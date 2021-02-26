@@ -2,8 +2,9 @@ import { Component, NgZone, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgForm } from '@angular/forms';
 import { ElectronService } from 'ngx-electron';
-import { LastDirectoryService } from './last-directory.service'
+//import { LastDirectoryService } from './last-directory.service'
 import { DbServiceService } from './db-service.service'
+import { UpdateRecentService } from './update-recent.service'
 
 @Component({
   selector: 'app-root',
@@ -15,7 +16,8 @@ export class AppComponent {
   
   constructor(
     private _electronService: ElectronService,
-    private _lastDirectoryService: LastDirectoryService,
+    //private _lastDirectoryService: LastDirectoryService,
+    private _updateRecentService: UpdateRecentService,
     private conn: DbServiceService,
     private readonly _nz: NgZone
   ) { }
@@ -35,7 +37,7 @@ export class AppComponent {
         console.log(err)
         this.fs.writeFile(this.recentPath, "", function(error) {
             if (error) console.log(error);
-            console.log("Асинхронная запись пустого файла recent.txt завершена.");
+            else console.log("Асинхронная запись пустого файла recent.txt завершена.");
         });
     }
     if (fileContent) {
@@ -54,22 +56,9 @@ export class AppComponent {
             }
         }
     }
+    this._updateRecentService.recentPathArray = listOfExistingDatabases;
+    this._updateRecentService.recentPath = this.recentPath;
     return listOfExistingDatabases;
-  }
-
-  private updateRecentProjects = function(path) {
-    let index = this.recentPathArray.indexOf(path)
-    if (index > 0) {
-      this.recentPathArray.splice(index, 1);
-    } else if (index < 0 && this.recentPathArray.length >= 5) {
-      //удалить элементы начиная с индекса maxRecent-1, в кол-ве length - maxRecent + 1
-      this.recentPathArray.splice(5 - 1, this.recentPathArray.length - 5 + 1);
-    }
-    this.recentPathArray.unshift(path);
-    this.fs.writeFile(this.recentPath, this.recentPathArray.join('\n') + '\n', function(error) {
-      if (error) throw error;
-      console.log('Асинхронная запись файла recent.txt завершена.');
-    });
   }
 
   /* -------------------------------------- Публичные параметры компонента, инициализация ----------------------------------------- */
@@ -83,6 +72,7 @@ export class AppComponent {
   @ViewChild('waitingMessageTag') waitingMessageTag;
   @ViewChild('waitingVoileTag') waitingVoileTag;
   ready = false;
+  waiting = false;
 
   setWaiting(message) {
     if (message) {
@@ -92,6 +82,7 @@ export class AppComponent {
       this.waitingVoileTag.nativeElement.className = 'loading_voile_hidden';
       this.waitingMessageTag.nativeElement.innerText = '';
     }
+    this.waiting = !!message;
     console.log(message);
   }
 
@@ -141,7 +132,8 @@ export class AppComponent {
         this._nz.run(() => {
           this.newProjectParentDirectory = '';
           this.openProjectPath = '';
-          
+          this._updateRecentService.updateRecentProjects(obj.src);
+
           let extIndex = obj.src.lastIndexOf('.export.gz');
           if (extIndex < 0) extIndex = obj.src.length;
           let dbName = obj.src.substring(obj.src.lastIndexOf(this.separator)+1, extIndex);

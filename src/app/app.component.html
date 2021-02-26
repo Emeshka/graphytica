@@ -60,10 +60,10 @@
         [selectFolders]="true"
         [multiselection]="false"
       ></app-filepath-selector>
-      <div class="form_error" *ngIf="!newProjectParentDirectory">
+      <div class="form_error" *ngIf="!waiting && !newProjectParentDirectory">
         Обязательное поле.
       </div>
-      <div class="form_error" *ngIf="projectFolderExists(new_project_name.value)">
+      <div class="form_error" *ngIf="!waiting && projectFolderExists(new_project_name.value)">
         Папка или файл с именем &quot;{{new_project_name.value}}.export.gz&quot; уже существует по указанному пути. Выберите другое местоположение или измените имя проекта.
       </div>
 
@@ -109,7 +109,7 @@
       [selectFolders]="false"
       [multiselection]="false"
     ></app-filepath-selector>
-    <div class="form_error" *ngIf="!openProjectPath">
+    <div class="form_error" *ngIf="!waiting && !openProjectPath">
       Обязательное поле.
     </div>
     <div>

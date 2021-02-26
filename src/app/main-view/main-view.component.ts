@@ -1,8 +1,9 @@
 import { Component, Input, ViewChild, NgZone } from '@angular/core';
 
 import { ElectronService } from 'ngx-electron';
-import { LastDirectoryService } from '../last-directory.service';
+//import { LastDirectoryService } from '../last-directory.service';
 import { DbServiceService } from '../db-service.service';
+import { UpdateRecentService } from '../update-recent.service';
 import cytoscape from 'cytoscape';
 import cola from 'cytoscape-cola';
 
@@ -15,14 +16,15 @@ export class MainViewComponent {
   /* ---------------------------------------------------- private --------------------------------------------------- */
   constructor(
     private _electronService: ElectronService,
-    private _lastDirectoryService: LastDirectoryService,
+    //private _lastDirectoryService: LastDirectoryService,
+    private _updateRecentService: UpdateRecentService,
     private conn: DbServiceService,
     private _nz: NgZone) { }
 
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
   private ipcRenderer = this._electronService.ipcRenderer;
-  private cytoscape = this._electronService.remote.require('cytoscape');
+  //private cytoscape = this._electronService.remote.require('cytoscape');
   private cy;
 
   private _dbLastSavedPath : string;
@@ -70,6 +72,7 @@ export class MainViewComponent {
     this._nz.run(() => {
       this.switchDialog('');
       let p = JSON.parse(params).src;
+      this._updateRecentService.updateRecentProjects(p);
       if (p == this.dbLastSavedPath) this.unsavedChanges = false;
       else this.unsavedChanges = true;
 
@@ -92,6 +95,7 @@ export class MainViewComponent {
     console.log('renderer app component received export-success =', params);
     let obj = JSON.parse(params);
     let exportedPath = obj.src;
+    this._updateRecentService.updateRecentProjects(exportedPath);
     this._nz.run(() => {
       if (exportedPath) {
         this.unsavedChanges = false;
