@@ -1,0 +1,11 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+#stat_classes {
+    width: 90%;
+    margin: 0 auto;
+    border: 1px solid black;
+    border-collapse: collapse;
+}

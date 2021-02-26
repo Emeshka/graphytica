@@ -1,0 +1,43 @@
+:host {
+    display: block;
+    height:100%;
+    font-family: sans-serif;
+    font-size: 12pt;
+}
+#start_screen, #new_project_dialog, #import_screen_1, #import_screen_2, #open_screen {
+    width: calc(100% - 60px);
+    height: calc(100% - 60px);
+    margin: 0px;
+    padding: 30px;
+}
+.grey_link {
+    margin: 10px;
+    font-size: 90%;
+    color: #888888;
+    text-decoration: underline;
+    cursor: pointer;
+}
+.grey_link:hover {
+    text-decoration: none;
+    color: #666666;
+}
+#start_screen_top_panel {
+    width: auto;
+    display: flex;
+    justify-content: space-between;
+}
+#start_screen_recent {
+    margin-top: 20px;
+    width: auto;
+}
+.start_screen_recent_path {
+    max-width: 100%;
+}
+/*#loading_voile_full_screen>* {
+    display: inline-block;
+    vertical-align: middle;
+}*/
+.dialog_textfield, .form_error {
+    width: calc(100% - 40px);
+    margin: 20px;
+}

@@ -1,0 +1,56 @@
+{
+  "name": "ae-graphytica",
+  "version": "0.0.0",
+  "license": "MIT",
+  "main": "main.js",
+  "build": {
+    "appID": "ae-graphytica",
+    "productName": "Graphytica",
+    "description": "Local graph database editor and analyzer with GUI",
+    "icon": "dist/favicon.png"
+  },
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve --progress=true --open=true",
+    "build": "ng build",
+    "test": "ng test",
+    "lint": "ng lint",
+    "e2e": "ng e2e",
+    "electron": "electron .",
+    "electron-build": "npm run build && npm run electron",
+    "electron-pack": "electron-packager . --platform=win32 --ignore=(^/src|^/e2e|^/.vscode) --overwrite --out=../"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "~10.2.0",
+    "@angular/common": "~10.2.0",
+    "@angular/compiler": "~10.2.0",
+    "@angular/core": "~10.2.0",
+    "@angular/forms": "~10.2.0",
+    "@angular/platform-browser": "~10.2.0",
+    "@angular/platform-browser-dynamic": "~10.2.0",
+    "@angular/router": "~10.2.0",
+    "@types/orientjs": "^3.0.11",
+    "cytoscape": "^3.17.0",
+    "cytoscape-cola": "^2.4.0",
+    "ngx-electron": "^2.2.0",
+    "orientjs": "^3.0.11",
+    "rxjs": "~6.6.0",
+    "single-instance": "0.0.1",
+    "temp": "^0.9.4",
+    "tslib": "^2.0.0",
+    "zone.js": "~0.10.2"
+  },
+  "devDependencies": {
+    "@angular-builders/custom-webpack": "^10.0.1",
+    "@angular/cli": "~10.2.0",
+    "@angular/compiler-cli": "~10.2.0",
+    "@types/node": "^12.11.1",
+    "codelyzer": "^6.0.0",
+    "electron": "^10.4.0",
+    "electron-packager": "^15.1.0",
+    "ts-node": "~8.3.0",
+    "tslint": "~6.1.0",
+    "typescript": "~4.0.2"
+  }
+}

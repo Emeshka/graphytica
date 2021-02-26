@@ -1,0 +1,30 @@
+:host {
+    display: block;
+    width: 100%;
+    padding: 0px 20px;
+}
+
+.filepath_selector_textfield {/*100% - host padding - button width - button margin - button border - self border*/
+    width: calc(100% - 40px - 50px - 10px - 2px - 2px);
+    vertical-align: middle;
+}
+
+.filepath_selector_button {
+    display: inline-block;
+    vertical-align: middle;
+    width: 40px;
+    height: 40px;
+    margin: 5px;
+    border: 1px solid grey;
+    background-color: #eeeeee;
+    border-radius: 3px;
+    background-image: url('../../assets/img/open.png');
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    cursor: default;
+}
+
+.filepath_selector_button:hover {
+    background-color: #fefefe;
+}

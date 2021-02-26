@@ -1,0 +1,41 @@
+
+<div id="tools">
+    <app-icon-button
+        title="Выделение"
+        iconSrc="assets/img/select.png"
+        [callback]="setTool.bind(this, 'select_vertex')"
+    ></app-icon-button>
+</div>
+<div>Настройки:</div>
+<div id="tool_settings">
+    настройки активного инструмента
+    <div *ngIf="activeTool == 'click_select_vertex'">
+        Инструмент Выделение: настройки
+    </div>
+</div>
+<div>Выделено:</div>
+<div id="selected">
+    свойства выделения
+    <div *ngFor="let v of selection">
+        {{ v.id }}
+    </div>
+</div>
+
+<div>Всего вершин:</div>
+<table id="stat_classes">
+    <tbody>
+        <tr>
+            <th>Класс</th>
+            <th>Кол-во вершин</th>
+        </tr>
+        <tr *ngIf="!amountByClass">
+            <td style="text-align: center;" colspan="2">
+                <app-loading></app-loading>
+            </td>
+        </tr>
+        <tr *ngFor="let cl of amountByClass | keyvalue">
+            <td>{{cl.key}}</td>
+            <td>{{cl.value}}</td>
+        </tr>
+    </tbody>
+</table>

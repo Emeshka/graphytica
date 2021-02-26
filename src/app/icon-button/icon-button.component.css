@@ -1,0 +1,30 @@
+:host {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon_button {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin: 2px;
+    background-color: #eeeeee;
+    border: 1px solid grey;
+    border-radius: 3px;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    cursor: default;
+}
+
+.icon_button:hover {
+    background-color: #fefefe;
+}
+
+.icon_button_active, .icon_button:active {
+    background-color: #87d4f3;
+}
+
+.icon_button_active:hover {
+    background-color: #a9e1f7;
+}

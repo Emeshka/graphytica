@@ -1,0 +1,5 @@
+<div>
+    <input placeholder="Выберите путь..." class="filepath_selector_textfield" [value]="inputValue()" (input)="updatePaths($event.target.value)">
+    <div class="filepath_selector_button" (click)="openClickListener()"></div>
+</div>
+<div class="form_error">{{errorMessage}}</div>

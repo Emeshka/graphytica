@@ -1,0 +1,29 @@
+:host {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.tile_button {
+    display: inline-block;
+    width: 100px;
+    height: 100px;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid grey;
+    background-color: #eeeeee;
+    text-align: center;
+    border-radius: 3px;
+    background-position: center 33%;
+    background-repeat: no-repeat;
+    background-size: 50px;
+    font-size:90%;
+    cursor: default;
+}
+
+.tile_button:hover {
+    background-color: #fefefe;
+}
+
+.tile_button_disabled {
+    opacity: 0.5;
+}

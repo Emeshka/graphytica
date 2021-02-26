@@ -1,0 +1,99 @@
+:host {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+#twocolumned {
+    width: 100%;
+    height: 100%;
+    display: flex;
+}
+
+#instrument_panel {
+    width: 30%;
+    height: 100%;
+    overflow: auto;
+    background-color: #eeeeee;
+    display:flex;
+    flex-direction:column;
+}
+
+#instrument_panel_content {
+    background: white;
+    width: 99%;
+    border-right: 1% solid #eeeeee;
+    flex:1;
+}
+
+#graph_field {
+    flex:1;
+    height: 100%;
+}
+
+#floating_control {
+    position: fixed;
+    top: 0px;
+    left: calc(30% + 1px + (69% / 2) - 120px);
+    width: 240px;
+    display: flex;
+    justify-content: space-around;
+    opacity: 0.5;
+}
+
+#floating_control:hover {
+    opacity: 1;
+    background-color: #eeeeee;
+    border-radius: 0px 0px 5px 5px;
+}
+
+.instrument_panel_category {
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: bottom;
+    border-top: 1px solid black;
+    border-right: 1px solid black;
+    border-top-right-radius: 5px;
+    font-size: 11pt;
+    padding: 5px;
+    cursor: default;
+}
+
+.category_selected {
+    background-color: white;
+}
+
+.file_option {
+    width: 100%;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.file_option:hover {
+    background-color: #eeeeee;
+}
+
+.main_dialog {
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 5px;
+    width: 70%;
+    height: 70%;
+    padding: 20px;
+    text-align: left;
+    display: inline-block;
+}
+
+.center_block {
+    width: 100%;
+    text-align: center;
+    /*display: flex;
+    justify-content: space-evenly;*/
+}
+
+.icon_button_container {
+    display: inline-block;
+    text-align: left;
+    /*display: flex;
+    justify-content: space-evenly;*/
+}

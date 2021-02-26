@@ -1,0 +1,46 @@
+/* You can add global styles to this file, and also import other style files */
+
+body {
+  min-width: 100vw;
+  min-height: 100vh;
+  height: 1px;/* https://stackoverflow.com/questions/8468066/child-inside-parent-with-min-height-100-not-inheriting-height */
+  margin: 0px;
+}
+.vertical_spacer {
+  display: inline-block;
+  vertical-align: middle;
+  height: 100%;
+}
+.vertical_spacer_el_bottom {
+  display: inline-block;
+  vertical-align: bottom;
+}
+.vertical_spacer_el_middle {
+  display: inline-block;
+  vertical-align: middle;
+}
+.big_loading_anim_icon {
+  margin: 10px;
+  height: 8vh;
+}
+.small_loading_anim_icon {
+  margin: 2px;
+  height: 2vh;
+}
+.form_error {
+  color: red;
+}
+.loading_voile_full_screen {
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  background: rgba(255,255,255,0.7);
+  text-align: center;
+}
+.loading_voile_hidden {
+  width: 0px;
+  height: 0px;
+  display: none;
+}

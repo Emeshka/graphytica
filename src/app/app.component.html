@@ -1,0 +1,157 @@
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * The content below * * * * * * * * * * * -->
+<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * -->
+<!-- * * * * * * * * * * and can be replaced. * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * Delete the template below * * * * * * * * * * -->
+<!-- * * * * * * * to get started with your project! * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+
+<div>
+  <div id="start_screen" *ngIf="appView == 'start_view'">
+    <div id="start_screen_top_panel">
+      <div>
+        <app-tile-button
+          text="Новый проект"
+          iconSrc="assets/img/new_database.png"
+          [callback]="switchAppView.bind(this, 'new_project_view')"
+        ></app-tile-button>
+        <app-tile-button
+          text="Открыть проект"
+          iconSrc="assets/img/open.png"
+          [callback]="switchAppView.bind(this, 'open_view')"
+        ></app-tile-button>
+        <!--<app-tile-button
+          text="Импорт"
+          iconSrc="assets/img/import.png"
+          [callback]="switchAppView.bind(this, 'import_1_view')"
+        ></app-tile-button>-->
+      </div>
+      <div>
+        <span class="grey_link" (click)="switchAppView('help_view')">Справка</span>
+        <span class="grey_link" (click)="quitClickListener()">Выход</span>
+      </div>
+    </div>
+
+    <div id="start_screen_recent">
+      <div>Недавние проекты:</div>
+      <ul>
+        <li class="grey_link" *ngFor="let recentPathItem of recentPathArray">
+          <div class="start_screen_recent_path">{{recentPathItem}}</div>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div id="new_project_dialog" *ngIf="appView == 'new_project_view'">
+    <h1>Создание проекта</h1>
+    <form #f="ngForm" (ngSubmit)="createProject(f)">
+      <div>Имя проекта:</div>
+      <input ngModel name="new_project_name" #new_project_name="ngModel" required placeholder="Имя проекта" class="dialog_textfield">
+      <div class="form_error" *ngIf="new_project_name.invalid && (new_project_name.dirty || new_project_name.touched) && new_project_name.errors.required">
+        Обязательное поле.
+      </div>
+      <div class="form_error" *ngIf="!isValidFilename(new_project_name.value)">
+        Имя проекта не должно содержать символы и комбинации символов, запрещенные в вашей операционной системе.
+      </div>
+
+      <div>Сохранить в:</div>
+      <app-filepath-selector
+        [callback]="newProjectPathUpdateCallback"
+        [selectFolders]="true"
+        [multiselection]="false"
+      ></app-filepath-selector>
+      <div class="form_error" *ngIf="!newProjectParentDirectory">
+        Обязательное поле.
+      </div>
+      <div class="form_error" *ngIf="projectFolderExists(new_project_name.value)">
+        Папка или файл с именем &quot;{{new_project_name.value}}.export.gz&quot; уже существует по указанному пути. Выберите другое местоположение или измените имя проекта.
+      </div>
+
+      <!--<div>Пароль к новому проекту:</div>
+      <input ngModel name="password" #password="ngModel" required type="password" placeholder="Пароль к новому проекту"
+        pattern="^[_A-Za-z0-9]+$" class="dialog_textfield">
+      <div *ngIf="password.invalid && (password.dirty || password.touched)">
+        <div class="form_error" *ngIf="password.errors.required">
+          Обязательное поле.
+        </div>
+        <div class="form_error" *ngIf="password.errors.pattern">
+          Пароль должен содержать только большие или маленькие латинские буквы, цифры или нижнее подчеркивание.
+        </div>
+      </div>
+    
+      <div>Повторите пароль:</div>
+      <input ngModel name="check_password" #check_password="ngModel" required type="password" placeholder="Повторите пароль" pattern="^[_A-Za-z0-9]+$" class="dialog_textfield">
+      <div *ngIf="check_password.invalid && (check_password.dirty || check_password.touched)">
+        <div class="form_error" *ngIf="check_password.errors.required">
+          Обязательное поле.
+        </div>
+        <div class="form_error" *ngIf="check_password.errors.pattern">
+          Пароль должен содержать только большие или маленькие латинские буквы, цифры или нижнее подчеркивание.
+        </div>
+      </div>
+      <div class="form_error" *ngIf="check_password.value !== password.value">
+        Введенные пароли не совпадают.
+      </div>
+    
+      // && check_password.value === password.value
+    -->
+
+      <input type="button" value="Отмена" (click)="switchAppView('start_view')">
+      <button type="submit"
+        *ngIf="f.valid && !projectFolderExists(new_project_name.value) && newProjectParentDirectory && isValidFilename(new_project_name.value)"
+      >Создать</button>
+    </form>
+  </div>
+  <div id="open_screen" *ngIf="appView == 'open_view'">
+    <h1>Открыть проект</h1>
+    <app-filepath-selector
+      [callback]="openProjectPathUpdateCallback"
+      [selectFolders]="false"
+      [multiselection]="false"
+    ></app-filepath-selector>
+    <div class="form_error" *ngIf="!openProjectPath">
+      Обязательное поле.
+    </div>
+    <div>
+      Тип файла:
+      <select #openGraphTypeTag>
+        <option selected value="">Определить автоматически</option>
+        <option value="orientdb">OrientDB export file format (формат сохранения Graphytica)</option>
+        <option value="graphml">Graph XML</option>
+        <option value="graphson">Graph JSON</option>
+      </select>
+    </div>
+    <input type="button" value="Отмена" (click)="switchAppView('start_view')">
+    <input type="button" value="Открыть" (click)="openProject(openGraphTypeTag.value)"
+      *ngIf="openProjectExists() && openProjectPath">
+  </div>
+  <div id="import_screen_1" *ngIf="appView == 'import_1_view'">экран импорта 1</div>
+  <div id="import_screen_2" *ngIf="appView == 'import_2_view'">экран импорта 2</div>
+  <app-main-view *ngIf="appView == 'main_view'"
+    [getParams]="getParams"
+    [backToStartView]="switchAppView.bind(this, 'start_view')"
+    [setWaiting]="setWaiting.bind(this)"
+    [reopenProject]="reopenProject.bind(this)"
+  ></app-main-view>
+  <div id="help_view" *ngIf="appView == 'help_view'">Экран помощи</div>
+</div>
+<!--Я бы сделала по нормальному, если б оно желало работать-->
+<div #waitingVoileTag class="loading_voile_full_screen">
+  <div class="vertical_spacer"></div>
+  <div class="vertical_spacer_el_middle">
+    <img src="assets/img/loading_anim.webp" class="big_loading_anim_icon">
+    <div #waitingMessageTag>Подождите, сервер запускается...</div>
+  </div>
+</div>
+
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * The content above * * * * * * * * * * * -->
+<!-- * * * * * * * * * * is only a placeholder * * * * * * * * * * -->
+<!-- * * * * * * * * * * and can be replaced. * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+<!-- * * * * * * * * * * End of Placeholder * * * * * * * * * * * -->
+<!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+
+
+
+<router-outlet></router-outlet>
