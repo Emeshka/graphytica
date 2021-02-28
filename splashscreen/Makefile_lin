@@ -1,0 +1,10 @@
+all: splash.o main_lin.o
+	g++ main_lin.o splash.o /usr/lib/x86_64-linux-gnu/libfltk.a -lX11 -ldl -lXext -lXft -lXinerama -lfontconfig -o splash_exe 
+	strip splash_exe
+
+splash.o: splash.cxx splash.h
+	g++ -c -O3 splash.cxx 
+
+main_lin.o: main_lin.cpp
+	g++ -c -O3 main_lin.cpp
+

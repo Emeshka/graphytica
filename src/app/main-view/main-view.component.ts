@@ -553,8 +553,8 @@ export class MainViewComponent {
   // сохранить как
   saveAsProjectListener = (fp) => {
     this.setWaiting('Сохранение проекта...');
-    let p = fp + '.export';
-    if (this.fs.existsSync(p + '.gz')) {
+    let p = fp + '.export.gz';
+    if (this.fs.existsSync(p)) {
       if (this.fs.lstatSync(this.importPath).isFile()) {
         const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
           type: 'question',
@@ -563,7 +563,7 @@ export class MainViewComponent {
           message: 'Одноименная папка уже существует по этому пути. Вы уверены, что хотите удалить ее и сохранить файл вместо нее?'
         });
         if (choice === 1) {
-          this.fs.rmdir(p + '.gz', { recursive: true }, () => {
+          this.fs.rmdir(p, { recursive: true }, () => {
             this._electronService.ipcRenderer.send('export-database', p);
           });
         }
@@ -575,7 +575,7 @@ export class MainViewComponent {
           message: 'Вы уверены, что хотите заменить существующий файл?'
         });
         if (choice === 1) {
-          this.fs.unlink(p + '.gz', () => {
+          this.fs.unlink(p, () => {
             this._electronService.ipcRenderer.send('export-database', p);
           })
         }

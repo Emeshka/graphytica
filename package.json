@@ -12,13 +12,14 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --progress=true --open=true",
-    "build": "ng build",
-    "test": "ng test",
-    "lint": "ng lint",
-    "e2e": "ng e2e",
+    "ngbuild": "ng build",
+    "ngbuild-prod": "ng build --prod",
     "electron": "electron .",
-    "electron-build": "npm run build && npm run electron",
-    "electron-pack": "electron-packager . --platform=win32 --ignore=(^/src|^/e2e|^/.vscode) --overwrite --out=../"
+    "app": "chcp 65001 && npm run electron && chcp 866",
+    "build-app": "npm run ngbuild && npm run app",
+    "electron-pack": "electron-packager . --platform=win32 --ignore=\"(^/src|^/e2e|^/.vscode|^/unused|^/splashscreen|^/debug.log)\" --overwrite --out=../",
+    "release-splash": "node ./splashscreen/release.js",
+    "release": "npm run ngbuild-prod && npm run electron-pack && npm run release-splash"
   },
   "private": true,
   "dependencies": {
@@ -33,6 +34,7 @@
     "@types/orientjs": "^3.0.11",
     "cytoscape": "^3.17.0",
     "cytoscape-cola": "^2.4.0",
+    "legacy-encoding": "^3.0.0",
     "ngx-electron": "^2.2.0",
     "orientjs": "^3.0.11",
     "rxjs": "~6.6.0",

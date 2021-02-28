@@ -218,7 +218,7 @@ export class AppComponent {
   createProject = (form) => {
     this.setWaiting('Создание родительского каталога...');
     let prName = form.value.new_project_name;
-    let prExportPath = this.path.join(this.newProjectParentDirectory, prName)+'.export';
+    let prExportPath = this.path.join(this.newProjectParentDirectory, prName)+'.export.gz';
 
     this.fs.mkdir(this.newProjectParentDirectory, {recursive: true}, (err) => { 
       if (err) { 
