@@ -63,12 +63,12 @@ export class MainViewComponent {
   };
   private quitRequestListener = (event,request) => {
     this.onClose(true, () => {
-      console.log('renderer main-view: onClose finished');
+      //console.log('renderer main-view: onClose finished');
       this.ipcRenderer.send('quit-request', true);
     });
   };
   private importSuccessListener = (event,params) => {
-    console.log('renderer main-view component received import-success =', params);
+    console.log('main-view received import-success =', params);
     this._nz.run(() => {
       this.switchDialog('');
       let p = JSON.parse(params).src;
@@ -92,7 +92,7 @@ export class MainViewComponent {
     });
   }
   private exportSuccessListener = (event,params) => {
-    console.log('renderer app component received export-success =', params);
+    console.log('main-view received export-success =', params);
     let obj = JSON.parse(params);
     let exportedPath = obj.src;
     this._updateRecentService.updateRecentProjects(exportedPath);
@@ -103,7 +103,10 @@ export class MainViewComponent {
         this.dbOpenedWithFormat = obj.format;
 
         let extIndex = exportedPath.lastIndexOf('.export.gz');
-        if (extIndex < 0) extIndex = exportedPath.length;
+        if (extIndex < 0) {
+          extIndex = exportedPath.lastIndexOf('.gz');
+          if (extIndex < 0) extIndex = exportedPath.length;
+        }
         this.dbName = exportedPath.substring(exportedPath.lastIndexOf(this.path.sep)+1, extIndex);
         this.setWaiting('');
       }
@@ -132,9 +135,7 @@ export class MainViewComponent {
     "ORestricted", "OTriggered", "OLineString", "OSecurityPolicy", "OSchedule", "OSequence", "ORectangle", "OIdentity",
     "OPolygon", "OMultiPoint", "OGeometryCollection", "ORole"];
   userDefinedClasses = [];
-  //storedData = null;//сохраненная копия данных (!!! НЕ ПУТАТЬ МЕСТАМИ - СНАЧАЛА ВЕРШИНЫ, ПОТОМ РЕБРА !!!)
-  //vizData = null;//визуализированная копия данных (например в cytoscape мы удалили/скрыли часть вершин, но только для визуализации, не по-настоящему)
-
+  
   private selectionNodes = [];
   private selectionEdges = [];
 
@@ -152,7 +153,7 @@ export class MainViewComponent {
         this.cy.autoungrabify(false);
         this.cy.autounselectify(false);
         this.cy.userPanningEnabled(false);
-        this.setElementEvents(true);
+        //this.setElementEvents(true);
       }/*,
       onclick: (evt) => {
         var elem = evt.target;
@@ -170,7 +171,7 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        this.setElementEvents(false);
+        //this.setElementEvents(false);
       }
     },
     zoom_in: {
@@ -180,7 +181,7 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        this.setElementEvents(false);
+        //this.setElementEvents(false);
       },
       onclick: (evt) => {
         this.cy.zoom({
@@ -196,7 +197,7 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        this.setElementEvents(false);
+        //this.setElementEvents(false);
       },
       onclick: (evt) => {
         this.cy.zoom({
@@ -212,7 +213,7 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        this.setElementEvents(false);
+        //this.setElementEvents(false);
       },
       onclick: (evt) => {
         this.cy.zoom({
@@ -227,22 +228,22 @@ export class MainViewComponent {
 
   /* ---------------------------------------------------- public functions --------------------------------------------------- */
 
-  setElementEvents = function(value) {
+  /*setElementEvents = function(value) {
     let testNode = null;
     if (value) {
       /*this.cy.$('node, edge').forEach(node => {
         node.style('events', 'yes');
         testNode = node;
         if (testNode) console.log(`node style length: `, testNode.style());
-      });*/
+      })
     } else {
       /*this.cy.$('node, edge').forEach(node => {
         node.style('events', 'no');
         testNode = node;
         if (testNode) console.log(`node style length: `, testNode.style());
-      });*/
+      });
     }
-  }
+  }*/
 
   getData = () => {
     return new Promise((resolve, reject) => {
@@ -272,28 +273,25 @@ export class MainViewComponent {
         }).catch(e => reject(e));
       }).catch(e => reject(e));*/
 
-      //TODO убрать таймаут, когда удалим тест выше
-      setTimeout(() => {
-        this.conn.db.class.list().then(classes => {
-          // определить все кастомные классы
-          this.userDefinedClasses = classes.filter(cl => !this.servicePrecreatedClasses.includes(cl.name));
-          console.log(this.userDefinedClasses);
+      this.conn.db.class.list().then(classes => {
+        // определить все кастомные классы
+        this.userDefinedClasses = classes.filter(cl => !this.servicePrecreatedClasses.includes(cl.name));
+        //console.log(this.userDefinedClasses);
 
-          this.conn.db.query('SELECT * FROM V').then(allVertices => {
-            //console.log('SELECT * FROM V', allVertices);
-            this.conn.db.query('SELECT * FROM E').then(allEdges => {
-              //console.log('SELECT * FROM E', allEdges);
+        this.conn.db.query('SELECT * FROM V').then(allVertices => {
+          //console.log('SELECT * FROM V', allVertices);
+          this.conn.db.query('SELECT * FROM E').then(allEdges => {
+            //console.log('SELECT * FROM E', allEdges);
 
-              // конвертация в формат понятный cytoscape
-              let convertedV = allVertices.map(this.conn.odbRecordToCytoscapeElement('node'));
-              let convertedE = allEdges.map(this.conn.odbRecordToCytoscapeElement('edge'));
-              let storedData = convertedV.concat(convertedE);
-              console.log('storedData:', storedData);
-              resolve(storedData);
-            }).catch(e => reject(e));
+            // конвертация в формат понятный cytoscape
+            let convertedV = allVertices.map(this.conn.odbRecordToCytoscapeElement('node'));
+            let convertedE = allEdges.map(this.conn.odbRecordToCytoscapeElement('edge'));
+            let storedData = convertedV.concat(convertedE);
+            console.log('Project storedData:', storedData);
+            resolve(storedData);
           }).catch(e => reject(e));
         }).catch(e => reject(e));
-      }, 5000)
+      }).catch(e => reject(e));
     })
   }
 
@@ -331,7 +329,7 @@ export class MainViewComponent {
         //иконка инструмента
         this.cy.on('mouseover', tool.appliableTo, () => {
           this._nz.run(() => {
-            console.log(`tool mouseover`)
+            //console.log(`tool mouseover`)
             this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
             //console.log(`cursor: ${this.graphField.nativeElement.style.cursor}`);
             //this.graphField.nativeElement.style.cursor = `pointer`;
@@ -340,7 +338,7 @@ export class MainViewComponent {
         });
         this.cy.on('mouseout', tool.appliableTo, () => {
           this._nz.run(() => {
-            console.log(`tool mouseout`)
+            //console.log(`tool mouseout`)
             this.graphField.nativeElement.style.cursor = `default`;
           })
         });
@@ -350,7 +348,7 @@ export class MainViewComponent {
         this.cy.on('mouseover', (evt) => {
           this._nz.run(() => {
             if (evt.target != this.cy) return;
-            console.log(`tool mouseover`)
+            //console.log(`tool mouseover`)
             this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
             //console.log(`cursor: ${this.graphField.nativeElement.style.cursor}`);
             //this.graphField.nativeElement.style.cursor = `pointer`;
@@ -360,7 +358,7 @@ export class MainViewComponent {
         this.cy.on('mouseout', (evt) => {
           this._nz.run(() => {
             if (evt.target != this.cy) return;
-            console.log(`tool mouseout`)
+            //console.log(`tool mouseout`)
             this.graphField.nativeElement.style.cursor = `default`;
           })
         });
@@ -463,21 +461,6 @@ export class MainViewComponent {
         autounselectify: true
       });
 
-      // имитация forEach и map на коллекции
-      /*cytoscape('collection', 'forEach', function( fn ){
-        for( var i = 0; i < this.length; i++ ){
-          fn.apply( this[i], [ i, this[i] ] );
-        }
-        return this; // chainability
-      });
-      cytoscape('collection', 'map', function( fn ){
-        let modifiedArray = [];
-        for( var i = 0; i < this.length; i++ ){
-          modifiedArray.push(fn.apply( this[i], [ i, this[i] ] ));
-        }
-        return modifiedArray;
-      });*/
-
       // мониторинг выделения
       // восстановление после импорта и перестройки cy
       for (let i = 0; i<this.selectionNodes.length; i++) {
@@ -486,15 +469,16 @@ export class MainViewComponent {
       for (let i = 0; i<this.selectionEdges.length; i++) {
         this.cy.$('#'+this.selectionEdges[i].id)?.select();
       }
-      this.setElementEvents(true);
+      //this.setElementEvents(true);
 
       // обновление выделения. оно же следит и за изменением выделения категориями вершин и ребер, т.к.они там вручную вызывают eles.select()
       let selectionNodesUpdate = () => {//пустой map - преобразование в массив
         this.selectionNodes = this.cy.$(':selected').filter(e => e.isNode());
-        console.log(this.selectionNodes, this.selectionNodes instanceof Array);
+        console.log('this.selectionNodes: ', this.selectionNodes, this.selectionNodes instanceof Array);
       };
       let selectionEdgesUpdate = () => {
         this.selectionEdges = this.cy.$(':selected').filter(e => e.isEdge());
+        console.log('this.selectionEdges: ', this.selectionEdges, this.selectionEdges instanceof Array);
       }
       this.cy.nodes().on('select', selectionNodesUpdate)
       this.cy.edges().on('select', selectionEdgesUpdate)
@@ -637,7 +621,7 @@ export class MainViewComponent {
 
       this.batchBuildCopy += 'commit;\n';
     }
-    console.log(this.batchBuildCopy);
+    //console.log(this.batchBuildCopy);
 
     this.setWaiting('Закрытие соединения...');
     this.onClose(false, () => {
@@ -649,7 +633,7 @@ export class MainViewComponent {
           format: this.importGraphTypeTag.nativeElement.value
         }
         this._electronService.ipcRenderer.send('import-database', JSON.stringify(params));
-        console.log('importMerge(): sent import-database request');
+        //console.log('importMerge(): sent import-database request');
       });
     })
   }
@@ -698,7 +682,7 @@ export class MainViewComponent {
       }).then(() => {
         this.conn.client.close();
         this.conn.client = null;
-        console.log('Graphytica INFO: Temp database dropped');
+        //console.log('Graphytica INFO: Temp database dropped');
         
         removeListeners();
         if (callback) callback();

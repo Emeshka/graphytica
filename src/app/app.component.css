@@ -30,13 +30,28 @@
     margin-top: 20px;
     width: auto;
 }
-.start_screen_recent_path {
-    max-width: 100%;
+#start_screen_recent table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15px 0px;
 }
-/*#loading_voile_full_screen>* {
-    display: inline-block;
+#start_screen_recent table tr {
+    width: 100%;
+}
+#start_screen_recent table tr td {
     vertical-align: middle;
-}*/
+}
+.start_screen_recent_path {
+    width: auto;
+}
+.start_screen_recent_path_index {
+    width: auto;
+    text-align: center;
+}
+.start_screen_recent_path_tool {
+    width: 10%;
+    text-align: center;
+}
 .dialog_textfield, .form_error {
     width: calc(100% - 40px);
     margin: 20px;

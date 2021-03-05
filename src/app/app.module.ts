@@ -15,7 +15,8 @@ import { FilepathSelectorComponent } from './filepath-selector/filepath-selector
 import { MainViewComponent } from './main-view/main-view.component';
 import { LoadingComponent } from './loading/loading.component';
 import { VerticesCategoryComponent } from './vertices-category/vertices-category.component';
-import { IconButtonComponent } from './icon-button/icon-button.component'
+import { IconButtonComponent } from './icon-button/icon-button.component';
+import { PrettyButtonComponent } from './pretty-button/pretty-button.component'
 
 @NgModule({
   declarations: [
@@ -26,7 +27,8 @@ import { IconButtonComponent } from './icon-button/icon-button.component'
     MainViewComponent,
     LoadingComponent,
     VerticesCategoryComponent,
-    IconButtonComponent
+    IconButtonComponent,
+    PrettyButtonComponent
   ],
   imports: [
     BrowserModule,

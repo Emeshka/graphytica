@@ -21,11 +21,6 @@
           iconSrc="assets/img/open.png"
           [callback]="switchAppView.bind(this, 'open_view')"
         ></app-tile-button>
-        <!--<app-tile-button
-          text="Импорт"
-          iconSrc="assets/img/import.png"
-          [callback]="switchAppView.bind(this, 'import_1_view')"
-        ></app-tile-button>-->
       </div>
       <div>
         <span class="grey_link" (click)="switchAppView('help_view')">Справка</span>
@@ -35,13 +30,29 @@
 
     <div id="start_screen_recent">
       <div>Недавние проекты:</div>
-      <ul>
-        <li class="grey_link" *ngFor="let recentPathItem of recentPathArray">
-          <div class="start_screen_recent_path">{{recentPathItem}}</div>
-        </li>
-      </ul>
+      <table>
+        <tr *ngFor="let recentPathItem of _updateRecentService.recentPathArray; index as i">
+          <td class="start_screen_recent_path_index">{{i + 1}}.</td>
+          <td class="grey_link start_screen_recent_path" (click)="openRecent(recentPathItem)">{{recentPathItem}}</td>
+          <td class="start_screen_recent_path_tool">
+            <app-icon-button
+                title="Убрать проект из списка недавних"
+                iconSrc="assets/img/close.png"
+                [callback]="removeFromRecent.bind(this, recentPathItem)"
+            ></app-icon-button>
+          </td>
+          <td class="start_screen_recent_path_tool">
+            <app-icon-button
+                title="Удалить проект с диска (необратимо)"
+                iconSrc="assets/img/delete_project.png"
+                [callback]="deleteProject.bind(this, recentPathItem)"
+            ></app-icon-button>
+          </td>
+        </tr>
+      </table>
     </div>
   </div>
+
   <div id="new_project_dialog" *ngIf="appView == 'new_project_view'">
     <h1>Создание проекта</h1>
     <form #f="ngForm" (ngSubmit)="createProject(f)">
@@ -66,42 +77,15 @@
       <div class="form_error" *ngIf="!waiting && projectFolderExists(new_project_name.value)">
         Папка или файл с именем &quot;{{new_project_name.value}}.export.gz&quot; уже существует по указанному пути. Выберите другое местоположение или измените имя проекта.
       </div>
-
-      <!--<div>Пароль к новому проекту:</div>
-      <input ngModel name="password" #password="ngModel" required type="password" placeholder="Пароль к новому проекту"
-        pattern="^[_A-Za-z0-9]+$" class="dialog_textfield">
-      <div *ngIf="password.invalid && (password.dirty || password.touched)">
-        <div class="form_error" *ngIf="password.errors.required">
-          Обязательное поле.
-        </div>
-        <div class="form_error" *ngIf="password.errors.pattern">
-          Пароль должен содержать только большие или маленькие латинские буквы, цифры или нижнее подчеркивание.
-        </div>
-      </div>
-    
-      <div>Повторите пароль:</div>
-      <input ngModel name="check_password" #check_password="ngModel" required type="password" placeholder="Повторите пароль" pattern="^[_A-Za-z0-9]+$" class="dialog_textfield">
-      <div *ngIf="check_password.invalid && (check_password.dirty || check_password.touched)">
-        <div class="form_error" *ngIf="check_password.errors.required">
-          Обязательное поле.
-        </div>
-        <div class="form_error" *ngIf="check_password.errors.pattern">
-          Пароль должен содержать только большие или маленькие латинские буквы, цифры или нижнее подчеркивание.
-        </div>
-      </div>
-      <div class="form_error" *ngIf="check_password.value !== password.value">
-        Введенные пароли не совпадают.
-      </div>
-    
-      // && check_password.value === password.value
-    -->
-
-      <input type="button" value="Отмена" (click)="switchAppView('start_view')">
-      <button type="submit"
-        *ngIf="f.valid && !projectFolderExists(new_project_name.value) && newProjectParentDirectory && isValidFilename(new_project_name.value)"
-      >Создать</button>
+      <app-pretty-button text="Отмена" [callback]="switchAppView.bind(this, 'start_view')"></app-pretty-button>
+      <app-pretty-button
+        text="Создать"
+        [active]="!waiting && f.valid && !projectFolderExists(new_project_name.value) && newProjectParentDirectory && isValidFilename(new_project_name.value)"
+        type="submit"
+      ></app-pretty-button>
     </form>
   </div>
+
   <div id="open_screen" *ngIf="appView == 'open_view'">
     <h1>Открыть проект</h1>
     <app-filepath-selector
@@ -121,21 +105,20 @@
         <option value="graphson">Graph JSON</option>
       </select>
     </div>
-    <input type="button" value="Отмена" (click)="switchAppView('start_view')">
-    <input type="button" value="Открыть" (click)="openProject(openGraphTypeTag.value)"
-      *ngIf="openProjectExists() && openProjectPath">
+    <app-pretty-button text="Отмена" [callback]="switchAppView.bind(this, 'start_view')"></app-pretty-button>
+    <app-pretty-button text="Открыть" [callback]="openProject.bind(this, openGraphTypeTag.value)"
+      [active]="!waiting && openProjectExists() && openProjectPath"></app-pretty-button>
   </div>
-  <div id="import_screen_1" *ngIf="appView == 'import_1_view'">экран импорта 1</div>
-  <div id="import_screen_2" *ngIf="appView == 'import_2_view'">экран импорта 2</div>
+
   <app-main-view *ngIf="appView == 'main_view'"
     [getParams]="getParams"
     [backToStartView]="switchAppView.bind(this, 'start_view')"
     [setWaiting]="setWaiting.bind(this)"
     [reopenProject]="reopenProject.bind(this)"
   ></app-main-view>
+
   <div id="help_view" *ngIf="appView == 'help_view'">Экран помощи</div>
 </div>
-<!--Я бы сделала по нормальному, если б оно желало работать-->
 <div #waitingVoileTag class="loading_voile_full_screen">
   <div class="vertical_spacer"></div>
   <div class="vertical_spacer_el_middle">

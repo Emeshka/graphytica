@@ -1,9 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
 
 body {
-  min-width: 100vw;
+  min-width: 100%;
+  min-height: 100%;
+  /*min-width: 100vw;
   min-height: 100vh;
-  height: 1px;/* https://stackoverflow.com/questions/8468066/child-inside-parent-with-min-height-100-not-inheriting-height */
+  height: 1px; https://stackoverflow.com/questions/8468066/child-inside-parent-with-min-height-100-not-inheriting-height */
   margin: 0px;
 }
 .vertical_spacer {
@@ -43,4 +45,8 @@ body {
   width: 0px;
   height: 0px;
   display: none;
+}
+@font-face {
+  font-family: "Arimo";
+  src: local("Arimo"), url(./assets/arimo.ttf) format("truetype");
 }

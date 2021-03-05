@@ -1,0 +1,38 @@
+.pretty_button {
+    text-decoration: none;
+    display: inline-block;
+    width: 140px;
+    height: 45px;
+    line-height: 45px;
+    border-radius: 6px;
+    border: none;
+    margin: 10px 20px;
+    font-size: 15px;
+    font-family: "Arimo", 'Times New Roman';
+    text-align: center;
+    transition: .3s;
+}
+.pretty_button_inactive {
+    box-shadow: 0 15px 20px rgba(250, 231, 214, 0.4);
+    background: #dad5ce;
+    color: grey;
+    cursor: default;
+}
+.pretty_button_active {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, .1);
+    background: #ffaa33;
+    color: white;
+    cursor: pointer;
+}
+.pretty_button_inactive:hover {
+    background: #d1cec8;
+}
+.pretty_button_active:hover {
+    background: #ff9e17;
+    box-shadow: 0 10px 17px rgba(229, 134, 46, 0.4);
+}
+.pretty_button_active:active, .pretty_button_active:focus {
+    background: #ff6333;
+    border: none;
+    outline: none;
+}

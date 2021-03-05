@@ -58,7 +58,7 @@ locker.lock().then(() => {
 			home = odbDevRoot;
 		}
 		let serverStopCommand = `"${serverShutdownPath}" -p "root"`;
-		console.log(serverStopCommand);
+		//console.log(serverStopCommand);
 		try {
 			let stdout = cp.execSync(serverStopCommand, {env: getEnv(home)});
 			console.log('Graphytica INFO: shutdown stdout:' + bufferToString(stdout));
@@ -80,7 +80,7 @@ locker.lock().then(() => {
 		console.log('Graphytica INFO: OrientDB Server starting...')
 
 		let serverLauncherPath = path.join(odbRoot, 'bin', 'server') + (process.platform == 'win32' ? '.bat' : '.sh');
-		console.log(serverLauncherPath);
+		//console.log(serverLauncherPath);
 
 		try {
 			let childProcess = cp.spawn(serverLauncherPath, [], {env: getEnv()});
@@ -244,7 +244,7 @@ locker.lock().then(() => {
 					}).on('error', function (e) {
 						server.close();
 						// сервер включился, организуем отправку сообщения с подтверждением
-						console.log('Graphytica INFO: argv: '+process.argv)
+						//console.log('Graphytica INFO: argv: '+process.argv)
 						// argument[1] when started by launcher as e.g. 'ae-graphytica.exe 9044'. When started by npm 'electron .',
 						// argument[1] is . , and no pid is passed at all
 						let pidSplashScreen = parseInt(process.argv[1]);
@@ -289,15 +289,16 @@ locker.lock().then(() => {
 	}
 	
 	ipcMain.on('export-database', (event, destination) => {
-		console.log('Graphytica INFO: Trying to export database...')
+		//console.log('Graphytica INFO: Trying to export database...')
 
-		temp.open('graphytica', function(err, info) {
+		temp.open({prefix: "graphytica", suffix: ".gz"}, function(err, info) {
 			if (err) console.log(err);
 			else {
 				let script = '"'+path.join(odbRoot, 'bin', 'console') + (process.platform == 'win32' ? '.bat' : '.sh')+'"';
-				script += ` "CONNECT remote:localhost/tempdb root root;EXPORT DATABASE ${escapePathCom(info.path)};DISCONNECT"`;
+				let databasePath = escapePathCom(info.path.substring(0, info.path.length - 3))
+				script += ` "CONNECT remote:localhost/tempdb root root;EXPORT DATABASE ${databasePath};DISCONNECT"`;
 				
-				console.log('Graphytica INFO: Command to execute:', script);
+				//console.log('Graphytica INFO: Command to execute:', script);
 				cp.exec(script, {env: getEnv()}, function(e, stdout, stderr) {
 					if (e) {
 						console.log('Graphytica ERROR: ' + e);
@@ -308,11 +309,11 @@ locker.lock().then(() => {
 						fs.copyFile(info.path, destination, (err) => {
 							if (err) console.log(err);
 							else {
-								console.log(info.path+' was copied to '+destination);
+								//console.log(info.path + ' was copied to '+destination);
 								fs.close(info.fd, function(err) {
 									if (err) console.log(err);
 									else {
-										console.log('Graphytica INFO: export executed:\n\n' + bufferToString(stdout));
+										//console.log('Graphytica INFO: export executed:\n\n' + bufferToString(stdout));
 										let params = JSON.stringify({
 											src: destination,
 											format: ''
@@ -329,7 +330,7 @@ locker.lock().then(() => {
 	});
 	
 	ipcMain.on('import-database', async (event, params) => {
-		console.log('Graphytica INFO: Trying to import database...')
+		//console.log('Graphytica INFO: Trying to import database...')
 		let paramsObj = JSON.parse(params);
 
 		temp.open('graphytica', function(err, info) {
@@ -338,7 +339,7 @@ locker.lock().then(() => {
 				fs.copyFile(paramsObj.src, info.path, (err) => {
 					if (err) console.log(err);
 					else {
-						console.log(paramsObj.src+' was copied to '+info.path);
+						//console.log(paramsObj.src+' was copied to '+info.path);
 						fs.close(info.fd, function(err) {
 							if (err) console.log(err);
 							else {
@@ -348,7 +349,7 @@ locker.lock().then(() => {
 								if (paramsObj.format != '') script += ` -format=${paramsObj.format}`;
 								script += ` -merge=false;DISCONNECT"`;
 								
-								console.log('Graphytica INFO: Command to execute:', script);
+								//console.log('Graphytica INFO: Command to execute:', script);
 		
 								cp.exec(script, {env: getEnv()}, function(e, stdout, stderr) {
 									if (e) {
@@ -358,7 +359,7 @@ locker.lock().then(() => {
 										if (stderr) console.log('Graphytica ERROR: stderr: ' + bufferToString(stderr));
 										win.webContents.send('import-success', false);
 									} else {
-										console.log('Graphytica INFO: import executed:\n\n' + bufferToString(stdout));
+										//console.log('Graphytica INFO: import executed:\n\n' + bufferToString(stdout));
 										win.webContents.send('import-success', params);
 									} 
 								});
@@ -371,14 +372,14 @@ locker.lock().then(() => {
 	});
 
 	ipcMain.on('quit-request', (event, ready) => {
-		console.log('main quit-request:', ready)
+		//console.log('main quit-request:', ready)
 		rendererReadyToClose = ready;
 		win.close();
 		//then window-all-closed fires automatically
 	});
 	
 	app.on('window-all-closed', function() {
-		console.log('Graphytica INFO: window-all-closed...')
+		//console.log('Graphytica INFO: window-all-closed...')
 		execShutdown();//sync
 		if (process.platform !== 'darwin') {
 			app.quit()

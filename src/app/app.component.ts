@@ -24,42 +24,10 @@ export class AppComponent {
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
   private separator = this.path.sep;
-  private recentPath = this.path.join(__dirname, "assets", "recent.txt");
+  //private recentPath = this.path.join(__dirname, "assets", "recent.txt");
 
   /* ------------------------------------- Приватные методы ------------------------------------------ */
 
-  private readRecentProjects = function() {
-    let fileContent = ''
-    let listOfExistingDatabases = []
-    try {
-        fileContent = this.fs.readFileSync(this.recentPath, "utf8");
-    } catch (err) {
-        console.log(err)
-        this.fs.writeFile(this.recentPath, "", function(error) {
-            if (error) console.log(error);
-            else console.log("Асинхронная запись пустого файла recent.txt завершена.");
-        });
-    }
-    if (fileContent) {
-        let listOfProjects = fileContent.split('\n')
-        let n = Math.min(listOfProjects.length, 5)
-        for (let i = 0; i<n; i++) {
-            let projectPath = listOfProjects[i]
-            if (projectPath) {
-                if (!this.fs.existsSync(projectPath)) {
-                    console.log(projectPath + ' does not exist. Removing from list')
-                    continue
-                }
-                let index = listOfExistingDatabases.indexOf(projectPath)
-                if (index >= 0) listOfExistingDatabases.splice(index, 1)
-                listOfExistingDatabases.push(projectPath)
-            }
-        }
-    }
-    this._updateRecentService.recentPathArray = listOfExistingDatabases;
-    this._updateRecentService.recentPath = this.recentPath;
-    return listOfExistingDatabases;
-  }
 
   /* -------------------------------------- Публичные параметры компонента, инициализация ----------------------------------------- */
 
@@ -68,7 +36,7 @@ export class AppComponent {
   newProjectParentDirectory = '';
   openProjectPath = '';
   @ViewChild('openGraphTypeTag') openGraphTypeTag;
-  recentPathArray = this.readRecentProjects();
+  //recentPathArray = this.readRecentProjects(); 
   @ViewChild('waitingMessageTag') waitingMessageTag;
   @ViewChild('waitingVoileTag') waitingVoileTag;
   ready = false;
@@ -115,7 +83,7 @@ export class AppComponent {
     let importExportSuccessListener = (event,jsonstr) => {
       if (this.appView != 'main_view') {
         this.setWaiting('Почти готово...');
-        console.log('renderer app component received import or export success =', jsonstr);
+        console.log('app received import or export success =', jsonstr);
         if (!jsonstr) {
           this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
             type: 'warning',
@@ -123,7 +91,7 @@ export class AppComponent {
             title: 'Ошибка',
             message: 'Произошла ошибка. Попробуйте еще раз.'
           });
-          console.log('event.ports:', event.ports);
+          //console.log('event.ports:', event.ports);
           this.setWaiting('');
           return;
         }
@@ -135,7 +103,12 @@ export class AppComponent {
           this._updateRecentService.updateRecentProjects(obj.src);
 
           let extIndex = obj.src.lastIndexOf('.export.gz');
-          if (extIndex < 0) extIndex = obj.src.length;
+          if (extIndex < 0) {
+            extIndex = obj.src.lastIndexOf('.gz');
+            if (extIndex < 0) {
+              extIndex = obj.src.length;
+            }
+          }
           let dbName = obj.src.substring(obj.src.lastIndexOf(this.separator)+1, extIndex);
 
           this.getParams = () => {
@@ -152,6 +125,7 @@ export class AppComponent {
     };
     ipcRenderer.on('import-success', importExportSuccessListener)
     ipcRenderer.on('export-success', importExportSuccessListener);
+    this._updateRecentService.readRecentProjects();
   }
 
   /* -------------------------------------- Коллбеки и слушатели ------------------------------------------ */
@@ -160,7 +134,6 @@ export class AppComponent {
     if (this.appView == 'main_view') {
       this._electronService.ipcRenderer.send('fixed-size', '');
       this._electronService.remote.getCurrentWindow().setTitle('Graphytica');
-      console.log('....ffff')
     } if (this.appView != value) {
       if (value == 'main_view') {
         this._electronService.ipcRenderer.send('full-size', '');
@@ -173,7 +146,7 @@ export class AppComponent {
 
   newProjectPathUpdateCallback = (paths) => {
     this.newProjectParentDirectory = paths[0];
-    console.log(`newProjectPathUpdateCallback: selectedPath = ${this.newProjectParentDirectory}`)
+    //console.log(`newProjectPathUpdateCallback: selectedPath = ${this.newProjectParentDirectory}`)
   }
 
   projectFolderExists = (prName) => {
@@ -224,7 +197,7 @@ export class AppComponent {
       if (err) { 
         return console.error(err); 
       } else {
-        console.log('Directory created successfully!');
+        //console.log('Directory created successfully!');
         let connect = this.conn.getConnectionPromise(this.setWaiting.bind(this));
         connect.then(() => {
           // первый экспорт пустой базы данных
@@ -244,6 +217,52 @@ export class AppComponent {
     return this.fs.existsSync(this.openProjectPath) && this.fs.lstatSync(this.openProjectPath).isFile();
   }
 
+  openRecent = (path) => {
+    if (!this.waiting) {
+      this.openProjectPath = path;
+      this.openProject('');
+    }
+  }
+
+  removeFromRecent = (path) => {
+    this._updateRecentService.removeFromList(path);//, this.readRecentProjects.bind(this)
+  }
+
+  deleteProject = (path) => {
+    if (!this.waiting) {
+      const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+        type: 'question',
+        buttons: ['No', 'Yes'],
+        title: 'Удаление нельзя будет отменить!',
+        message: `Вы уверены, что хотите безвозвратно удалить с диска проект\n${path}?\nЭто действие нельзя будет отменить!`
+      });
+      if (choice === 1) {
+        if (this.fs.existsSync(path)) {
+          this.fs.unlink(path, (e) => {
+            if (e) {
+              this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+                type: 'warning',
+                buttons: ['OK'],
+                title: 'Ошибка',
+                message: `Не удалось удалить проект по указанному пути:\n${path}\n${e.message}`
+              });
+            } else {
+              this.removeFromRecent(path);
+            }
+          })
+        } else {
+          this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+            type: 'warning',
+            buttons: ['OK'],
+            title: 'Проекта не существует',
+            message: `Проекта нет по указанному пути:\n${path}\nВозможно он был перемещен или удален ранее.`
+          });
+          this.removeFromRecent(path);
+        }
+      }
+    }
+  }
+
   openProject = (format) => {
     let connect = this.conn.getConnectionPromise(this.setWaiting.bind(this));
     connect.then(() => {
@@ -254,7 +273,7 @@ export class AppComponent {
         merge: false
       }
       this._electronService.ipcRenderer.send('import-database', JSON.stringify(params));
-      console.log('openProject(): sent import-database request')
+      //console.log('openProject(): sent import-database request')
     });
   }
 
