@@ -48,7 +48,12 @@
               [setTool]="setTool.bind(this)"
           ></app-vertices-category>
           <div *ngIf="openedCategory == 'edges'"></div>
-          <div *ngIf="openedCategory == 'classes'"></div>
+          <app-classes-category
+            *ngIf="openedCategory == 'classes'"
+            [defaultClasses]="servicePrecreatedClasses"
+            [selectionNodes]="selectionNodes"
+            [selectionEdges]="selectionEdges"
+          ></app-classes-category>
           <div *ngIf="openedCategory == 'view'"></div>
           <div *ngIf="openedCategory == 'query'">
             Здесь можно ввести вручную отдельные запросы или скрипт для исполнения консолью OrientDB на диалекте SQL, поддерживаемом этой СУБД.

@@ -1,0 +1,23 @@
+:host {
+    display: block;
+    padding: 5px;
+    cursor: pointer;
+    border-left: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+:host:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.class_name {
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.vertex_descendant {
+    background: #fac57b;
+}
+
+.edge_descendant {
+    background: #c7c3f5;;
+}

@@ -1,7 +1,6 @@
 import { Component, Input, ViewChild, NgZone } from '@angular/core';
 
 import { ElectronService } from 'ngx-electron';
-//import { LastDirectoryService } from '../last-directory.service';
 import { DbServiceService } from '../db-service.service';
 import { UpdateRecentService } from '../update-recent.service';
 import cytoscape from 'cytoscape';
@@ -16,7 +15,6 @@ export class MainViewComponent {
   /* ---------------------------------------------------- private --------------------------------------------------- */
   constructor(
     private _electronService: ElectronService,
-    //private _lastDirectoryService: LastDirectoryService,
     private _updateRecentService: UpdateRecentService,
     private conn: DbServiceService,
     private _nz: NgZone) { }
@@ -24,7 +22,6 @@ export class MainViewComponent {
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
   private ipcRenderer = this._electronService.ipcRenderer;
-  //private cytoscape = this._electronService.remote.require('cytoscape');
   private cy;
 
   private _dbLastSavedPath : string;
@@ -131,7 +128,7 @@ export class MainViewComponent {
 
   // данные
   //обратить внимание, что V - это класс, по умолчанию присвоенный всем вершинам, а E - всем ребрам, и им можно наследовать при создании класса
-  readonly servicePrecreatedClasses = ["OMultiLineString", "OFunction", "OShape", "OUser", "OPoint", "OMultiPolygon",
+  servicePrecreatedClasses = ["OMultiLineString", "OFunction", "OShape", "OUser", "OPoint", "OMultiPolygon",
     "ORestricted", "OTriggered", "OLineString", "OSecurityPolicy", "OSchedule", "OSequence", "ORectangle", "OIdentity",
     "OPolygon", "OMultiPoint", "OGeometryCollection", "ORole"];
   userDefinedClasses = [];
@@ -381,7 +378,7 @@ export class MainViewComponent {
           {
             selector: 'node',
             style: {
-              'background-color': '#7878ff',
+              'background-color': '#ffaa33',
               'label': 'data(id)'
             }
           }, {
@@ -397,13 +394,13 @@ export class MainViewComponent {
           {
             selector: ':selected',
             css: {
-              'background-color': '#a0a0ff',
-              'border-width': '2px',
+              'background-color': '#ff6333',
+              /*'border-width': '1px',
               'border-style': 'solid',
-              'border-color': '#ddddff',
-              'line-color': '#aa0000',
-              'target-arrow-color': '#aa0000',
-              'source-arrow-color': '#aa0000'
+              'border-color': '#ddddff',*/
+              'line-color': '#0000aa',
+              'target-arrow-color': '#0000aa',
+              'source-arrow-color': '#0000aa'
             }
           },
           {

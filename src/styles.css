@@ -46,6 +46,17 @@ body {
   height: 0px;
   display: none;
 }
+.section {
+  padding: 5px;
+  margin: 3px;
+}
+.section:first_child {
+  font-weight: bold;
+  font-size: 11pt;
+  background: grey;
+  padding: 2px;
+  margin-bottom: 3px;
+}
 @font-face {
   font-family: "Arimo";
   src: local("Arimo"), url(./assets/arimo.ttf) format("truetype");

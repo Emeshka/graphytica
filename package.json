@@ -17,7 +17,8 @@
     "electron": "electron .",
     "app": "chcp 65001 && npm run electron && chcp 866",
     "build-app": "npm run ngbuild && npm run app",
-    "electron-pack": "electron-packager . --platform=win32 --ignore=\"(^/src|^/e2e|^/.vscode|^/unused|^/splashscreen|^/debug.log)\" --overwrite --out=../",
+    "build-app-linux": "npm run ngbuild && npm run electron",
+    "electron-pack": "electron-packager . --ignore=\"(^/src|^/e2e|^/.vscode|^/unused|^/splashscreen|^/debug.log)\" --overwrite --out=../",
     "release-splash": "node ./splashscreen/release.js",
     "release": "npm run ngbuild-prod && npm run electron-pack && npm run release-splash"
   },
