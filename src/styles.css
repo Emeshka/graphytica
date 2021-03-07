@@ -50,11 +50,11 @@ body {
   padding: 5px;
   margin: 3px;
 }
-.section:first_child {
+.section>div:first-child {
   font-weight: bold;
   font-size: 11pt;
-  background: grey;
-  padding: 2px;
+  background: rgb(140, 140, 140);
+  padding: 3px;
   margin-bottom: 3px;
 }
 @font-face {

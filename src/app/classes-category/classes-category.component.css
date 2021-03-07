@@ -3,13 +3,28 @@
     width: 100%;
 }
 
-/*#stat_classes {
-    width: 90%;
-    margin: 0 auto;
-    border: 1px solid black;
-    border-collapse: collapse;
-}*/
-
 .class_name {
     font-weight: bold;
+    font-size: 10pt;
+    font-family: monospace;
+}
+
+table {
+    border-collapse: collapse;
+    border-radius: 3px;
+    margin: 5px auto;
+    width: 95%;
+}
+
+td {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    width: min(auto, 70%);
+    overflow: auto;
+    vertical-align: middle;
+}
+
+td:first-child {
+    width: 30%;
+    text-align: right;
 }

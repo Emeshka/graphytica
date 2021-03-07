@@ -1,23 +1,36 @@
 :host {
     display: block;
-    padding: 5px;
-    cursor: pointer;
-    border-left: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-:host:hover {
-    background: rgba(0, 0, 0, 0.1);
+.tree_branch {
+    padding: 5px;
+    cursor: default;
+    border-left: 1px solid rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .class_name {
     font-weight: bold;
+    font-size: 10pt;
     font-family: monospace;
 }
 
+.tree_branch:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
 .vertex_descendant {
-    background: #fac57b;
+    background: #ffe6c3;
 }
 
 .edge_descendant {
-    background: #c7c3f5;;
+    background: #eaeaff;
+}
+
+.vertex_descendant:hover {
+    background: #ffd294;
+}
+
+.edge_descendant:hover {
+    background: #cacfff;
 }

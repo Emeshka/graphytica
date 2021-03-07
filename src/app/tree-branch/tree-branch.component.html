@@ -1,18 +1,16 @@
 
 <div *ngIf="tree && tree.length > 0" [ngStyle]="{marginLeft: (level * 20) + 'px'}">
-    <div *ngFor="let item of tree">
-        <div class="class_name">{{item.name}}</div>
+    <div
+        *ngFor="let item of tree"
+        [class.vertex_descendant]="item.name == 'V'"
+        [class.edge_descendant]="item.name == 'E'"
+        class="tree_branch"
+    >
+        <div class="class_name" (click)="selectElement(item.name)">{{item.name}}</div>
         <tree-branch
             [tree]="item.children"
             [level]="level + 1"
+            [selectElement]="selectElement"
         ></tree-branch>
     </div>
 </div>
-<!--
-            [selectElement]="selectElement"
-    (click)="selectElement(element.name)"
-        class="tree_branch"
-        
-        [class.vertex_descendant]="element.name == 'V'"
-        [class.edge_descendant]="element.name == 'E'"
--->

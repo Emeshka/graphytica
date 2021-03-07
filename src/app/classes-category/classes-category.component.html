@@ -1,30 +1,31 @@
-<!--<div>Классы:</div>
-<table id="stat_classes">
-    <tbody>
-        <tr>
-            <th>Класс</th>
-            <th>Количество</th>
-        </tr>
-        <tr *ngIf="!amountByClass">
-            <td style="text-align: center;" colspan="2">
-                <app-loading></app-loading>
-            </td>
-        </tr>
-        <tr *ngFor="let cl of amountByClass | keyvalue" [class.tr_vertex]="cl.value.type == 'V'" [class.tr_edge]="cl.value.type == 'E'">
-            <td class="td_class_name">{{alias[cl.key] || cl.key}}</td>
-            <td>{{cl.value.count}}</td>
-        </tr>
-    </tbody>
-</table>-->
-
 <div class="section">
     <div>Дерево классов:</div>
-    <tree-branch [tree]="classTree" level="0"></tree-branch>
+    <tree-branch [tree]="classTree" level="0" [selectElement]="selectClass.bind(this)"></tree-branch>
 </div>
-<div>Свойства {{selectedClass}}:</div>
- <!--<div class="section" *ngIf="selectedClass && mapClassTree && mapClassTree[selectedClass]">
-   <div *ngFor="let cl of mapClassTree[selectedClass] | keyvalue">
-        <div>{{cl.key}}</div>
-        <div>{{cl.value}}</div>
-    </div>[selectElement]="selectClass.bind(this)"
-</div>-->
+<div class="section" *ngIf="selectedClass && mapClassTree && mapClassTree[selectedClass]">
+    <div>Свойства <span class="class_name">{{selectedClass}}</span>:</div>
+    <table>
+        <!--<ng-template *ngFor="let cl of mapClassTree[selectedClass] | keyvalue">
+            <tr *ngIf="cl.key != 'children' && cl.key != 'name'">
+                <td>{{cl.key}}:</td>
+                <td>{{cl.value}}</td>
+            </tr>
+        </ng-template>-->
+        <tr>
+            <td>Суперкласс:</td>
+            <td>{{mapClassTree[selectedClass].superClass}}</td>
+        </tr>
+        <tr>
+            <td>Число кластеров:</td>
+            <td>{{mapClassTree[selectedClass].clusterIds.length}}</td>
+        </tr>
+        <tr>
+            <td>Число экземпляров:</td>
+            <td>{{countEntities}}</td>
+        </tr>
+        <tr>
+            <td>Потомки:</td>
+            <td>{{selectedDirectChildren}}</td>
+        </tr>
+    </table>
+</div>

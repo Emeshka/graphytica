@@ -11,37 +11,9 @@ export class ClassesCategoryComponent implements OnInit {
     private conn: DbServiceService,
     private _nz: NgZone
   ) { }
-  /*alias = {
-    'V': 'Всего вершин',
-    'E': 'Всего ребер',
-    '=': 'Всего элементов'
-  }*/
-  selectedClass = '';
+  public selectedClass = '';
   public classTree = [];
-  demo = {
-    value: {name: 'vehicles'},
-    children: [
-        {
-            value: {name: 'cars'},
-            children: [
-                {
-                    value: {name: 'vw'},
-                    children: [
-                        {
-                            value: {name: 'golf'},
-                            children: []
-                        },
-                        {
-                            value: {name: 'passat'},
-                            children: []
-                        }
-                    ]
-                }
-            ]
-        }
-    ]
-}
-  //mapClassTree = {};
+  mapClassTree = {};
   /*oneditByProp = {
     'name': () => {
       console.log('onedit name')
@@ -54,10 +26,10 @@ export class ClassesCategoryComponent implements OnInit {
     }
   }*/
   @Input() defaultClasses: any = [];
-  //defaultProps = [];
   @Input() selectionNodes: any = [];
   @Input() selectionEdges: any = [];
   countEntities = -1;
+  selectedDirectChildren = [];
 
   /*getClassElements = (className) => {
     return new Promise((resolve, reject) => {
@@ -73,16 +45,17 @@ export class ClassesCategoryComponent implements OnInit {
   };
 
   selectClass = (value) => {
-    console.log('selectClass()', value)
-    this.selectedClass = value || '';
-    /*let nz = this._nz;
+    console.log('selectClass()', value);
+
+    this.selectedDirectChildren = this.mapClassTree[value].children.map(cl => cl.name);
+
     if (value) {
-      this.conn.db.select('count(*)').from(value).scalar().then(function(countEntities) {
-        nz.run(() => {
-          this.countEntities = countEntities
-        })
-      }).catch(e => reject(e));
-    }*/
+      this.conn.db.select('count(*)').from(value).scalar().then((countAll) => {
+        this.countEntities = countAll;
+      }).catch(e => console.log(e));
+    }
+
+    this.selectedClass = value || '';
   }
 
   updateClassAll() {
@@ -124,14 +97,14 @@ export class ClassesCategoryComponent implements OnInit {
         return tree;
       }
       let m = getMap(flat);
-      console.log(m);
+      //console.log(m);
       let t = unflatten(m);
       nz.run(() => {
-        //th.mapClassTree = m;
+        this.mapClassTree = m;
         this.classTree = t;
         console.log("th._nz.run");
       })
-    }).then(() => console.log('ended'));
+    })//.then(() => console.log('ended'));
   }
 
   ngOnInit(): void {
