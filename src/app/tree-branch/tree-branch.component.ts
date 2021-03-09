@@ -12,6 +12,10 @@ export class TreeBranchComponent implements OnInit {
   @Input() level: number = 0;
   @Input() selectElement = () => {};
 
+  newSubclass(superClass) {
+    console.log(`TreeBranch newSubclass('${superClass}')`)
+  }
+
   ngOnInit(): void {
     //console.log('ngOnInit() tree-branch');//, this.level, this.tree
   }

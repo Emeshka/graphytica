@@ -3,6 +3,7 @@ import { Component, Input, ViewChild, NgZone } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
 import { DbServiceService } from '../db-service.service';
 import { UpdateRecentService } from '../update-recent.service';
+import {OSelection} from './Selection';
 import cytoscape from 'cytoscape';
 import cola from 'cytoscape-cola';
 
@@ -11,6 +12,7 @@ import cola from 'cytoscape-cola';
   templateUrl: './main-view.component.html',
   styleUrls: ['./main-view.component.css']
 })
+
 export class MainViewComponent {
   /* ---------------------------------------------------- private --------------------------------------------------- */
   constructor(
@@ -109,6 +111,7 @@ export class MainViewComponent {
       }
     });
   }
+
   
   /* ---------------------------------------------------- Input, ViewChild --------------------------------------------------- */
 
@@ -128,13 +131,12 @@ export class MainViewComponent {
 
   // данные
   //обратить внимание, что V - это класс, по умолчанию присвоенный всем вершинам, а E - всем ребрам, и им можно наследовать при создании класса
-  servicePrecreatedClasses = ["OMultiLineString", "OFunction", "OShape", "OUser", "OPoint", "OMultiPolygon",
+  readonly servicePrecreatedClasses = ["OMultiLineString", "OFunction", "OShape", "OUser", "OPoint", "OMultiPolygon",
     "ORestricted", "OTriggered", "OLineString", "OSecurityPolicy", "OSchedule", "OSequence", "ORectangle", "OIdentity",
     "OPolygon", "OMultiPoint", "OGeometryCollection", "ORole"];
   userDefinedClasses = [];
   
-  private selectionNodes = [];
-  private selectionEdges = [];
+  public selection: OSelection = new OSelection([]);
 
   // инструменты, выделение
   openedCategory : string = 'file';
@@ -151,15 +153,7 @@ export class MainViewComponent {
         this.cy.autounselectify(false);
         this.cy.userPanningEnabled(false);
         //this.setElementEvents(true);
-      }/*,
-      onclick: (evt) => {
-        var elem = evt.target;
-        console.log( 'tapped ' + elem.id() );
-        this._nz.run(() => {
-          if (elem.source) this.selectionE = [elem];
-          else this.selectionV = [elem];
-        })
-      }*/
+      }
     },
     pan_view: {
       icon: 'assets/img/grab.png',
@@ -372,9 +366,9 @@ export class MainViewComponent {
     this.isRendering = true;
     this.getData().then(data => {
       this.cy = cytoscape({
-        container: this.graphField.nativeElement, // container to render in
+        container: this.graphField.nativeElement,
         elements: data,
-        style: [ // the stylesheet for the graph
+        style: [
           {
             selector: 'node',
             style: {
@@ -394,7 +388,7 @@ export class MainViewComponent {
           {
             selector: ':selected',
             css: {
-              'background-color': '#ff6333',
+              'background-color': '#228c15',//'#ff6333',
               /*'border-width': '1px',
               'border-style': 'solid',
               'border-color': '#ddddff',*/
@@ -457,32 +451,61 @@ export class MainViewComponent {
         autoungrabify: true,
         autounselectify: true
       });
-
-      // мониторинг выделения
-      // восстановление после импорта и перестройки cy
-      for (let i = 0; i<this.selectionNodes.length; i++) {
+      /*for (let i = 0; i<this.selectionNodes.length; i++) {
         this.cy.$('#'+this.selectionNodes[i].id)?.select();
-      }
-      for (let i = 0; i<this.selectionEdges.length; i++) {
-        this.cy.$('#'+this.selectionEdges[i].id)?.select();
-      }
-      //this.setElementEvents(true);
-
-      // обновление выделения. оно же следит и за изменением выделения категориями вершин и ребер, т.к.они там вручную вызывают eles.select()
-      let selectionNodesUpdate = () => {//пустой map - преобразование в массив
+      }*/
+      /*let selectionNodesUpdate = () => {//пустой map - преобразование в массив
         this.selectionNodes = this.cy.$(':selected').filter(e => e.isNode());
         console.log('this.selectionNodes: ', this.selectionNodes, this.selectionNodes instanceof Array);
-      };
-      let selectionEdgesUpdate = () => {
-        this.selectionEdges = this.cy.$(':selected').filter(e => e.isEdge());
-        console.log('this.selectionEdges: ', this.selectionEdges, this.selectionEdges instanceof Array);
+      };*/
+      //this.cy.edges().on('select', selectionEdgesUpdate)
+      //this.cy.edges().on('unselect', selectionEdgesUpdate)
+      //this.cy.edges().on('remove', selectionEdgesUpdate)
+
+      // двухстороннее отображение выделения
+      // восстановление после импорта и перестройки cy
+      for (let i = 0, len = this.selection.length; i<len; i++) {
+        this.cy.$('#'+this.selection[i].id)?.select();
       }
-      this.cy.nodes().on('select', selectionNodesUpdate)
-      this.cy.edges().on('select', selectionEdgesUpdate)
-      this.cy.nodes().on('unselect', selectionNodesUpdate)
-      this.cy.edges().on('unselect', selectionEdgesUpdate)
-      this.cy.nodes().on('remove', selectionNodesUpdate)
-      this.cy.edges().on('remove', selectionEdgesUpdate)
+//протестировать чтобы они не триггерили друг друга бесконечно
+      // Selection obj change => cy.(un)select()
+      let applyToCorespondingEles = function(odbRecordOrRid, callback) {
+        let id = null
+        if (typeof odbRecordOrRid == 'string') {
+          id = odbRecordOrRid
+        } else if (typeof odbRecordOrRid == 'object' && '@rid' in odbRecordOrRid) {
+          id = odbRecordOrRid['@rid']
+        } else if (typeof odbRecordOrRid == 'object' && 'id' in odbRecordOrRid) {
+          return;//это cy сам только что вставил свой элемент по событиям select, unselect, remove
+        } else {
+          console.warn(`No corresponding element in cytoscape graph for %o`, odbRecordOrRid)
+          return;
+        }
+        let cyElem = this.cy.$('#' + id)
+        if (!cyElem || cyElem.length == 0) {
+          console.warn(`No corresponding element in cytoscape graph for %o`, odbRecordOrRid)
+          return;
+        }
+        callback(cyElem)
+      }
+      this.selection.addEventListener("itemadded", function(e) {
+        console.log("Added %o at index %d.", e.item, e.index);
+        applyToCorespondingEles(e.item, (element) => element.select())
+      });
+      this.selection.addEventListener("itemremoved", function(e) {
+        console.log("Removed %o at index %d.", e.item, e.index);
+        applyToCorespondingEles(e.item, (element) => element.unselect())
+      });
+
+      // cy.(un)select => Selection obj change
+      let selectionUpdate = () => {
+        this.selection.pushAll(this.cy.$(':selected'));
+        console.log('this.selectionEdges: ', this.selection);
+        console.log();
+      }
+      this.cy.on('select', selectionUpdate)
+      this.cy.on('unselect', selectionUpdate)
+      this.cy.on('remove', selectionUpdate)
       
       this.isRendering = false;
       this.setTool('pan_view');

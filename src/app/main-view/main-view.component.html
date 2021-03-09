@@ -9,6 +9,7 @@
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'query'" (click)="switchCategory('query')">Запрос</div>
         </div>
         <div id="instrument_panel_content">
+          <div>{{selection}}</div>
           <div class="center_block">
             <div class="icon_button_container" *ngIf="openedCategory == 'file'">
                 <app-tile-button
@@ -44,15 +45,14 @@
           </div>
           <app-vertices-category
               *ngIf="openedCategory == 'vertices'"
-              [selection]="selectionNodes"
+              [selection]="selection"
               [setTool]="setTool.bind(this)"
           ></app-vertices-category>
           <div *ngIf="openedCategory == 'edges'"></div>
           <app-classes-category
             *ngIf="openedCategory == 'classes'"
             [defaultClasses]="servicePrecreatedClasses"
-            [selectionNodes]="selectionNodes"
-            [selectionEdges]="selectionEdges"
+            [selection]="selection"
           ></app-classes-category>
           <div *ngIf="openedCategory == 'view'"></div>
           <div *ngIf="openedCategory == 'query'">

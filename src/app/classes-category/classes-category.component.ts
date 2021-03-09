@@ -11,47 +11,98 @@ export class ClassesCategoryComponent implements OnInit {
     private conn: DbServiceService,
     private _nz: NgZone
   ) { }
+  @Input() defaultClasses: any = [];
+  @Input() selection: any = [];
+  readonly supportedAttributes = ['type', 'mandatory'];
+  /* TODO add support of other attributes https://orientdb.com/docs/3.0.x/sql/SQL-Alter-Property.html */
   public selectedClass = '';
   public classTree = [];
   mapClassTree = {};
-  /*oneditByProp = {
-    'name': () => {
-      console.log('onedit name')
-    },
-    'superClass': () => {
-      console.log('onedit superClass')
-    },
-    'clusters': () => {
-      console.log('onedit clusters')
-    }
-  }*/
-  @Input() defaultClasses: any = [];
-  @Input() selectionNodes: any = [];
-  @Input() selectionEdges: any = [];
   countEntities = -1;
+  countDirectEntities = -1;
   selectedDirectChildren = [];
+  selectedFieldList = {};
 
-  /*getClassElements = (className) => {
-    return new Promise((resolve, reject) => {
-      this.conn.db.select().from(className).all().then(function (array) {
-        resolve(array);
-      }).catch(e => reject(e));
+  /*
+  
+  пример создания свойств с доп. параметрами
+  return db.class.create('HasApplied', 'E')
+    .then((hasApplied) => {
+      return hasApplied.property.create(
+        [{
+          name: 'out',
+          type: 'link',
+          linkedClass: 'Consultant',
+          mandatory: true
+        }, {
+          name: 'in',
+          type: 'link',
+          linkedClass: 'Job',
+          mandatory: true
+        }, {
+          name: 'technicalQuestions',
+          type: 'embedded'
+        }, {
+          name: 'technicalAnswers',
+          type: 'embedded'
+        }, {
+          name: 'behavioralQuestions',
+          type: 'embedded'
+        }, {
+          name: 'behavioralAnswers',
+          type: 'embedded'
+        }, {
+          name: 'artifacts',
+          type: 'embeddedset'
+        }, {
+          name: 'comments',
+          type: 'string',
+        }, {
+          name: 'createdAt',
+          type: 'datetime'
+        }, {
+          name: 'updatedAt',
+          type: 'datetime'
+        }]
+      );
     })
-  };*/
-
-  countClassElements = (className) => {
-    return new Promise((resolve, reject) => {
-    })
+  
+    supported types
+    https://orientdb.com/docs/3.0.x/general/Types.html
+  */
+  addToSelection = () => {
+    this.conn.db.select('@rid').from(this.selectedClass).all().then(function(array) {
+      console.log('addToSelection():', array)
+      this.selection.pushAll(array);
+    }).catch(e => console.log(e));
   };
 
   selectClass = (value) => {
     console.log('selectClass()', value);
 
     this.selectedDirectChildren = this.mapClassTree[value].children.map(cl => cl.name);
+    this.conn.db.class.get(value).then((cl) => {
+      cl.property.list().then((list) => {
+        let map = {};
+        list.forEach((f) => {
+          map[f.name] = {}
+          for (let attr of this.supportedAttributes) {
+            map[f.name][attr] = f[attr]
+          }
+        })
+        this.selectedFieldList = map;
+      })
+    })
 
     if (value) {
-      this.conn.db.select('count(*)').from(value).scalar().then((countAll) => {
-        this.countEntities = countAll;
+      this.conn.db.select('count(*)').from(value).scalar().then((count) => {
+        this.countEntities = count;
+      }).catch(e => console.log(e));
+
+      this.conn.db.select('count(*)').from(value).where({
+        '@class': value
+      }).scalar().then((count) => {
+        this.countDirectEntities = count;
       }).catch(e => console.log(e));
     }
 
@@ -59,11 +110,11 @@ export class ClassesCategoryComponent implements OnInit {
   }
 
   updateClassAll() {
-    console.log('updateClassAll()')
+    //console.log('updateClassAll()')
     let nz = this._nz
     this.conn.db.class.list().then((classes) => {
       let flat = classes//.filter(e => !th.defaultClasses.includes(e.name));
-      console.log('There are classes in the db:', classes);
+      //console.log('There are classes in the db:', classes);
 
       function getMap(arr) {
         let map = {}, arrElem;
@@ -73,8 +124,8 @@ export class ClassesCategoryComponent implements OnInit {
           map[arrElem.name] = {//расплющить класс. иначе tree-branch пойдет в бесконечную проверку item.name (это всё геттеры)
             name: arrElem.name,
             superClass: arrElem.superClass,
-            clusterIds: arrElem.clusterIds,
-            properties: arrElem.properties
+            clusterCount: arrElem.clusterIds.length
+            //properties: arrElem.properties
           };
           map[arrElem.name]['children'] = [];
         }
@@ -102,13 +153,13 @@ export class ClassesCategoryComponent implements OnInit {
       nz.run(() => {
         this.mapClassTree = m;
         this.classTree = t;
-        console.log("th._nz.run");
+        //console.log("th._nz.run");
       })
     })//.then(() => console.log('ended'));
   }
 
   ngOnInit(): void {
-    console.log('ngOnInit() classes-category');
+    //console.log('ngOnInit() classes-category');
     this.updateClassAll();
     /*
     this.conn.db.query('SELECT @class, count(*) FROM E GROUP BY @class').then(result => {

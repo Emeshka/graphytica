@@ -3,29 +3,42 @@
     <tree-branch [tree]="classTree" level="0" [selectElement]="selectClass.bind(this)"></tree-branch>
 </div>
 <div class="section" *ngIf="selectedClass && mapClassTree && mapClassTree[selectedClass]">
-    <div>Свойства <span class="class_name">{{selectedClass}}</span>:</div>
+    <div>Данные класса <span class="class_name">{{selectedClass}}</span>:</div>
     <table>
-        <!--<ng-template *ngFor="let cl of mapClassTree[selectedClass] | keyvalue">
-            <tr *ngIf="cl.key != 'children' && cl.key != 'name'">
-                <td>{{cl.key}}:</td>
-                <td>{{cl.value}}</td>
-            </tr>
-        </ng-template>-->
         <tr>
             <td>Суперкласс:</td>
             <td>{{mapClassTree[selectedClass].superClass}}</td>
         </tr>
         <tr>
             <td>Число кластеров:</td>
-            <td>{{mapClassTree[selectedClass].clusterIds.length}}</td>
+            <td>{{mapClassTree[selectedClass].clusterCount}}</td>
         </tr>
         <tr>
             <td>Число экземпляров:</td>
             <td>{{countEntities}}</td>
         </tr>
         <tr>
+            <td>Число экземпляров без учета подклассов:</td>
+            <td>{{countDirectEntities}}</td>
+        </tr>
+        <tr>
             <td>Потомки:</td>
             <td>{{selectedDirectChildren}}</td>
+        </tr>
+    </table>
+    <app-icon-button title="Добавить класс в выделение" iconSrc="assets/img/add_to_selection.png"
+        [callback]="addToSelection.bind(this)"></app-icon-button>
+</div>
+<div class="section" *ngIf="selectedClass && mapClassTree && mapClassTree[selectedClass]">
+    <div>Поля класса <span class="class_name">{{selectedClass}}</span>:</div>
+    <table>
+        <tr>
+            <td>Поле</td>
+            <td>Тип</td>
+        </tr>
+        <tr *ngFor="let cl of mapClassTree[selectedClass].properties | keyvalue">
+            <td>{{cl.key}}</td>
+            <td>{{cl.value}}</td>
         </tr>
     </table>
 </div>

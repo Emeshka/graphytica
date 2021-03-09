@@ -6,7 +6,11 @@
         [class.edge_descendant]="item.name == 'E'"
         class="tree_branch"
     >
-        <div class="class_name" (click)="selectElement(item.name)">{{item.name}}</div>
+        <div>
+            <div class="class_name" (click)="selectElement(item.name)">{{item.name}}</div>
+            <app-icon-button title="Создать подкласс" iconSrc="assets/img/add_subclass.png"
+                [callback]="newSubclass.bind(this, item.name)"></app-icon-button>
+        </div>
         <tree-branch
             [tree]="item.children"
             [level]="level + 1"
