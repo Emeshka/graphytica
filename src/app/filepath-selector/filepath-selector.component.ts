@@ -24,10 +24,12 @@ export class FilepathSelectorComponent implements OnInit {
   paths = [];
   notValidatingPaths = [];
   errorMessage = '';
+  touched = false;
 
   private separator = this._electronService.remote.require('path').sep;
 
   openClickListener() {
+    this.touched = true;
     const remote = this._electronService.remote;
     //console.log('lastdir:', this._lastDirectoryService.value);
     let options = [];
@@ -50,6 +52,10 @@ export class FilepathSelectorComponent implements OnInit {
           this.notValidatingPaths = result.filePaths;
         }
       });
+  }
+
+  openEnterListener(event) {
+    if (event.key == 'Enter') this.openClickListener();
   }
 
   inputValue() {
@@ -81,6 +87,7 @@ export class FilepathSelectorComponent implements OnInit {
   }
 
   updatePaths(value) {
+    this.touched = true;
     //https://stackoverflow.com/questions/18893390/splitting-on-comma-outside-quotes
     let p = value.split(',(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)');
     //console.log(`updatePaths: splitted = ${p}, instanceof Array: ${p instanceof Array}`, p);

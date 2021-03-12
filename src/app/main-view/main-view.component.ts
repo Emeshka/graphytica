@@ -1,11 +1,13 @@
 import { Component, Input, ViewChild, NgZone } from '@angular/core';
-
 import { ElectronService } from 'ngx-electron';
 import { DbServiceService } from '../db-service.service';
 import { UpdateRecentService } from '../update-recent.service';
-import {OSelection} from './Selection';
+import { OSelection } from './Selection';
 import cytoscape from 'cytoscape';
 import cola from 'cytoscape-cola';
+import gridGuide from 'cytoscape-grid-guide';
+cytoscape.use( cola );
+gridGuide( cytoscape );
 
 @Component({
   selector: 'app-main-view',
@@ -34,8 +36,6 @@ export class MainViewComponent {
   public get dbLastSavedPath(): any {
     return this._dbLastSavedPath;
   }
-  private dbOpenedWithFormat : string;
-  private batchBuildCopy : string = '';
   private _dbName : string;
   public set dbName(val: any) {
     this._dbName = val;
@@ -61,66 +61,32 @@ export class MainViewComponent {
     this.ipcRenderer.send('has-unsaved-changes', this.unsavedChanges);
   };
   private quitRequestListener = (event,request) => {
-    this.onClose(true, () => {
-      //console.log('renderer main-view: onClose finished');
+    this.onClose(() => {
       this.ipcRenderer.send('quit-request', true);
     });
   };
-  private importSuccessListener = (event,params) => {
-    console.log('main-view received import-success =', params);
-    this._nz.run(() => {
-      this.switchDialog('');
-      let p = JSON.parse(params).src;
-      this._updateRecentService.updateRecentProjects(p);
-      if (p == this.dbLastSavedPath) this.unsavedChanges = false;
-      else this.unsavedChanges = true;
-
-      if (this.batchBuildCopy) {
-        this.setWaiting('Слияние проектов...');
-        this.conn.pool.acquire().then(session => {
-          session.batch(this.batchBuildCopy).all().then(() => {
-            this.batchBuildCopy = '';
-            this.setWaiting('');
-            this.render();
-          })
-        }).catch(e => console.log(e));
-      } else {
-        this.setWaiting('');
-        this.render();
-      }
-    });
-  }
-  private exportSuccessListener = (event,params) => {
-    console.log('main-view received export-success =', params);
-    let obj = JSON.parse(params);
-    let exportedPath = obj.src;
+   private successListener = (exportedPath) => {
+    console.log('main-view received export-success =', exportedPath);
     this._updateRecentService.updateRecentProjects(exportedPath);
-    this._nz.run(() => {
-      if (exportedPath) {
-        this.unsavedChanges = false;
-        this.dbLastSavedPath = exportedPath;
-        this.dbOpenedWithFormat = obj.format;
+    if (exportedPath) {
+      this.unsavedChanges = false;
+      this.dbLastSavedPath = exportedPath;
 
-        let extIndex = exportedPath.lastIndexOf('.export.gz');
-        if (extIndex < 0) {
-          extIndex = exportedPath.lastIndexOf('.gz');
-          if (extIndex < 0) extIndex = exportedPath.length;
-        }
-        this.dbName = exportedPath.substring(exportedPath.lastIndexOf(this.path.sep)+1, extIndex);
-        this.setWaiting('');
+      let extIndex = exportedPath.lastIndexOf('.gph');
+      if (extIndex < 0) {
+        extIndex = exportedPath.length;
       }
-    });
+      this.dbName = exportedPath.substring(exportedPath.lastIndexOf(this.path.sep)+1, extIndex);
+      this.setWaiting('');
+    }
   }
-
   
   /* ---------------------------------------------------- Input, ViewChild --------------------------------------------------- */
 
   @Input() getParams: any;
   @Input() backToStartView: () => {};
   @Input() setWaiting: (text) => {};
-  @Input() reopenProject = (projectPath, format) => {};
   @ViewChild('graph_field') graphField;
-  @ViewChild('importGraphTypeTag') importGraphTypeTag;
 
   /* ---------------------------------------------------- public --------------------------------------------------- */
 
@@ -128,20 +94,13 @@ export class MainViewComponent {
   mainDialog : string = '';
   importPath : string = '';
   saveAsPath : string = '';
-
-  // данные
-  //обратить внимание, что V - это класс, по умолчанию присвоенный всем вершинам, а E - всем ребрам, и им можно наследовать при создании класса
-  readonly servicePrecreatedClasses = ["OMultiLineString", "OFunction", "OShape", "OUser", "OPoint", "OMultiPolygon",
-    "ORestricted", "OTriggered", "OLineString", "OSecurityPolicy", "OSchedule", "OSequence", "ORectangle", "OIdentity",
-    "OPolygon", "OMultiPoint", "OGeometryCollection", "ORole"];
-  userDefinedClasses = [];
   
   public selection: OSelection = new OSelection([]);
 
   // инструменты, выделение
   openedCategory : string = 'file';
-  isRendering : boolean = true;
-  graphClickListener = () => {};//активный инструмент: что делать по клику на cy
+  isRendering : boolean = false;
+  //graphClickListener = () => {};//активный инструмент: что делать по клику на cy
   zoomStep = 0.3;
   readonly toolById = {
     select_move_any: {
@@ -152,7 +111,6 @@ export class MainViewComponent {
         this.cy.autoungrabify(false);
         this.cy.autounselectify(false);
         this.cy.userPanningEnabled(false);
-        //this.setElementEvents(true);
       }
     },
     pan_view: {
@@ -162,7 +120,6 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        //this.setElementEvents(false);
       }
     },
     zoom_in: {
@@ -172,7 +129,6 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        //this.setElementEvents(false);
       },
       onclick: (evt) => {
         this.cy.zoom({
@@ -188,7 +144,6 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        //this.setElementEvents(false);
       },
       onclick: (evt) => {
         this.cy.zoom({
@@ -204,7 +159,6 @@ export class MainViewComponent {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
-        //this.setElementEvents(false);
       },
       onclick: (evt) => {
         this.cy.zoom({
@@ -212,85 +166,52 @@ export class MainViewComponent {
           renderedPosition: evt.renderedPosition
         });
       }
+    },
+    new_vertex: {
+      icon: 'assets/img/new_vertex.png',
+      title: 'Увеличить масштаб',
+      settings: [
+        {
+          name: 'Класс новой вершины',
+          type: 'select',
+          options: [],
+          optionsConstructor: () => {
+            console.log(this)
+            return this.conn.getClassWithDescendants('V').map(c => {
+              return {text: c.name, value: c.name}
+            });
+          },
+          defaultValue: 'V',
+          value: 'V'
+        }
+      ],
+      oninit: () => {
+        this.cy.autoungrabify(true);
+        this.cy.autounselectify(true);
+        this.cy.userPanningEnabled(true);
+      },
+      onclick: (evt) => {
+        let cl = this.toolById.new_vertex.settings[0].value
+        let data = {
+          id: this.conn.nextId(),
+          _class: cl
+        };
+        let props = this.conn.getClass(cl).properties
+        for (let p in props) {
+          data[p] = null
+        }
+        console.log('new_vertex: class='+cl+', data:', data)
+        this.cy.add([
+          { group: 'nodes', data: data, position: evt.position }
+        ]);
+        this.unsavedChanges = true;
+      }
     }
   };
   readonly controlsToolList = ['zoom_out', 'zoom_in', 'zoom_auto', 'select_move_any', 'pan_view'];
   activeToolId = '';
 
   /* ---------------------------------------------------- public functions --------------------------------------------------- */
-
-  /*setElementEvents = function(value) {
-    let testNode = null;
-    if (value) {
-      /*this.cy.$('node, edge').forEach(node => {
-        node.style('events', 'yes');
-        testNode = node;
-        if (testNode) console.log(`node style length: `, testNode.style());
-      })
-    } else {
-      /*this.cy.$('node, edge').forEach(node => {
-        node.style('events', 'no');
-        testNode = node;
-        if (testNode) console.log(`node style length: `, testNode.style());
-      });
-    }
-  }*/
-
-  getData = () => {
-    return new Promise((resolve, reject) => {
-      //TEST
-      /*this.conn.db.class.create('dfdfdf_VertexClass', 'V').then(()=>{
-        this.conn.db.class.create('aaa_EdgeClass', 'E').then(() => {
-          this.conn.db.create('VERTEX', 'V').one();
-          this.conn.db.create('VERTEX', 'dfdfdf_VertexClass').one();
-
-          let batch = `begin;
-              let $v1 = create vertex dfdfdf_VertexClass set name = "вершина 1";
-              let $v2 = create vertex dfdfdf_VertexClass set name = "вершина 2";
-              let $v3 = create vertex dfdfdf_VertexClass set name = "вершина 3";
-              let $v4 = create vertex dfdfdf_VertexClass set name = "вершина 4";
-              let $e1 = create edge aaa_EdgeClass from $v1 to $v2;
-              let $e2 = create edge aaa_EdgeClass from $v2 to $v3;
-              let $e3 = create edge aaa_EdgeClass from $v3 to $v4;
-              let $e4 = create edge aaa_EdgeClass from $v4 to $v1;
-              commit;
-              return $e1;`;
-
-          this.pool.acquire().then(session => {
-            session.batch(batch).all().then(results => {
-              console.log(results);
-            }).catch(e => reject(e));
-          }).catch(e => reject(e));
-        }).catch(e => reject(e));
-      }).catch(e => reject(e));*/
-
-      this.conn.db.class.list().then(classes => {
-        // определить все кастомные классы
-        this.userDefinedClasses = classes.filter(cl => !this.servicePrecreatedClasses.includes(cl.name));
-        //console.log(this.userDefinedClasses);
-
-        this.conn.db.query('SELECT * FROM V').then(allVertices => {
-          //console.log('SELECT * FROM V', allVertices);
-          this.conn.db.query('SELECT * FROM E').then(allEdges => {
-            //console.log('SELECT * FROM E', allEdges);
-
-            // конвертация в формат понятный cytoscape
-            let convertedV = allVertices.map(this.conn.odbRecordToCytoscapeElement('node'));
-            let convertedE = allEdges.map(this.conn.odbRecordToCytoscapeElement('edge'));
-            let storedData = convertedV.concat(convertedE);
-            console.log('Project storedData:', storedData);
-            resolve(storedData);
-          }).catch(e => reject(e));
-        }).catch(e => reject(e));
-      }).catch(e => reject(e));
-    })
-  }
-
-  //https://stackoverflow.com/questions/10014271/generate-random-color-distinguishable-to-humans
-  selectColor = function(number) {
-    const hue = number * 137.508; // use golden angle approximation
-    return `hsl(${hue},50%,75%)`;
-  }
 
   //сейчас можно только один слушатель события одновременно, неважно на какой селектор
   setTool = (toolId) => {
@@ -354,6 +275,12 @@ export class MainViewComponent {
           })
         });
       }
+
+      if (tool.settings) {
+        for (let s of tool.settings) {
+          if (s.optionsConstructor) s.options = s.optionsConstructor();
+        }
+      }
     }
   }
 
@@ -362,162 +289,135 @@ export class MainViewComponent {
   }
 
   // полный ререндер. вызывать только в случае импорта, sql запроса или другого изменения графа не через cytoscape
-  render = () => {
+  render = (data, zoom, pan) => {
     this.isRendering = true;
-    this.getData().then(data => {
-      this.cy = cytoscape({
-        container: this.graphField.nativeElement,
-        elements: data,
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'background-color': '#ffaa33',
-              'label': 'data(id)'
-            }
-          }, {
-            selector: 'edge',
-            style: {
-              'width': 3,
-              'line-color': '#000000',
-              'target-arrow-color': '#000000',
-              'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier'
-            }
-          },
-          {
-            selector: ':selected',
-            css: {
-              'background-color': '#228c15',//'#ff6333',
-              /*'border-width': '1px',
-              'border-style': 'solid',
-              'border-color': '#ddddff',*/
-              'line-color': '#0000aa',
-              'target-arrow-color': '#0000aa',
-              'source-arrow-color': '#0000aa'
-            }
-          },
-          {
-            selector: '.cy_hidden',
-            css: {
-              'opacity': '0'
-            }
-          },
-          {
-            selector: '.cy_edit_hidden',
-            css: {
-              'opacity': '0.25'
-            }
+    console.log(data);
+    this.cy = cytoscape({
+      container: this.graphField.nativeElement,
+      elements: data,
+      layout: {
+        name: 'preset',
+        fit: true
+      },
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'background-color': '#ffaa33',
+            'label': 'data(id)'
           }
-        ],
-        layout: {// default layout options
-          animate: true, // whether to show the layout as it's running
-          refresh: 1, // number of ticks per frame; higher is faster but more jerky
-          maxSimulationTime: 4000, // max length in ms to run the layout
-          ungrabifyWhileSimulating: false, // so you can't drag nodes during layout
-          fit: true, // on every layout reposition of nodes, fit the viewport
-          padding: 30, // padding around the simulation
-          boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
-          nodeDimensionsIncludeLabels: false, // whether labels should be included in determining the space used by a node
-        
-          // layout event callbacks
-          ready: function(){}, // on layoutready
-          stop: function(){}, // on layoutstop
-        
-          // positioning options
-          randomize: false, // use random node positions at beginning of layout
-          avoidOverlap: true, // if true, prevents overlap of node bounding boxes
-          handleDisconnected: true, // if true, avoids disconnected components from overlapping
-          convergenceThreshold: 0.01, // when the alpha value (system energy) falls below this value, the layout stops
-          nodeSpacing: function( node ){ return 10; }, // extra spacing around nodes
-          flow: undefined, // use DAG/tree flow layout if specified, e.g. { axis: 'y', minSeparation: 30 }
-          alignment: undefined, // relative alignment constraints on nodes, e.g. {vertical: [[{node: node1, offset: 0}, {node: node2, offset: 5}]], horizontal: [[{node: node3}, {node: node4}], [{node: node5}, {node: node6}]]}
-          gapInequalities: undefined, // list of inequality constraints for the gap between the nodes, e.g. [{"axis":"y", "left":node1, "right":node2, "gap":25}]
-        
-          // different methods of specifying edge length
-          // each can be a constant numerical value or a function like `function( edge ){ return 2; }`
-          edgeLength: undefined, // sets edge length directly in simulation
-          edgeSymDiffLength: undefined, // symmetric diff edge length in simulation
-          edgeJaccardLength: undefined, // jaccard edge length in simulation
-        
-          // iterations of cola algorithm; uses default values on undefined
-          unconstrIter: undefined, // unconstrained initial layout iterations
-          userConstIter: undefined, // initial layout iterations with user-specified constraints
-          allConstIter: undefined, // initial layout iterations with all constraints including non-overlap
+        }, {
+          selector: 'edge',
+          style: {
+            'width': 3,
+            'line-color': '#000000',
+            'target-arrow-color': '#000000',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'bezier'
+          }
         },
-        userZoomingEnabled: false,
-
-        userPanningEnabled: true,
-        autoungrabify: true,
-        autounselectify: true
-      });
-      /*for (let i = 0; i<this.selectionNodes.length; i++) {
-        this.cy.$('#'+this.selectionNodes[i].id)?.select();
-      }*/
-      /*let selectionNodesUpdate = () => {//пустой map - преобразование в массив
-        this.selectionNodes = this.cy.$(':selected').filter(e => e.isNode());
-        console.log('this.selectionNodes: ', this.selectionNodes, this.selectionNodes instanceof Array);
-      };*/
-      //this.cy.edges().on('select', selectionEdgesUpdate)
-      //this.cy.edges().on('unselect', selectionEdgesUpdate)
-      //this.cy.edges().on('remove', selectionEdgesUpdate)
-
-      // двухстороннее отображение выделения
-      // восстановление после импорта и перестройки cy
-      for (let i = 0, len = this.selection.length; i<len; i++) {
-        this.cy.$('#'+this.selection[i].id)?.select();
-      }
-//протестировать чтобы они не триггерили друг друга бесконечно
-      // Selection obj change => cy.(un)select()
-      let applyToCorespondingEles = function(odbRecordOrRid, callback) {
-        let id = null
-        if (typeof odbRecordOrRid == 'string') {
-          id = odbRecordOrRid
-        } else if (typeof odbRecordOrRid == 'object' && '@rid' in odbRecordOrRid) {
-          id = odbRecordOrRid['@rid']
-        } else if (typeof odbRecordOrRid == 'object' && 'id' in odbRecordOrRid) {
-          return;//это cy сам только что вставил свой элемент по событиям select, unselect, remove
-        } else {
-          console.warn(`No corresponding element in cytoscape graph for %o`, odbRecordOrRid)
-          return;
+        {
+          selector: ':selected',
+          css: {
+            'background-color': '#228c15',//'#ff6333',
+            /*'border-width': '1px',
+            'border-style': 'solid',
+            'border-color': '#ddddff',*/
+            'line-color': '#0000aa',
+            'target-arrow-color': '#0000aa',
+            'source-arrow-color': '#0000aa'
+          }
+        },
+        {
+          selector: '.cy_hidden',
+          css: {
+            'opacity': '0'
+          }
+        },
+        {
+          selector: '.cy_edit_hidden',
+          css: {
+            'opacity': '0.25'
+          }
         }
-        let cyElem = this.cy.$('#' + id)
-        if (!cyElem || cyElem.length == 0) {
-          console.warn(`No corresponding element in cytoscape graph for %o`, odbRecordOrRid)
-          return;
-        }
-        callback(cyElem)
-      }
-      this.selection.addEventListener("itemadded", function(e) {
-        console.log("Added %o at index %d.", e.item, e.index);
-        applyToCorespondingEles(e.item, (element) => element.select())
-      });
-      this.selection.addEventListener("itemremoved", function(e) {
-        console.log("Removed %o at index %d.", e.item, e.index);
-        applyToCorespondingEles(e.item, (element) => element.unselect())
-      });
+      ],
+      userZoomingEnabled: false,
+      userPanningEnabled: true,
+      autoungrabify: true,
+      autounselectify: true
+    });
+    this.cy.gridGuide({
+      // On/Off Modules
+      /* From the following four snap options, at most one should be true at a given time */
+      snapToGridOnRelease: false, // Snap to grid on release
+      snapToGridDuringDrag: false, // Snap to grid during drag
+      snapToAlignmentLocationOnRelease: false, // Snap to alignment location on release
+      snapToAlignmentLocationDuringDrag: false, // Snap to alignment location during drag
 
-      // cy.(un)select => Selection obj change
-      let selectionUpdate = () => {
-        this.selection.pushAll(this.cy.$(':selected'));
-        console.log('this.selectionEdges: ', this.selection);
-        console.log();
-      }
-      this.cy.on('select', selectionUpdate)
-      this.cy.on('unselect', selectionUpdate)
-      this.cy.on('remove', selectionUpdate)
-      
-      this.isRendering = false;
-      this.setTool('pan_view');
+      distributionGuidelines: false, // Distribution guidelines
+      geometricGuideline: false, // Geometric guidelines
+      initPosAlignment: false, // Guideline to initial mouse position
+      centerToEdgeAlignment: false, // Center to edge alignment
+      resize: false, // Adjust node sizes to cell sizes
+      parentPadding: false, // Adjust parent sizes to cell sizes by padding
+      drawGrid: true, // Draw grid background
+  
+      // General
+      gridSpacing: 20, // Distance between the lines of the grid.
+      snapToGridCenter: true, // Snaps nodes to center of gridlines. When false, snaps to gridlines themselves. Note that either snapToGridOnRelease or snapToGridDuringDrag must be true.
+  
+      // Draw Grid
+      zoomDash: true, // Determines whether the size of the dashes should change when the drawing is zoomed in and out if grid is drawn.
+      panGrid: true, // Determines whether the grid should move then the user moves the graph if grid is drawn.
+      gridStackOrder: -1, // Namely z-index
+      gridColor: '#dedede', // Color of grid lines
+      lineWidth: 1.0, // Width of grid lines
+  
+      // Guidelines
+      guidelinesStackOrder: 4, // z-index of guidelines
+      guidelinesTolerance: 2.00, // Tolerance distance for rendered positions of nodes' interaction.
+      guidelinesStyle: { // Set ctx properties of line. Properties are here:
+          strokeStyle: "#8b7d6b", // color of geometric guidelines
+          geometricGuidelineRange: 400, // range of geometric guidelines
+          range: 100, // max range of distribution guidelines
+          minDistRange: 10, // min range for distribution guidelines
+          distGuidelineOffset: 10, // shift amount of distribution guidelines
+          horizontalDistColor: "#ff0000", // color of horizontal distribution alignment
+          verticalDistColor: "#00ff00", // color of vertical distribution alignment
+          initPosAlignmentColor: "#0000ff", // color of alignment to initial mouse location
+          lineDash: [0, 0], // line style of geometric guidelines
+          horizontalDistLine: [0, 0], // line style of horizontal distribution guidelines
+          verticalDistLine: [0, 0], // line style of vertical distribution guidelines
+          initPosAlignmentLine: [0, 0], // line style of alignment to initial mouse position
+      },
+  
+      // Parent Padding
+      parentSpacing: -1 // -1 to set paddings of parents to gridSpacing
     })
+    // cy.(un)select => Selection obj change
+    let selectionUpdate = () => {
+      this.selection.pushAll(this.cy.$(':selected'));
+      console.log('this.selectionEdges: ', this.selection);
+      console.log();
+    }
+    this.cy.on('select', selectionUpdate)
+    this.cy.on('unselect', selectionUpdate)
+    this.cy.on('remove', selectionUpdate)
+    this.cy.viewport({
+      zoom: zoom,
+      pan: pan
+    });
+    
+    this.conn.cy = this.cy;
+    console.log(this.conn.cy.elements().jsons());
+    this.isRendering = false;
+    this.setTool('pan_view');
   }
 
   // переключатель категорий на панели инструментов
   switchCategory = (newCategory) => {
     this.openedCategory = newCategory;
   }
-
-  /*------------------------------------ Управление --------------------------------------- */
 
   /* ----------------------------------- Категория: файл ---------------------------------- */
 
@@ -537,17 +437,18 @@ export class MainViewComponent {
       message: 'Вы уверены, что хотите восстановить проект из сохраненной копии?\nВсе несохраненные изменения будут потеряны!'
     });
     if (choice === 1) {
-      this.setWaiting('Закрытие проекта...');
-      this.onClose(false, () => {
-        this.reopenProject(this.dbLastSavedPath, this.dbOpenedWithFormat)
-      });
+      this.setWaiting('Восстановление проекта...');
+      this.conn.import(this.dbLastSavedPath, false, (src, obj) => {
+        this.unsavedChanges = false;
+        this.render(obj.data, obj.zoom, obj.pan);
+        this.setWaiting('');
+      })
     }
   }
 
   // сохранить
   saveProjectListener = () => {
-    this.setWaiting('Сохранение проекта...');
-    this._electronService.ipcRenderer.send('export-database', this.dbLastSavedPath);
+    this.conn.export(this.dbLastSavedPath, null, this.successListener)
   }
 
   saveDisabled = () => {
@@ -557,7 +458,7 @@ export class MainViewComponent {
   // сохранить как
   saveAsProjectListener = (fp) => {
     this.setWaiting('Сохранение проекта...');
-    let p = fp + '.export.gz';
+    let p = fp + '.gph';
     if (this.fs.existsSync(p)) {
       if (this.fs.lstatSync(this.importPath).isFile()) {
         const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
@@ -568,7 +469,7 @@ export class MainViewComponent {
         });
         if (choice === 1) {
           this.fs.rmdir(p, { recursive: true }, () => {
-            this._electronService.ipcRenderer.send('export-database', p);
+            this.conn.export(p, null, this.successListener)
           });
         }
       } else {
@@ -580,11 +481,13 @@ export class MainViewComponent {
         });
         if (choice === 1) {
           this.fs.unlink(p, () => {
-            this._electronService.ipcRenderer.send('export-database', p);
+            this.conn.export(p, null, this.successListener)
           })
         }
       }
-    } else this._electronService.ipcRenderer.send('export-database', p);
+    } else {
+      this.conn.export(p, null, this.successListener)
+    }
   }
 
   // импорт
@@ -599,63 +502,19 @@ export class MainViewComponent {
   importMerge = () => {
     //create property Person.name string
     this.setWaiting('Подготовка...');
-    if (this.userDefinedClasses.length > 2) {
-      this.batchBuildCopy = this.userDefinedClasses.reduce((accum, el) => {
-        if (el.name == 'V' || el.name == 'E') return accum;
-
-        let com = `create class ${el.name} extends ${el.superClass};\n`;
-        //TODO grab properties
-        return accum + com;
-      }, this.batchBuildCopy)
-    }
-    if (this.cy.elements().length > 0) {
-      this.batchBuildCopy += 'begin;\n';
-
-      let varNameByRid = {}; let vertexCount = 0;
-      let storedData = this.cy.elements().map(e => e);
-
-      this.batchBuildCopy = storedData.reduce((accum, el) => {
-        let com = '';
-        if (el.data.target && el.data.source) {
-          let fromVar = varNameByRid[el.data.source];
-          let toVar = varNameByRid[el.data.target];
-          com = `create edge ${el.data['@class']} from ${fromVar} to ${toVar}`;
-        } else {
-          varNameByRid[el.data.id] = '$v'+vertexCount;
-          com = `let ${varNameByRid[el.data.id]} = create vertex ${el.data['@class']}`;
-          vertexCount++;
+    this.conn.import(this.importPath, true, (obj) => {
+      let newIdMap = {};
+      let newData = obj.data;
+      newData.forEach((item) => newIdMap[item.id] = this.conn.nextId())
+      newData.forEach((item) => {
+        if (item.target && item.source) {
+          item.target = newIdMap[item.target]
+          item.source = newIdMap[item.source]
         }
-        let setArray = [];
-        let userClassesNames = this.userDefinedClasses.map(e => e.name);
-        for (let p in el.data) {
-          if (p == 'source' || p == 'target' || p == 'id' || p == '@class') continue;
-          if (p.startsWith('in_') && userClassesNames.includes(p.substring(3))) continue;
-          if (p.startsWith('out_') && userClassesNames.includes(p.substring(4))) continue;
-
-          let val = (typeof el.data[p] == 'string') ? `"${el.data[p]}"` : el.data[p];
-          setArray.push(`${p} = ${val}`);
-        }
-        if (setArray.length > 0) com += ' set '+setArray.join(', ');
-        return accum + com + ';\n';
-      }, this.batchBuildCopy)
-
-      this.batchBuildCopy += 'commit;\n';
-    }
-    //console.log(this.batchBuildCopy);
-
-    this.setWaiting('Закрытие соединения...');
-    this.onClose(false, () => {
-      let connect = this.conn.getConnectionPromise(this.setWaiting);
-      connect.then(() => {
-        this.setWaiting('Импорт...');
-        let params = {
-          src: this.importPath,
-          format: this.importGraphTypeTag.nativeElement.value
-        }
-        this._electronService.ipcRenderer.send('import-database', JSON.stringify(params));
-        //console.log('importMerge(): sent import-database request');
-      });
-    })
+        item.id = newIdMap[item.id]
+      })
+      this.cy.add(newData)
+    });
   }
 
   // на кнопку закрыть проект
@@ -668,7 +527,7 @@ export class MainViewComponent {
     });
     if (choice === 1) {
       this.setWaiting('Закрытие проекта...');
-      this.onClose(true, () => {
+      this.onClose(() => {
         this.backToStartView();
         this.setWaiting('');
       });
@@ -678,55 +537,26 @@ export class MainViewComponent {
   /* ---------------------------------- Инициализация, финализация ------------------------------ */
 
   // закрытие всех соединений и удаление слушателей IPC
-  private onClose = (leaving, callback) => {
-    if (this.conn.pool) this.conn.pool.close();
-    this.conn.pool = null;
-    if (this.conn.db) this.conn.db.close();
-    this.conn.db = null;
-    if (this.conn.server) this.conn.server.close();
-    this.conn.server = null;
-
-    let removeListeners = () => {
-      if (leaving) {
-        this.ipcRenderer.removeListener('has-unsaved-changes', this.hasUnsavedChangesListener);
-        this.ipcRenderer.removeListener('quit-request', this.quitRequestListener);
-        this.ipcRenderer.removeListener('import-success', this.importSuccessListener);
-        this.ipcRenderer.removeListener('export-success', this.exportSuccessListener);
-      }
-    }
-    if (this.conn.client) {
-      this.conn.client.dropDatabase({
-        name: 'tempdb',
-        username: 'root',
-        password: 'root'
-      }).then(() => {
-        this.conn.client.close();
-        this.conn.client = null;
-        //console.log('Graphytica INFO: Temp database dropped');
-        
-        removeListeners();
-        if (callback) callback();
-      }).catch(e => {console.log('Graphytica ERROR: Failed to drop temp DB.\n'+e)});
-    } else {
-      removeListeners();
-      if (callback) callback();
-    }
+  private onClose = (callback) => {
+    this.ipcRenderer.removeListener('has-unsaved-changes', this.hasUnsavedChangesListener);
+    this.ipcRenderer.removeListener('quit-request', this.quitRequestListener);
+    this.cy.destroy()
+    this.conn.cy = null;
+    this.cy = null;
+    if (callback) callback();
   }
 
   ngAfterViewInit(): void {
     let params = this.getParams();
+    let renderParams = ['data', 'zoom', 'pan'];
     for (let p in params) {
-      this[p] = params[p]
+      if (!renderParams.includes(p)) this[p] = params[p]
     }
     this.setWindowTitle();
 
     this.ipcRenderer.on('has-unsaved-changes', this.hasUnsavedChangesListener);
     this.ipcRenderer.on('quit-request', this.quitRequestListener);
-    this.ipcRenderer.on('import-success', this.importSuccessListener);
-    this.ipcRenderer.on('export-success', this.exportSuccessListener);
 
-    this.conn.db.open().then(() => {
-      this.render();
-    });
+    this.render(params.data, params.zoom, params.pan);
   }
 }

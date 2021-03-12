@@ -8,13 +8,32 @@
     >
         <div>
             <div class="class_name" (click)="selectElement(item.name)">{{item.name}}</div>
-            <app-icon-button title="Создать подкласс" iconSrc="assets/img/add_subclass.png"
-                [callback]="newSubclass.bind(this, item.name)"></app-icon-button>
+            <div class="hor_spacer"></div>
+            <tiny-button *ngIf="!fakeEditableChild"
+                title="Создать подкласс"
+                iconSrc="assets/img/add_subclass.png"
+                [callback]="newSubclass.bind(this, item.name)"></tiny-button>
+            <tiny-button *ngIf="!fakeEditableChild && item.name != 'V' && item.name != 'E'"
+                title="Удалить класс"
+                iconSrc="assets/img/close.png"
+                [callback]="removeClass.bind(this, item.name)"></tiny-button>
         </div>
         <tree-branch
             [tree]="item.children"
             [level]="level + 1"
             [selectElement]="selectElement"
         ></tree-branch>
+        <div *ngIf="fakeEditableChild && item.name == newSubclassSuper"
+            [ngStyle]="{marginLeft: ((level + 1) * 20) + 'px'}"
+            class="tree_branch"
+        >
+            <input value="" placeholder="Имя класса"
+                (change)="setNewClassName($event.target.value)">
+            <tiny-button
+                title="Не создавать"
+                iconSrc="assets/img/close.png"
+                [callback]="hideFakeField.bind(this)"
+            ></tiny-button>
+        </div>
     </div>
 </div>

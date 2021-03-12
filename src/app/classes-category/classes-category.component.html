@@ -1,44 +1,65 @@
 <div class="section">
     <div>Дерево классов:</div>
-    <tree-branch [tree]="classTree" level="0" [selectElement]="selectClass.bind(this)"></tree-branch>
+    <tree-branch [tree]="conn.classesTree" level="0" [selectElement]="selectClass.bind(this)"></tree-branch>
 </div>
-<div class="section" *ngIf="selectedClass && mapClassTree && mapClassTree[selectedClass]">
+<div class="section" *ngIf="selectedClass">
     <div>Данные класса <span class="class_name">{{selectedClass}}</span>:</div>
     <table>
         <tr>
             <td>Суперкласс:</td>
-            <td>{{mapClassTree[selectedClass].superClass}}</td>
-        </tr>
-        <tr>
-            <td>Число кластеров:</td>
-            <td>{{mapClassTree[selectedClass].clusterCount}}</td>
+            <td>{{conn.classesMap[selectedClass].superClass}}</td>
         </tr>
         <tr>
             <td>Число экземпляров:</td>
-            <td>{{countEntities}}</td>
+            <td class="readonly">{{countEntities}}</td>
         </tr>
         <tr>
             <td>Число экземпляров без учета подклассов:</td>
-            <td>{{countDirectEntities}}</td>
+            <td class="readonly">{{countDirectEntities}}</td>
         </tr>
         <tr>
             <td>Потомки:</td>
-            <td>{{selectedDirectChildren}}</td>
+            <td class="readonly">{{selectedDirectChildren}}</td>
         </tr>
     </table>
+    <div>Доступные действия:</div>
     <app-icon-button title="Добавить класс в выделение" iconSrc="assets/img/add_to_selection.png"
         [callback]="addToSelection.bind(this)"></app-icon-button>
+    <app-icon-button title="Исключить класс из выделения" iconSrc="assets/img/exclude_from_selection.png"
+        [callback]="excludeFromSelection.bind(this)"></app-icon-button>
 </div>
-<div class="section" *ngIf="selectedClass && mapClassTree && mapClassTree[selectedClass]">
+<div class="section" *ngIf="selectedClass">
     <div>Поля класса <span class="class_name">{{selectedClass}}</span>:</div>
     <table>
-        <tr>
-            <td>Поле</td>
-            <td>Тип</td>
-        </tr>
-        <tr *ngFor="let cl of mapClassTree[selectedClass].properties | keyvalue">
+        <tr *ngFor="let cl of conn.classesMap[selectedClass].properties | keyvalue">
             <td>{{cl.key}}</td>
-            <td>{{cl.value}}</td>
+            <td><select class="masked_input" value="{{cl.value.type}}"
+                (change)="alterField(cl.key, 'type', $event.target.value)">
+                    <option *ngFor="let type of conn.supportedTypes" [selected]="type == cl.value.type" value="{{type}}">{{type}}</option>
+                </select>
+            </td>
+        </tr>
+        <tr *ngIf="fakeNewField">
+            <td><input value="" placeholder="Имя поля" (change)="setNewFieldName($event.target.value)"></td>
+            <td><select value="" (change)="setNewFieldType($event.target.value)">
+                    <option selected disabled value="">Тип данных</option>
+                    <option *ngFor="let type of conn.supportedTypes" value="{{type}}">{{type}}</option>
+                </select>
+                <tiny-button
+                    title="Не создавать"
+                    iconSrc="assets/img/close.png"
+                    [callback]="hideFakeField.bind(this)"
+                ></tiny-button>
+            </td>
+        </tr>
+        <tr *ngIf="!fakeNewField">
+            <td colspan=2 class="add_field">
+                <tiny-button
+                    iconSrc="assets/img/green_plus.png"
+                    title="Создать новое поле"
+                    [callback]="addFakeField.bind(this)"
+                ></tiny-button>
+            </td>
         </tr>
     </table>
 </div>

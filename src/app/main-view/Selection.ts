@@ -207,6 +207,14 @@ export class OSelection {
         }
     }
 
+    /*select = () => {};
+    unselect = () => {};
+
+    setMethods(select, unselect) {
+      this.select = select;
+      this.unselect = unselect;
+    }*/
+
     constructor(items) {
       console.log('OSelection constructor:', this)
 

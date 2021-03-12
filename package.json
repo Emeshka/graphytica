@@ -35,6 +35,7 @@
     "@types/orientjs": "^3.0.11",
     "cytoscape": "^3.17.0",
     "cytoscape-cola": "^2.4.0",
+    "cytoscape-grid-guide": "^2.3.2",
     "legacy-encoding": "^3.0.0",
     "ngx-electron": "^2.2.0",
     "orientjs": "^3.0.11",

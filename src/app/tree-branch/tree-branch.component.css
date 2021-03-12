@@ -35,3 +35,8 @@
 .edge_descendant:hover {
     background: #cae7ff;
 }
+
+.hor_spacer {
+    display: inline-block;
+    width: 20px;
+}

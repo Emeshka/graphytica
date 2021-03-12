@@ -1,5 +1,5 @@
 <div>
     <input placeholder="Выберите путь..." class="filepath_selector_textfield" [value]="inputValue()" (input)="updatePaths($event.target.value)">
-    <div class="filepath_selector_button" (click)="openClickListener()"></div>
+    <div class="filepath_selector_button" (click)="openClickListener()" (keydown)="openEnterListener($event)" tabindex="0"></div>
 </div>
-<div class="form_error">{{errorMessage}}</div>
+<div *ngIf="touched" class="form_error">{{errorMessage}}</div>

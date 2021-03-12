@@ -1,0 +1,22 @@
+:host {
+    display: inline-block;
+}
+
+.tiny_button {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin: 2px;
+    /*background-color: #eeeeee;
+    border: 1px solid grey;
+    border-radius: 3px;*/
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    cursor: default;
+    opacity: 0.5;
+}
+
+.tiny_button:hover {
+    opacity: 1;
+}

@@ -26,7 +26,7 @@ export class AppOpenFileButtonBigComponent implements OnInit {
 
   openClickListener() {
     const remote = this._electronService.remote;
-    console.log('lastdir:', this._lastDirectoryService.value);
+    //console.log('lastdir:', this._lastDirectoryService.value);
     remote.dialog
       .showSaveDialog(remote.getCurrentWindow(), {
         title: 'Сохранить как',

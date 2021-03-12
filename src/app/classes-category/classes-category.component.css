@@ -28,3 +28,27 @@ td:first-child {
     width: 30%;
     text-align: right;
 }
+
+.masked_input {
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    line-height: 100%;
+    border-radius: none;
+    border: none;
+    padding: 0px 10px;
+    margin: 0px;
+}
+
+.masked_input:hover {
+    color: #222222;
+}
+
+.masked_input:focus {
+    appearance: auto;
+}
+
+.readonly {
+    background: #fafafa;
+    color: #222222;
+}

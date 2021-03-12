@@ -16,15 +16,13 @@ export class AppComponent {
   
   constructor(
     private _electronService: ElectronService,
-    //private _lastDirectoryService: LastDirectoryService,
     private _updateRecentService: UpdateRecentService,
     private conn: DbServiceService,
-    private readonly _nz: NgZone
+    private nz: NgZone
   ) { }
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
   private separator = this.path.sep;
-  //private recentPath = this.path.join(__dirname, "assets", "recent.txt");
 
   /* ------------------------------------- Приватные методы ------------------------------------------ */
 
@@ -35,12 +33,13 @@ export class AppComponent {
   appView = 'start_view';
   newProjectParentDirectory = '';
   openProjectPath = '';
+  touchedFilepath = false;
   @ViewChild('openGraphTypeTag') openGraphTypeTag;
-  //recentPathArray = this.readRecentProjects(); 
   @ViewChild('waitingMessageTag') waitingMessageTag;
   @ViewChild('waitingVoileTag') waitingVoileTag;
-  ready = false;
+  ready = true;
   waiting = false;
+  recent = [];
 
   setWaiting(message) {
     if (message) {
@@ -54,16 +53,50 @@ export class AppComponent {
     console.log(message);
   }
 
+  successListener = (src, obj) => {
+    if (this.appView != 'main_view') {
+      this.setWaiting('Почти готово...');
+      console.log('app received import or export success =', src);
+      if (!src) {
+        this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+          type: 'warning',
+          buttons: ['OK'],
+          title: 'Ошибка',
+          message: 'Произошла ошибка. Попробуйте еще раз.'
+        });
+        //console.log('event.ports:', event.ports);
+        this.setWaiting('');
+        return;
+      }
+
+      this.nz.run(() => {
+        this.newProjectParentDirectory = '';
+        this.openProjectPath = '';
+        this._updateRecentService.updateRecentProjects(src);
+  
+        let extIndex = src.lastIndexOf('.gph');
+        if (extIndex < 0) {
+          extIndex = src.length;
+        }
+        let dbName = src.substring(src.lastIndexOf(this.separator)+1, extIndex);
+  
+        this.getParams = () => {
+          return {
+            dbName: dbName,
+            dbLastSavedPath: src,
+            data: obj.data,
+            zoom: obj.zoom,
+            pan: obj.pan
+          }
+        }
+        this.switchAppView('main_view');
+        this.setWaiting('');
+      })
+    }
+  };
+
   ngAfterViewInit(){
     var ipcRenderer = this._electronService.ipcRenderer;
-    ipcRenderer.on('port-listening', (event,portListening) => {
-      this._nz.run(() => {
-        this.conn.port = portListening;
-        this.setWaiting('');
-        ipcRenderer.send('port-listening', true);
-        this.ready = true;
-      })
-    });
     //отвечаем на запросы выхода, только если main_view не построен
     //console.log('Adding ipcRenderer listeners on app component')
     ipcRenderer.on('has-unsaved-changes', (event,request) => {
@@ -80,52 +113,10 @@ export class AppComponent {
         ipcRenderer.send('quit-request', true);
       }
     });
-    let importExportSuccessListener = (event,jsonstr) => {
-      if (this.appView != 'main_view') {
-        this.setWaiting('Почти готово...');
-        console.log('app received import or export success =', jsonstr);
-        if (!jsonstr) {
-          this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
-            type: 'warning',
-            buttons: ['OK'],
-            title: 'Ошибка',
-            message: 'Произошла ошибка. Попробуйте еще раз.'
-          });
-          //console.log('event.ports:', event.ports);
-          this.setWaiting('');
-          return;
-        }
-        let obj = JSON.parse(jsonstr);
-
-        this._nz.run(() => {
-          this.newProjectParentDirectory = '';
-          this.openProjectPath = '';
-          this._updateRecentService.updateRecentProjects(obj.src);
-
-          let extIndex = obj.src.lastIndexOf('.export.gz');
-          if (extIndex < 0) {
-            extIndex = obj.src.lastIndexOf('.gz');
-            if (extIndex < 0) {
-              extIndex = obj.src.length;
-            }
-          }
-          let dbName = obj.src.substring(obj.src.lastIndexOf(this.separator)+1, extIndex);
-
-          this.getParams = () => {
-            return {
-              dbName: dbName,
-              dbLastSavedPath: obj.src,
-              dbOpenedWithFormat: obj.format
-            }
-          }
-          this.switchAppView('main_view');
-          this.setWaiting('');
-        });
-      }
-    };
-    ipcRenderer.on('import-success', importExportSuccessListener)
-    ipcRenderer.on('export-success', importExportSuccessListener);
-    this._updateRecentService.readRecentProjects();
+    this._updateRecentService.change.subscribe( value => {
+      this.recent = [].concat(this._updateRecentService.recentPathArray)
+    });
+    this.setWaiting('');
   }
 
   /* -------------------------------------- Коллбеки и слушатели ------------------------------------------ */
@@ -134,9 +125,13 @@ export class AppComponent {
     if (this.appView == 'main_view') {
       this._electronService.ipcRenderer.send('fixed-size', '');
       this._electronService.remote.getCurrentWindow().setTitle('Graphytica');
-    } if (this.appView != value) {
+    }
+    if (this.appView != value) {
       if (value == 'main_view') {
         this._electronService.ipcRenderer.send('full-size', '');
+      }
+      if (value == 'start_view') {
+        this.touchedFilepath = false;
       }
       this.appView = value;
     }
@@ -146,20 +141,19 @@ export class AppComponent {
 
   newProjectPathUpdateCallback = (paths) => {
     this.newProjectParentDirectory = paths[0];
+    this.touchedFilepath = true;
     //console.log(`newProjectPathUpdateCallback: selectedPath = ${this.newProjectParentDirectory}`)
   }
 
   projectFolderExists = (prName) => {
     if (!prName) return false;
     //console.log(this.newProjectParentDirectory, prName);
-    return this.fs.existsSync(this.path.join(this.newProjectParentDirectory, prName+'.export.gz'));
+    return this.fs.existsSync(this.path.join(this.newProjectParentDirectory, prName+'.gph'));
   }
 
   isValidFilename(p) {
-    //console.log('isValidFile:', p)
     if (!p) return true;
 		switch (process.platform) { 
-			//case 'darwin': - не знаю насчет того буду ли я собирать под мак
 			case 'win32': {
         //console.log('check space or dot at end')
         if (p.endsWith(' ') || p.endsWith('\t') || p.endsWith('\n') || p.endsWith('\r') || p.endsWith('.')) return false;
@@ -191,25 +185,23 @@ export class AppComponent {
   createProject = (form) => {
     this.setWaiting('Создание родительского каталога...');
     let prName = form.value.new_project_name;
-    let prExportPath = this.path.join(this.newProjectParentDirectory, prName)+'.export.gz';
+    let prExportPath = this.path.join(this.newProjectParentDirectory, prName)+'.gph';
 
     this.fs.mkdir(this.newProjectParentDirectory, {recursive: true}, (err) => { 
       if (err) { 
         return console.error(err); 
       } else {
-        //console.log('Directory created successfully!');
-        let connect = this.conn.getConnectionPromise(this.setWaiting.bind(this));
-        connect.then(() => {
-          // первый экспорт пустой базы данных
-          this.setWaiting('Сохранение проекта...');
-          this._electronService.ipcRenderer.send('export-database', prExportPath);
-        });
+        // первый экспорт пустой базы данных
+        this.setWaiting('Сохранение проекта...');
+        this.conn.initializeNew();
+        this.conn.export(prExportPath, null, this.successListener);
       }
     });
   }
 
   openProjectPathUpdateCallback = (paths) => {
     this.openProjectPath = paths[0];
+    this.touchedFilepath = true;
     //console.log(`newProjectPathUpdateCallback: selectedPath = ${this.newProjectParentDirectory}`)
   }
 
@@ -220,7 +212,7 @@ export class AppComponent {
   openRecent = (path) => {
     if (!this.waiting) {
       this.openProjectPath = path;
-      this.openProject('');
+      this.openProject();
     }
   }
 
@@ -263,24 +255,15 @@ export class AppComponent {
     }
   }
 
-  openProject = (format) => {
-    let connect = this.conn.getConnectionPromise(this.setWaiting.bind(this));
-    connect.then(() => {
-      this.setWaiting('Открытие проекта...');
-      let params = {
-        src: this.openProjectPath,
-        format: format,
-        merge: false
-      }
-      this._electronService.ipcRenderer.send('import-database', JSON.stringify(params));
-      //console.log('openProject(): sent import-database request')
-    });
+  openProject = () => {
+    this.setWaiting('Открытие проекта...');
+    this.conn.import(this.openProjectPath, false, this.successListener)
   }
 
-  reopenProject = (projectPath, format) => {
+  reopenProject = (projectPath) => {
     //this.switchAppView('start_view');
     this.openProjectPath = projectPath;
-    this.openProject(format);
+    this.openProject();
   }
 
   quitClickListener() {

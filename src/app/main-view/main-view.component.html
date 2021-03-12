@@ -2,14 +2,13 @@
     <div id="instrument_panel">
         <div id="instrument_panel_categories">
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'file'" (click)="switchCategory('file')">Файл</div>
-            <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'vertices'" (click)="switchCategory('vertices')">Вершины</div>
-            <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'edges'" (click)="switchCategory('edges')">Ребра</div>
+            <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'edit'" (click)="switchCategory('edit')">Правка</div>
+            <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'selection'" (click)="switchCategory('selection')">Выделение</div>
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'classes'" (click)="switchCategory('classes')">Классы</div>
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'view'" (click)="switchCategory('view')">Вид</div>
-            <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'query'" (click)="switchCategory('query')">Запрос</div>
+            <!--<div class="instrument_panel_category" [class.category_selected]="openedCategory == 'query'" (click)="switchCategory('query')">Запрос</div>-->
         </div>
         <div id="instrument_panel_content">
-          <div>{{selection}}</div>
           <div class="center_block">
             <div class="icon_button_container" *ngIf="openedCategory == 'file'">
                 <app-tile-button
@@ -43,62 +42,66 @@
                 ></app-tile-button>
             </div>
           </div>
-          <app-vertices-category
-              *ngIf="openedCategory == 'vertices'"
+          <edit-category
+              *ngIf="openedCategory == 'edit'"
               [selection]="selection"
               [setTool]="setTool.bind(this)"
-          ></app-vertices-category>
-          <div *ngIf="openedCategory == 'edges'"></div>
+              [isActiveTool]="isActiveTool.bind(this)"
+              [toolById]="toolById"
+              [activeToolId]="activeToolId"
+          ></edit-category>
+          <selection-category
+            *ngIf="openedCategory == 'selection'"
+          ></selection-category>
           <app-classes-category
             *ngIf="openedCategory == 'classes'"
-            [defaultClasses]="servicePrecreatedClasses"
             [selection]="selection"
           ></app-classes-category>
-          <div *ngIf="openedCategory == 'view'"></div>
-          <div *ngIf="openedCategory == 'query'">
-            Здесь можно ввести вручную отдельные запросы или скрипт для исполнения консолью OrientDB на диалекте SQL, поддерживаемом этой СУБД.
-          </div>
+          <view-category
+            *ngIf="openedCategory == 'view'"
+            [cy]="cy"
+          ></view-category>
         </div>
     </div>
     <div id="graph_field" #graph_field></div>
 </div>
 
 <div id="floating_control">
-    <app-loading *ngIf="isRendering"></app-loading>
-    <div *ngIf="!isRendering">
-      <app-icon-button *ngFor="let id of controlsToolList"
-          [title]="toolById[id].title"
-          [iconSrc]="toolById[id].icon"
-          [active]="isActiveTool.bind(this, id)"
-          [callback]="setTool.bind(this, id)"
-      ></app-icon-button>
-    </div>
+  <app-loading *ngIf="isRendering"></app-loading>
+  <div *ngIf="!isRendering">
+    <app-icon-button *ngFor="let id of controlsToolList"
+        [title]="toolById[id].title"
+        [iconSrc]="toolById[id].icon"
+        [active]="isActiveTool.bind(this, id)"
+        [callback]="setTool.bind(this, id)"
+    ></app-icon-button>
+  </div>
 </div>
 
 <div class="loading_voile_full_screen" *ngIf="mainDialog">
-    <div class="vertical_spacer"></div>
-    <div class="main_dialog vertical_spacer_el_middle" *ngIf="mainDialog == 'import_dialog'">
-      <h1>Импорт - добавить к текущему графу</h1>
-      <app-filepath-selector
-        [callback]="importProjectPathUpdateCallback"
-        [selectFolders]="false"
-        [multiselection]="false"
-      ></app-filepath-selector>
-      <div class="form_error" *ngIf="!importPath">
-        Обязательное поле.
-      </div>
-      <div>
-        Тип файла:
-        <select #importGraphTypeTag>
-          <option selected value="">Определить автоматически</option>
-          <option value="orientdb">OrientDB export file format (формат сохранения Graphytica)</option>
-          <option value="graphml">Graph XML</option>
-          <option value="graphson">Graph JSON</option>
-        </select>
-      </div>
-      <div>Текущий проект будет сохранен, закрыт и открыт снова после импорта.</div>
-      <input type="button" value="Отмена" (click)="switchDialog('')">
-      <input type="button" value="Открыть" (click)="importMerge()"
-        *ngIf="importFileExists() && importPath">
+  <div class="vertical_spacer"></div>
+  <div class="main_dialog vertical_spacer_el_middle" *ngIf="mainDialog == 'import_dialog'">
+    <h1>Импорт - добавить к текущему графу</h1>
+    <app-filepath-selector
+      [callback]="importProjectPathUpdateCallback"
+      [selectFolders]="false"
+      [multiselection]="false"
+    ></app-filepath-selector>
+    <div class="form_error" *ngIf="!importPath">
+      Обязательное поле.
     </div>
+    <!--<div>
+      Тип файла:
+      <select #importGraphTypeTag>
+        <option selected value="">Определить автоматически</option>
+        <option value="orientdb">OrientDB export file format (формат сохранения Graphytica)</option>
+        <option value="graphml">Graph XML</option>
+        <option value="graphson">Graph JSON</option>
+      </select>
+    </div>
+    <div>Текущий проект будет сохранен, закрыт и открыт снова после импорта.</div>-->
+    <input type="button" value="Отмена" (click)="switchDialog('')">
+    <input type="button" value="Открыть" (click)="importMerge()"
+      *ngIf="importFileExists() && importPath">
+  </div>
 </div>

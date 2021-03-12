@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -8,13 +9,16 @@ export class UpdateRecentService {
 
   constructor(
     private _electronService: ElectronService
-  ) { }
+  ) {
+    this.readRecentProjects()
+  }
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
 
   recentPathArray = [];
-  recentPath = this.path.join(__dirname, "assets", "recent.txt");;
+  recentPath = this.path.join(__dirname, "assets", "recent.txt");
   maxRecords = 10;
+  change: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   readRecentProjects = function() {
     let fileContent = ''
@@ -25,7 +29,6 @@ export class UpdateRecentService {
         console.log(err)
         this.fs.writeFile(this.recentPath, "", function(error) {
             if (error) console.log(error);
-            //else console.log("Асинхронная запись пустого файла recent.txt завершена.");
         });
     }
     if (fileContent) {
@@ -45,6 +48,7 @@ export class UpdateRecentService {
         }
     }
     this.recentPathArray = listOfExistingDatabases;
+    this.change.next(true);
   }
 
   updateRecentProjects = function(path) {
@@ -56,21 +60,20 @@ export class UpdateRecentService {
       this.recentPathArray.splice(this.maxRecords - 1, this.recentPathArray.length - this.maxRecords + 1);
     }
     this.recentPathArray.unshift(path);
+    this.change.next(true);
     this.fs.writeFile(this.recentPath, this.recentPathArray.join('\n') + '\n', function(error) {
       if (error) console.log(error);
-      //else console.log('Асинхронная запись файла recent.txt завершена.');
     });
   }
 
-  removeFromList = function(path) {//, callback
+  removeFromList = function(path) {
     let index = this.recentPathArray.indexOf(path)
     if (index >= 0) {
       this.recentPathArray.splice(index, 1);
+      this.change.next(true);
+      this.fs.writeFile(this.recentPath, this.recentPathArray.join('\n') + '\n', function(error) {
+        if (error) console.log(error);
+      });
     }
-    this.fs.writeFile(this.recentPath, this.recentPathArray.join('\n') + '\n', function(error) {
-      if (error) console.log(error);
-      //else console.log('Асинхронная запись файла recent.txt завершена.');
-      //if (callback && typeof callback == 'function') callback();
-    });
   }
 }

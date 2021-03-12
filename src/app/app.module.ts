@@ -17,7 +17,10 @@ import { VerticesCategoryComponent } from './vertices-category/vertices-category
 import { IconButtonComponent } from './icon-button/icon-button.component';
 import { PrettyButtonComponent } from './pretty-button/pretty-button.component';
 import { ClassesCategoryComponent } from './classes-category/classes-category.component';
-import { TreeBranchComponent } from './tree-branch/tree-branch.component'
+import { TreeBranchComponent } from './tree-branch/tree-branch.component';
+import { SelectionCategoryComponent } from './selection-category/selection-category.component';
+import { TinyButtonComponent } from './tiny-button/tiny-button.component';
+import { ViewCategoryComponent } from './view-category/view-category.component'
 
 @NgModule({
   declarations: [
@@ -31,7 +34,10 @@ import { TreeBranchComponent } from './tree-branch/tree-branch.component'
     IconButtonComponent,
     PrettyButtonComponent,
     ClassesCategoryComponent,
-    TreeBranchComponent
+    TreeBranchComponent,
+    SelectionCategoryComponent,
+    TinyButtonComponent,
+    ViewCategoryComponent
   ],
   imports: [
     BrowserModule,

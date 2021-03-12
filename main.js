@@ -3,16 +3,16 @@ const url = require("url");
 const fs = require("fs");
 const path = require("path");
 const cp = require('child_process');
-const net = require('net');
-const temp = require('temp');
+//const net = require('net');
+//const temp = require('temp');
 const legacy = require('legacy-encoding');
 const SingleInstance = require('single-instance');
 
 const locker = new SingleInstance('ae-graphytica');
 locker.lock().then(() => {
 	let win; let rendererReadyToClose = false;
-	let odbRoot = path.join(__dirname, 'dist', 'orientdb-3.1.4');
-	let odbDevRoot = path.join(__dirname, 'src', 'orientdb-3.1.4');
+	/*let odbRoot = path.join(__dirname, 'dist', 'orientdb-3.1.4');
+	let odbDevRoot = path.join(__dirname, 'src', 'orientdb-3.1.4');*/
 
 	var log_file = fs.createWriteStream(path.join(__dirname, 'debug.log'), {flags: 'w'});
 	console._log = console.log;
@@ -36,7 +36,7 @@ locker.lock().then(() => {
 		}
 	}
 	
-	function escapePathCom(filepath) {
+	/*function escapePathCom(filepath) {
 		return '""'+filepath.replaceAll('\\', '\\\\')+'""';
 	}
 
@@ -65,24 +65,32 @@ locker.lock().then(() => {
 		} catch (e) {
 			console.log(`Graphytica ERROR: failed to shutdown OrientDB server:\n\n ${e}\n\n${e.stderr ? bufferToString(e.stderr) : ''}`)
 		}
-	}
+	}*/
 
 	function kill() {
 		console.log('Graphytica INFO: Trying to force-quit. Check for critical errors in log above.')
-		execShutdown();
+		//execShutdown();
 		process.exit(-1);
 	}
 
 	process.on('SIGINT', kill);
 	
 	function createWindow() {
-		temp.track();
-		console.log('Graphytica INFO: OrientDB Server starting...')
+						//console.log('Graphytica INFO: argv: '+process.argv)
+						// argument[1] when started by launcher as e.g. 'ae-graphytica.exe 9044'. When started by npm 'electron .',
+						// argument[1] is . , and no pid is passed at all
+						let pidSplashScreen = parseInt(process.argv[1]);
+						if (pidSplashScreen) {
+							process.kill(pidSplashScreen);
+							console.log(`terminated ${pidSplashScreen}`);
+						}
+		//temp.track();
+		//console.log('Graphytica INFO: OrientDB Server starting...')
 
-		let serverLauncherPath = path.join(odbRoot, 'bin', 'server') + (process.platform == 'win32' ? '.bat' : '.sh');
+		//let serverLauncherPath = path.join(odbRoot, 'bin', 'server') + (process.platform == 'win32' ? '.bat' : '.sh');
 		//console.log(serverLauncherPath);
 
-		try {
+		/*try {
 			let childProcess = cp.spawn(serverLauncherPath, [], {env: getEnv()});
 			childProcess.on('error', function(e) {//e.g. ENOENT
 				console.log('Graphytica ERROR: failed to run OrientDB server:\n\n' + e)
@@ -99,7 +107,7 @@ locker.lock().then(() => {
 			console.log('Graphytica ERROR: failed to run OrientDB server:\n\n' + e)
 			kill();
 			return;
-		}
+		}*/
 
 		if (!win) {
 			let initialWidth = 800, initialHeight = 600
@@ -164,7 +172,7 @@ locker.lock().then(() => {
 		}
 	}
 	
-	function runServer() {
+	/*function runServer() {
 		function portInUse(port, callback) {
 			var server = net.createServer(function(socket) {
 				socket.write('Echo server\r\n');
@@ -369,7 +377,7 @@ locker.lock().then(() => {
 				});
 			}
 		});
-	});
+	});*/
 
 	ipcMain.on('quit-request', (event, ready) => {
 		//console.log('main quit-request:', ready)
@@ -380,17 +388,27 @@ locker.lock().then(() => {
 	
 	app.on('window-all-closed', function() {
 		//console.log('Graphytica INFO: window-all-closed...')
-		execShutdown();//sync
+		//execShutdown();//sync
 		if (process.platform !== 'darwin') {
 			app.quit()
 		}
 	})
 
-	app.on('ready', runServer)
+	app.on('ready', () => {
+		//console.log('Graphytica INFO: argv: '+process.argv)
+		// argument[1] when started by launcher as e.g. 'ae-graphytica.exe 9044'. When started by npm 'electron .',
+		// argument[1] is . , and no pid is passed at all
+		let pidSplashScreen = parseInt(process.argv[1]);
+		if (pidSplashScreen) {
+			process.kill(pidSplashScreen);
+			console.log(`terminated ${pidSplashScreen}`);
+		}
+		createWindow()
+	})
 	
 	app.on('activate', function() {
 		if (win === null) {
-			runServer()
+			createWindow()
 		}
 	})
 }).catch(err => {

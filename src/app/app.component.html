@@ -31,7 +31,7 @@
     <div id="start_screen_recent">
       <div>Недавние проекты:</div>
       <table>
-        <tr *ngFor="let recentPathItem of _updateRecentService.recentPathArray; index as i">
+        <tr *ngFor="let recentPathItem of recent; index as i">
           <td class="start_screen_recent_path_index">{{i + 1}}.</td>
           <td class="grey_link start_screen_recent_path" (click)="openRecent(recentPathItem)">{{recentPathItem}}</td>
           <td class="start_screen_recent_path_tool">
@@ -71,7 +71,7 @@
         [selectFolders]="true"
         [multiselection]="false"
       ></app-filepath-selector>
-      <div class="form_error" *ngIf="!waiting && !newProjectParentDirectory">
+      <div class="form_error" *ngIf="touchedFilepath && !waiting && !newProjectParentDirectory">
         Обязательное поле.
       </div>
       <div class="form_error" *ngIf="!waiting && projectFolderExists(new_project_name.value)">
@@ -93,10 +93,10 @@
       [selectFolders]="false"
       [multiselection]="false"
     ></app-filepath-selector>
-    <div class="form_error" *ngIf="!waiting && !openProjectPath">
+    <div class="form_error" *ngIf="touchedFilepath && !waiting && !openProjectPath">
       Обязательное поле.
     </div>
-    <div>
+    <!--<div>
       Тип файла:
       <select #openGraphTypeTag>
         <option selected value="">Определить автоматически</option>
@@ -104,9 +104,9 @@
         <option value="graphml">Graph XML</option>
         <option value="graphson">Graph JSON</option>
       </select>
-    </div>
+    </div>-->
     <app-pretty-button text="Отмена" [callback]="switchAppView.bind(this, 'start_view')"></app-pretty-button>
-    <app-pretty-button text="Открыть" [callback]="openProject.bind(this, openGraphTypeTag.value)"
+    <app-pretty-button text="Открыть" [callback]="openProject.bind(this)"
       [active]="!waiting && openProjectExists() && openProjectPath"></app-pretty-button>
   </div>
 
@@ -123,7 +123,7 @@
   <div class="vertical_spacer"></div>
   <div class="vertical_spacer_el_middle">
     <img src="assets/img/loading_anim.webp" class="big_loading_anim_icon">
-    <div #waitingMessageTag>Подождите, сервер запускается...</div>
+    <div #waitingMessageTag>Подождите...</div>
   </div>
 </div>
 
