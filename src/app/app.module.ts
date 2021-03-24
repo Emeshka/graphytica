@@ -2,10 +2,13 @@ import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NgForm } from '@angular/forms';
+//import {TextFieldModule} from '@angular/cdk/text-field';
+//import { MatFormFieldModule } from '@angular/material/form-field';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NgxElectronModule } from 'ngx-electron';
+import { AutosizeModule } from 'ngx-autosize';
 
 import { AppOpenFileButtonBigComponent } from './app-open-file-button-big/app-open-file-button-big.component';
 import { TileButtonComponent } from './tile-button/tile-button.component';
@@ -20,7 +23,9 @@ import { ClassesCategoryComponent } from './classes-category/classes-category.co
 import { TreeBranchComponent } from './tree-branch/tree-branch.component';
 import { SelectionCategoryComponent } from './selection-category/selection-category.component';
 import { TinyButtonComponent } from './tiny-button/tiny-button.component';
-import { ViewCategoryComponent } from './view-category/view-category.component'
+import { ViewCategoryComponent } from './view-category/view-category.component';
+import { SwitchTrueFalseComponent } from './switch-true-false/switch-true-false.component';
+import { AutosizedTextareaComponent } from './autosized-textarea/autosized-textarea.component'
 
 @NgModule({
   declarations: [
@@ -37,12 +42,17 @@ import { ViewCategoryComponent } from './view-category/view-category.component'
     TreeBranchComponent,
     SelectionCategoryComponent,
     TinyButtonComponent,
-    ViewCategoryComponent
+    ViewCategoryComponent,
+    SwitchTrueFalseComponent,
+    AutosizedTextareaComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     NgxElectronModule,
+    //TextFieldModule,
+    AutosizeModule,
+    //MatFormFieldModule,
     FormsModule
   ],
   providers: [LastDirectoryService],

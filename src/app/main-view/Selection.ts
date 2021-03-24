@@ -207,6 +207,10 @@ export class OSelection {
         }
     }
 
+    getArray() {
+      return this._array.map((x) => x);
+    }
+
     /*select = () => {};
     unselect = () => {};
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -13,6 +14,7 @@ export class DbServiceService {
 
   private fs = this._electronService.remote.require('fs');
   cy = null;
+  change: BehaviorSubject<boolean> = new BehaviorSubject(false);
   readonly supportedAttributes = ['type'];
   readonly supportedTypes = ['string', 'number', 'boolean'];
 
@@ -70,8 +72,22 @@ export class DbServiceService {
             this.classes = fullData.classes
           } else {
             for (let c of fullData.classes) {
-              if (c.name != 'V' && c.name != 'E') this.classes.push(c);
-              else {
+              if (c.name != 'V' && c.name != 'E') {
+                if (this.classesMap[c.name]) {
+                  // done refactor data
+                  let newClassName = c.name
+                  while (newClassName in this.classesMap) {
+                    newClassName = c.name + (Math.floor(Math.random() * 1000))
+                  }
+                  for (let e of fullData.data) {
+                    if (e.data['_class'] == c.name) {
+                      e.data['_class'] = newClassName
+                    }
+                  }
+                  c.name = newClassName
+                }
+                this.classes.push(c);
+              } else {
                 let oldProps = this.classesMap[c.name].properties;
                 let newProps = c.properties;
                 for (let p in newProps) {
@@ -80,7 +96,13 @@ export class DbServiceService {
                     newPropName = p + (Math.floor(Math.random() * 1000))
                   }
                   if (newPropName != p) {
-                    // refactor data
+                    // done refactor data
+                    for (let e of fullData.data) {
+                      if (e.data['_class'] == c.name && e.data[p]) {
+                        e.data[newPropName] = e.data[p]
+                        delete e.data[p];
+                      }
+                    }
                   }
                   oldProps[newPropName] = newProps[p]
                 }
@@ -121,7 +143,7 @@ export class DbServiceService {
     function getClassMap(arr) {
       let map = {}, arrElem;
       for(let i = 0, len = arr.length; i < len; i++) {
-        console.log(i)
+        //console.log(i)
         arrElem = arr[i];
         map[arrElem.name] = arrElem;
         map[arrElem.name]['children'] = [];
@@ -133,7 +155,7 @@ export class DbServiceService {
       let tree = [], mappedElem;
 
       for (let id in map) {
-        console.log(id)
+        //console.log(id)
         if (map.hasOwnProperty(id)) {
           mappedElem = map[id];
           if (mappedElem.superClass) {
@@ -170,12 +192,13 @@ export class DbServiceService {
         properties: properties
       })
       this.update();
+      this.change.next(true);
     }
   }
 
-  getClass(name) {
+  /*getClass(name) {
     return this.classes.find(c => c.name == name)
-  }
+  }*/
 
   getClassWithDescendants(className) {
     let map = this.classesMap;
@@ -193,17 +216,78 @@ export class DbServiceService {
     return accum;
   }
 
-  alterClass(name, params) {
-    if (!name || !params) throw `Invalid alterClass() call: name=${name}, params=${params}`
+  getClosestCommonAncestor(className1, className2) {
+    let c1 = this.classesMap[className1];
+    let c2 = this.classesMap[className2];
+    if (!c1) throw `Invalid getClosestCommonAncestor() call: first class ${className1} doesn't exist`
+    if (!c2) throw `Invalid getClosestCommonAncestor() call: second class ${className2} doesn't exist`
+
+    /*let classAncestors1 = [className1];
+    let superName1 = c1.superClass;
+    while (superName1) {
+      classAncestors1.push(superName1)
+      superName1 = this.classesMap[superName1].superClass;
+    }*/
+    let classAncestors1 = [className1].concat(this.getSuperStack(className1).map(c => c.name))
+
+    let superName2 = className2;
+    while (superName2) {
+      for (let i = 0; i < classAncestors1.length; i++) {
+        if (superName2 == classAncestors1[i]) {
+          return superName2
+        }
+      }
+      superName2 = this.classesMap[superName2].superClass;
+    }
+    return '';
+  }
+
+  getAllProps(className) {
+    let c = this.classesMap[className]
+    if (!c) throw `Invalid getAllProps() call: class ${className} doesn't exist`
+    let arr = [c].concat(this.getSuperStack(className))
+    let props = {};
+    for (let c of arr) {
+      for (let p in c.properties) {
+        props[p] = c.properties[p]
+      }
+    }
+    return props;
+  }
+
+  getSuperStack(className) {
+    let c = this.classesMap[className]
+    if (!c) throw `Invalid getSuperStack() call: class ${className} doesn't exist`
+    let superName = c.superClass
+    let stack = []
+    while (superName) {
+      let s = this.classesMap[superName]
+      stack.push(s)
+      superName = s.superClass;
+    }
+    return stack;
+  }
+
+  alterClass(className, params) {
+    if (!className || !params) throw `Invalid alterClass() call: className=${className}, params=${params}`
     else {
-      let c = this.classesMap[name]
+      console.log('alterClass():', className, params)
+      let c = this.classesMap[className]
       for (let t in params) {
-        if ((t == 'name' || t == 'superClass') && typeof params[t] == 'string') {
-          if (name == 'V' || name == 'E') {
-            throw `Failed class alteration: class ${name} must stay root and cannot be renamed`
+        let changeName = (t == 'name' && params.name != className)
+        let changeSuper = (t == 'superClass' && params.superClass != c.superClass)
+        if ((changeName || changeSuper)  && typeof params[t] == 'string') {
+          if (className == 'V' || className == 'E') {
+            throw `Failed class alteration: class ${className} must stay root and cannot be renamed`
           }
-          if (t == name && this.cy) {
-            // refactor
+          if (t == 'name' && this.cy) {
+            // done refactor
+            let elements = this.cy.elements();
+            for (let e of elements) {
+              if (e.data('_class') == className) {
+                e.data('_class', params.name)
+              }
+            }
           }
           c[t] = params[t];
           this.update();
@@ -213,6 +297,7 @@ export class DbServiceService {
           for (let propName of params[t]) delete c.properties[propName]
         }
       }
+      this.change.next(true);
     }
   }
 
@@ -224,12 +309,20 @@ export class DbServiceService {
       for (let attr in params) {
         if (this.supportedAttributes.includes(attr)) {
           p[attr] = params[attr]
-        } else if (attr == 'name') {
+        } else if (attr == 'name' && params.name != propName) {
           c.properties[params.name] = p;
           delete c.properties[propName];
-          // refactor
+          // done refactor
+          let elements = this.cy.elements();
+          for (let e of elements) {
+            if (e.data('_class') == className && e.data(propName)) {
+              e.data(params.name, e.data(propName))
+              e.removeData(propName)
+            }
+          }
         }
       }
+      this.change.next(true);
     }
   }
 
@@ -240,8 +333,18 @@ export class DbServiceService {
     let cl = this.classes.find(c => c.name == name)
     let index = this.classes.indexOf(cl)
     if (index >= 0) {
-      this.classes.splice(index, 1);
+      let names = this.getClassWithDescendants(name).map(c => c.name);
+      let descendantsSelector = '[_class = "'+names.join('"], [_class = "')+'"]';
+      let eles = this.cy.$(descendantsSelector);
+      eles.data('_class', cl.superClass);
+
+      for (let name of names) {
+        this.classes.splice(index, 1)
+        cl = this.classes.find(c => c.name == name)
+        index = this.classes.indexOf(cl)
+      }
       this.update();
-    }
+      this.change.next(true);
+    } else throw `Failed class removal: class ${name} doesn't exist`
   }
 }

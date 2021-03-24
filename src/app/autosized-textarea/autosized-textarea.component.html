@@ -1,0 +1,22 @@
+<!-- Реализация материалами<textarea matInput
+    cdkTextareaAutosize
+    #autosize="cdkTextareaAutosize"
+    cdkAutosizeMinRows="1"
+    cdkAutosizeMaxRows="5"
+    
+    [value]="value"
+    class="masked_input"
+    placeholder="{{placeholder}}"
+    (input)="inputListener($event)"
+    (change)="changeListener($event)"
+></textarea>-->
+<textarea
+    autosize
+    [minRows]="1"
+    [maxRows]="5"
+
+    [value]="value"
+    [class.masked_input]="isMasked"
+    placeholder="{{placeholder}}"
+    [autofocus]="autofocus"
+></textarea>

@@ -14,6 +14,7 @@
     font-weight: bold;
     font-size: 10pt;
     font-family: monospace;
+    overflow-wrap: break-word;
 }
 
 .tree_branch:hover {
@@ -39,4 +40,13 @@
 .hor_spacer {
     display: inline-block;
     width: 20px;
+}
+
+.invalid_input {
+    background: rgba(255, 0, 0, 0.2);
+}
+
+#class_name_textfield {
+    display: inline-block;
+    width: calc(100% - 20px);
 }

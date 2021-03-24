@@ -9,3 +9,42 @@
     border: 1px solid black;
     border-collapse: collapse;
 }
+
+.free {
+    font-style: italic;
+}
+
+.class_defined {
+    font-weight: bold;
+}
+
+table {
+    border-collapse: collapse;
+    border-radius: 3px;
+    margin: 5px auto;
+    width: 95%;
+}
+
+td {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 5px 15px;
+    width: min(auto, 70%);
+    overflow: auto;
+    vertical-align: middle;
+}
+
+td:first-child {
+    text-align: right;
+}
+
+.field_name {
+    width: 35%;
+}
+
+.field_value {
+    width: 65%;
+}
+
+.full_width {
+    width: calc(100% - 20px);
+}

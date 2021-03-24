@@ -27,15 +27,16 @@ export class AppOpenFileButtonBigComponent implements OnInit {
   openClickListener() {
     const remote = this._electronService.remote;
     //console.log('lastdir:', this._lastDirectoryService.value);
-    remote.dialog
-      .showSaveDialog(remote.getCurrentWindow(), {
+    remote.dialog.showSaveDialog(remote.getCurrentWindow(), {
         title: 'Сохранить как',
+        filters: [
+          { name: 'Graphytica projects (.gph)', extensions: ['gph'] },
+          { name: 'All files', extensions: ['*'] }
+        ],
         defaultPath: this._lastDirectoryService.value || remote.app.getPath('documents') || remote.app.getPath('home') || ".",
       })
       .then((result) => {
-        if (!result || !result.filePath){
-          console.log('You didn\'t select a file');
-        } else {
+        if (result && result.filePath) {
           let path = result.filePath;
           this._lastDirectoryService.value = path.substring(0, path.lastIndexOf(this.separator));
           this.callback(result.filePath);

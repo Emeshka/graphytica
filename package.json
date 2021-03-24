@@ -37,6 +37,7 @@
     "cytoscape-cola": "^2.4.0",
     "cytoscape-grid-guide": "^2.3.2",
     "legacy-encoding": "^3.0.0",
+    "ngx-autosize": "^1.8.4",
     "ngx-electron": "^2.2.0",
     "orientjs": "^3.0.11",
     "rxjs": "~6.6.0",

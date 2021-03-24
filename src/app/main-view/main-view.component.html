@@ -1,6 +1,6 @@
 <div id="twocolumned">
     <div id="instrument_panel">
-        <div id="instrument_panel_categories">
+        <div>
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'file'" (click)="switchCategory('file')">Файл</div>
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'edit'" (click)="switchCategory('edit')">Правка</div>
             <div class="instrument_panel_category" [class.category_selected]="openedCategory == 'selection'" (click)="switchCategory('selection')">Выделение</div>
@@ -14,15 +14,15 @@
                 <app-tile-button
                   text="Сохранить проект"
                   iconSrc="assets/img/save.png"
-                  [disabled]="saveDisabled"
-                  [callback]="saveProjectListener"
+                  [disabled]="saveDisabled.bind(this)"
+                  [callback]="saveProjectListener.bind(this)"
                 ></app-tile-button>
                 <app-save-file-tile-button
                   text="Сохранить как"
                   iconSrc="assets/img/saveas.png"
                   [selectFolders]="false"
                   [multiselection]="false"
-                  [callback]="saveAsProjectListener"
+                  [callback]="saveAsProjectListener.bind(this)"
                 ></app-save-file-tile-button>
                 <app-tile-button
                   text="Импорт"
@@ -32,13 +32,13 @@
                 <app-tile-button
                   text="Восстановить из сохранения"
                   iconSrc="assets/img/reload.png"
-                  [disabled]="saveDisabled"
-                  [callback]="restoreProjectFromDisk"
+                  [disabled]="saveDisabled.bind(this)"
+                  [callback]="restoreProjectFromDisk.bind(this)"
                 ></app-tile-button>
                 <app-tile-button
                   text="Закрыть проект"
                   iconSrc="assets/img/close.png"
-                  [callback]="closeProjectListener"
+                  [callback]="closeProjectListener.bind(this)"
                 ></app-tile-button>
             </div>
           </div>

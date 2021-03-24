@@ -1,6 +1,5 @@
 import { Component, NgZone, ViewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { NgForm } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { ElectronService } from 'ngx-electron';
 //import { LastDirectoryService } from './last-directory.service'
 import { DbServiceService } from './db-service.service'

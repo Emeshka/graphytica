@@ -1,0 +1,43 @@
+textarea {
+    resize: none;
+    overflow: auto;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    width: 100%;
+    border-radius: 2px;
+    padding: 1pt 0px;
+    box-sizing: border-box;
+}
+
+.masked_input {
+    background-color: rgba(0,0,0,0);
+    width: 100%;
+    border-radius: 0px;
+    border: none;
+    margin: 0px;
+    background-size: 13px;
+    background-repeat: no-repeat;
+    background-position: right;
+}
+
+.masked_input:hover:not(:focus) {
+    background-image: url('../../assets/img/edit.png');
+}
+
+/*.masked_input:focus {
+    padding: 0px 10px;
+    margin: 0px;
+}*/
+
+:host {
+    display: inline-block;
+    width: 100%;
+    font-size: 11pt;
+    line-height: 14pt;
+    vertical-align: bottom;
+}
+
+.invalid_input {
+    background: rgb(255, 174, 174);
+}

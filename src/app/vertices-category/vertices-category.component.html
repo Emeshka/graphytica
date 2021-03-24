@@ -1,12 +1,81 @@
-<div id="tools">
-    <app-icon-button *ngFor="let id of toolList"
-        [title]="toolById[id].title"
-        [iconSrc]="toolById[id].icon"
-        [active]="isActiveTool.bind(this, id)"
-        [callback]="setTool.bind(this, id)"
-    ></app-icon-button>
+<div class="section">
+    <div>Инструменты:</div>
+    <div id="tools">
+        <app-icon-button *ngFor="let id of toolList"
+            [title]="toolById[id].title"
+            [iconSrc]="toolById[id].icon"
+            [active]="isActiveTool.bind(this, id)"
+            [callback]="callSetTool.bind(this, id)"
+        ></app-icon-button>
+    </div>
 </div>
-<div>Настройки:</div>
-<div id="tool_settings">
-    настройки активного инструмента {{activeToolId}}
+
+<div class="section" *ngIf="activeToolId">
+    <div>{{toolById[activeToolId].title}}:</div>
+    <table>
+        <ng-container *ngFor="let s of toolById[activeToolId].settings; let i = index">
+            <tr *ngIf="s.type == 'select'">
+                <td class="field_name">{{s.name}}</td>
+                <td class="field_value">
+                    <select class="full_width" (change)="setSettingsValue(i, $event.target.value)">
+                        <option *ngFor="let o of s.options" [selected]="o.value == s.value"
+                            value="{{o.value}}">{{o.text}}
+                        </option>
+                    </select>
+                </td>
+            </tr>
+        </ng-container>
+    </table>
+</div>
+
+<div class="section" *ngIf="editSelected === true">
+    <div>Свойства выделенных элементов:</div>
+    <div>
+        <table>
+            <tr class="edit_properties_header">
+                <td></td>
+                <td *ngFor="let e of entities">{{e.id}}</td>
+            </tr>
+            <tr *ngFor="let p of classDefinedProps | keyvalue">
+                <td class="class_defined">{{p.key}}</td>
+                <td *ngFor="let e of entities">{{e[p.key]}}</td>
+            </tr>
+            <tr *ngFor="let p of freeProps">
+                <td class="free">{{p.key}}</td>
+                <td *ngFor="let e of entities">{{e[p.key]}}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="section" *ngIf="editSelected === false">
+    <div>
+        <div *ngIf="activeToolId == 'new_vertex'">
+            Создать новую вершину со свойствами:
+        </div>
+        <div *ngIf="activeToolId == 'new_edge'">
+            Создать новое ребро со свойствами:
+        </div>
+    </div>
+    <div>
+        <table>
+            <tr *ngFor="let p of classDefinedProps | keyvalue">
+                <td class="field_name class_defined">{{p.key}}</td>
+                <td class="field_value" *ngIf="p.value.type != 'boolean'">
+                    <input
+                        class="full_width"
+                        [type]="p.value.type == 'string' ? 'text' : 'number'"
+                        [value]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : ''"
+                        (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
+                    >
+                </td>
+                <td *ngIf="p.value.type == 'boolean'">
+                    <switch-true-false
+                        [currentValue]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : false"
+                        (value)="setPropOfNew(p.key, $event, p.value.type)"
+                    ></switch-true-false>
+                </td>
+            </tr>
+        </table>
+    </div>
 </div>

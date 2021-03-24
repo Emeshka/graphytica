@@ -66,7 +66,7 @@ export class MainViewComponent {
     });
   };
    private successListener = (exportedPath) => {
-    console.log('main-view received export-success =', exportedPath);
+    //console.log('main-view received export-success =', exportedPath);
     this._updateRecentService.updateRecentProjects(exportedPath);
     if (exportedPath) {
       this.unsavedChanges = false;
@@ -105,7 +105,7 @@ export class MainViewComponent {
   readonly toolById = {
     select_move_any: {
       icon: 'assets/img/select.png',
-      title: 'Действие мыши: выделение и перемещение элементов',
+      title: 'Выделение и перемещение элементов',
       appliableTo: 'node, edge',//cytoscape selector
       oninit: () => {
         this.cy.autoungrabify(false);
@@ -115,7 +115,7 @@ export class MainViewComponent {
     },
     pan_view: {
       icon: 'assets/img/grab.png',
-      title: 'Действие мыши: перемещение поля зрения',
+      title: 'Перемещение поля зрения',
       oninit: () => {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
@@ -169,20 +169,23 @@ export class MainViewComponent {
     },
     new_vertex: {
       icon: 'assets/img/new_vertex.png',
-      title: 'Увеличить масштаб',
+      title: 'Создать вершину',
       settings: [
         {
           name: 'Класс новой вершины',
           type: 'select',
           options: [],
           optionsConstructor: () => {
-            console.log(this)
+            //console.log(this)
             return this.conn.getClassWithDescendants('V').map(c => {
               return {text: c.name, value: c.name}
             });
           },
-          defaultValue: 'V',
           value: 'V'
+        },
+        {
+          type: 'hidden',
+          value: {}
         }
       ],
       oninit: () => {
@@ -196,11 +199,15 @@ export class MainViewComponent {
           id: this.conn.nextId(),
           _class: cl
         };
-        let props = this.conn.getClass(cl).properties
+        /*let props = this.conn.getClass(cl).properties
         for (let p in props) {
           data[p] = null
+        }*/
+        let propsOfNew: any = this.toolById.new_vertex.settings[1].value
+        for (let p in propsOfNew) {
+          data[p] = propsOfNew[p]
         }
-        console.log('new_vertex: class='+cl+', data:', data)
+        //console.log('new_vertex: class='+cl+', data:', data)
         this.cy.add([
           { group: 'nodes', data: data, position: evt.position }
         ]);
@@ -215,7 +222,7 @@ export class MainViewComponent {
 
   //сейчас можно только один слушатель события одновременно, неважно на какой селектор
   setTool = (toolId) => {
-    console.log(`active tool: ${toolId}`)
+    //console.log(`setTool(): new = ${toolId}, old = ${this.activeToolId}`)
     if (this.activeToolId) {
       this.cy.removeListener('tap');
       this.cy.removeListener('tapdrag');
@@ -224,62 +231,54 @@ export class MainViewComponent {
       this.cy.autoungrabify(true);
       this.cy.userPanningEnabled(true);
     }
-    if (!toolId || this.toolById[toolId]) this.activeToolId = toolId;
+    if (toolId || this.toolById[toolId]) this.activeToolId = toolId;
     else {
       console.log(`Warning: tried to set unknown tool '${toolId}'`);
       return;
     }
 
-    if (toolId) {
-      let tool = this.toolById[toolId];
-      let cursorPath = tool.icon.substring(0, tool.icon.length - 4) + '_cur_30x30.png';
+    let tool = this.toolById[toolId];
+    let cursorPath = tool.icon.substring(0, tool.icon.length - 4) + '_cur_30x30.png';
 
-      if (tool.oninit) tool.oninit();
-      if (tool.appliableTo) {
-        if (tool.onclick) this.cy.on('tap', tool.appliableTo, tool.onclick);
-        if (tool.ondrag) this.cy.on('tapdrag', tool.appliableTo, tool.ondrag);
-        //иконка инструмента
-        this.cy.on('mouseover', tool.appliableTo, () => {
-          this._nz.run(() => {
-            //console.log(`tool mouseover`)
-            this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
-            //console.log(`cursor: ${this.graphField.nativeElement.style.cursor}`);
-            //this.graphField.nativeElement.style.cursor = `pointer`;
-            //this.graphField.nativeElement.style.cursor = `url('${this.toolById[this.activeToolId].icon}')`;
-          })
-        });
-        this.cy.on('mouseout', tool.appliableTo, () => {
-          this._nz.run(() => {
-            //console.log(`tool mouseout`)
-            this.graphField.nativeElement.style.cursor = `default`;
-          })
-        });
-      } else {
-        if (tool.onclick) this.cy.on('tap', tool.onclick);
-        if (tool.ondrag) this.cy.on('tapdrag', tool.ondrag);
-        this.cy.on('mouseover', (evt) => {
-          this._nz.run(() => {
-            if (evt.target != this.cy) return;
-            //console.log(`tool mouseover`)
-            this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
-            //console.log(`cursor: ${this.graphField.nativeElement.style.cursor}`);
-            //this.graphField.nativeElement.style.cursor = `pointer`;
-            //this.graphField.nativeElement.style.cursor = `url('${this.toolById[this.activeToolId].icon}')`;
-          })
-        });
-        this.cy.on('mouseout', (evt) => {
-          this._nz.run(() => {
-            if (evt.target != this.cy) return;
-            //console.log(`tool mouseout`)
-            this.graphField.nativeElement.style.cursor = `default`;
-          })
-        });
-      }
+    if (tool.oninit) tool.oninit();
+    if (tool.appliableTo) {
+      if (tool.onclick) this.cy.on('tap', tool.appliableTo, tool.onclick);
+      if (tool.ondrag) this.cy.on('tapdrag', tool.appliableTo, tool.ondrag);
+      //иконка инструмента
+      this.cy.on('mouseover', tool.appliableTo, () => {
+        this._nz.run(() => {
+          //console.log(`tool mouseover`)
+          this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
+        })
+      });
+      this.cy.on('mouseout', tool.appliableTo, () => {
+        this._nz.run(() => {
+          //console.log(`tool mouseout`)
+          this.graphField.nativeElement.style.cursor = `default`;
+        })
+      });
+    } else {
+      if (tool.onclick) this.cy.on('tap', tool.onclick);
+      if (tool.ondrag) this.cy.on('tapdrag', tool.ondrag);
+      this.cy.on('mouseover', (evt) => {
+        this._nz.run(() => {
+          if (evt.target != this.cy) return;
+          //console.log(`tool mouseover`)
+          this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
+        })
+      });
+      this.cy.on('mouseout', (evt) => {
+        this._nz.run(() => {
+          if (evt.target != this.cy) return;
+          //console.log(`tool mouseout`)
+          this.graphField.nativeElement.style.cursor = `default`;
+        })
+      });
+    }
 
-      if (tool.settings) {
-        for (let s of tool.settings) {
-          if (s.optionsConstructor) s.options = s.optionsConstructor();
-        }
+    if (tool.settings) {
+      for (let s of tool.settings) {
+        if (s.optionsConstructor) s.options = s.optionsConstructor();
       }
     }
   }
@@ -291,7 +290,7 @@ export class MainViewComponent {
   // полный ререндер. вызывать только в случае импорта, sql запроса или другого изменения графа не через cytoscape
   render = (data, zoom, pan) => {
     this.isRendering = true;
-    console.log(data);
+    //console.log(data);
     this.cy = cytoscape({
       container: this.graphField.nativeElement,
       elements: data,
@@ -398,7 +397,6 @@ export class MainViewComponent {
     let selectionUpdate = () => {
       this.selection.pushAll(this.cy.$(':selected'));
       console.log('this.selectionEdges: ', this.selection);
-      console.log();
     }
     this.cy.on('select', selectionUpdate)
     this.cy.on('unselect', selectionUpdate)
@@ -407,9 +405,16 @@ export class MainViewComponent {
       zoom: zoom,
       pan: pan
     });
+
+    let catchChanges = (event) => {
+      //console.log(event)
+      this.unsavedChanges = true
+    }
+    this.cy.on('add remove move select unselect tapselect tapunselect boxselect box lock', catchChanges)
+    this.cy.elements().on('data', catchChanges)
     
     this.conn.cy = this.cy;
-    console.log(this.conn.cy.elements().jsons());
+    //console.log(this.conn.cy.elements().jsons());
     this.isRendering = false;
     this.setTool('pan_view');
   }
@@ -458,9 +463,33 @@ export class MainViewComponent {
   // сохранить как
   saveAsProjectListener = (fp) => {
     this.setWaiting('Сохранение проекта...');
-    let p = fp + '.gph';
-    if (this.fs.existsSync(p)) {
-      if (this.fs.lstatSync(this.importPath).isFile()) {
+    let pathWasAlreadyWithExtension = false;
+    if (fp.endsWith('.gph')) {
+      pathWasAlreadyWithExtension = true;
+    } else {
+      fp = fp + '.gph';
+    }
+    if (this.fs.existsSync(fp)) {
+      if (this.fs.lstatSync(fp).isFile()) {
+        if (pathWasAlreadyWithExtension) {
+          // for Windows 10 at least: asks replace confirmation automatically, no need for second confirmation
+          this.fs.unlink(fp, () => {
+            this.conn.export(fp, null, this.successListener)
+          })
+        } else {
+          const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+            type: 'question',
+            buttons: ['No', 'Yes'],
+            title: 'Файл существует!',
+            message: 'Вы уверены, что хотите заменить существующий файл?'
+          });
+          if (choice === 1) {
+            this.fs.unlink(fp, () => {
+              this.conn.export(fp, null, this.successListener)
+            })
+          }
+        }
+      } else {
         const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
           type: 'question',
           buttons: ['No', 'Yes'],
@@ -468,25 +497,13 @@ export class MainViewComponent {
           message: 'Одноименная папка уже существует по этому пути. Вы уверены, что хотите удалить ее и сохранить файл вместо нее?'
         });
         if (choice === 1) {
-          this.fs.rmdir(p, { recursive: true }, () => {
-            this.conn.export(p, null, this.successListener)
+          this.fs.rmdir(fp, { recursive: true }, () => {
+            this.conn.export(fp, null, this.successListener)
           });
-        }
-      } else {
-        const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
-          type: 'question',
-          buttons: ['No', 'Yes'],
-          title: 'Файл существует!',
-          message: 'Вы уверены, что хотите заменить существующий файл?'
-        });
-        if (choice === 1) {
-          this.fs.unlink(p, () => {
-            this.conn.export(p, null, this.successListener)
-          })
         }
       }
     } else {
-      this.conn.export(p, null, this.successListener)
+      this.conn.export(fp, null, this.successListener)
     }
   }
 
@@ -540,7 +557,7 @@ export class MainViewComponent {
   private onClose = (callback) => {
     this.ipcRenderer.removeListener('has-unsaved-changes', this.hasUnsavedChangesListener);
     this.ipcRenderer.removeListener('quit-request', this.quitRequestListener);
-    this.cy.destroy()
+    this.cy.destroy();
     this.conn.cy = null;
     this.cy = null;
     if (callback) callback();
@@ -553,6 +570,10 @@ export class MainViewComponent {
       if (!renderParams.includes(p)) this[p] = params[p]
     }
     this.setWindowTitle();
+    this.conn.change.subscribe( value => {
+      //console.log(value)
+      this.unsavedChanges = value
+    });
 
     this.ipcRenderer.on('has-unsaved-changes', this.hasUnsavedChangesListener);
     this.ipcRenderer.on('quit-request', this.quitRequestListener);

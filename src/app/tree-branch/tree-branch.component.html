@@ -1,5 +1,5 @@
 
-<div *ngIf="tree && tree.length > 0" [ngStyle]="{marginLeft: (level * 20) + 'px'}">
+<div *ngIf="tree && tree.length > 0" [ngStyle]="{marginLeft: (level ? 20 : 0) + 'px'}">
     <div
         *ngFor="let item of tree"
         [class.vertex_descendant]="item.name == 'V'"
@@ -8,7 +8,7 @@
     >
         <div>
             <div class="class_name" (click)="selectElement(item.name)">{{item.name}}</div>
-            <div class="hor_spacer"></div>
+            <div class="hor_spacer">{{level}}</div>
             <tiny-button *ngIf="!fakeEditableChild"
                 title="Создать подкласс"
                 iconSrc="assets/img/add_subclass.png"
@@ -20,15 +20,26 @@
         </div>
         <tree-branch
             [tree]="item.children"
-            [level]="level + 1"
+            [level]="level + 1" 
             [selectElement]="selectElement"
         ></tree-branch>
         <div *ngIf="fakeEditableChild && item.name == newSubclassSuper"
-            [ngStyle]="{marginLeft: ((level + 1) * 20) + 'px'}"
+            [ngStyle]="{marginLeft: (level ? 20 : 0) + 'px'}"
             class="tree_branch"
         >
-            <input value="" placeholder="Имя класса"
-                (change)="setNewClassName($event.target.value)">
+            <!--
+                [style.margin-left]="((level + 1) * 20) + 'px'"
+                [style.width]="'calc(100% - ' + ((level + 1) * 20 + 9) + 'px)'"-->
+            <div id="class_name_textfield">
+                <autosized-textarea
+                    value=""
+                    placeholder="Имя класса"
+                    (input)="checkClassName($event)"
+                    (change)="setNewClassName($event)"
+                    [autofocus]="true"
+                    [isMasked]="false"
+                ></autosized-textarea>
+            </div>
             <tiny-button
                 title="Не создавать"
                 iconSrc="assets/img/close.png"
