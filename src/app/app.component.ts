@@ -128,6 +128,7 @@ export class AppComponent {
     if (this.appView != value) {
       if (value == 'main_view') {
         this._electronService.ipcRenderer.send('full-size', '');
+        console.log('Sent full-size');
       }
       if (value == 'start_view') {
         this.touchedFilepath = false;

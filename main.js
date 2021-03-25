@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, screen } = require('electron')
 const url = require("url");
 const fs = require("fs");
 const path = require("path");
@@ -111,6 +111,10 @@ locker.lock().then(() => {
 
 		if (!win) {
 			let initialWidth = 800, initialHeight = 600
+			let {width, height} = screen.getPrimaryDisplay().size
+			let x = Math.floor((width - initialWidth)/2)
+			let y = Math.floor((height - initialHeight)/2)
+
 			win = new BrowserWindow({
 				webPreferences: {
 					enableRemoteModule: true,
@@ -118,18 +122,38 @@ locker.lock().then(() => {
 				},
 				width: initialWidth,
 				height: initialHeight,
-				resizable: false,
+				//resizable: false,
 				backgroundColor: '#ffffff',
 				icon: path.join(__dirname, 'dist/favicon.png')
 			})
+			win.setResizable(false)
 
 			ipcMain.on('fixed-size', (event, arg) => {
-				win.unmaximize();
-				win.setSize(initialWidth,initialHeight)
+				console.log('Received fixed-size poisition '+x+' '+y)
+				if (process.platform == 'linux') {
+					win.setResizable(true)
+					win.unmaximize();
+					win.setSize(initialWidth,initialHeight);
+					win.setPosition(x,y)
+					win.setResizable(false)
+				} else if (process.platform == 'win32') {
+					win.unmaximize();
+					win.setSize(initialWidth,initialHeight);
+				}
+				console.log('Executed fixed-size')
 			})
 
 			ipcMain.on('full-size', (event, arg) => {
-				win.maximize()
+				console.log('Received full-size')
+				if (process.platform == 'linux') {
+					win.setResizable(true)
+					win.setSize(width,height)
+					win.maximize()
+					win.setResizable(false)
+				} else if (process.platform == 'win32') {
+					win.maximize()
+				}
+				console.log('Executed full-size '+width+' '+height)
 			})
 		
 			ipcMain.on('has-unsaved-changes', (event, hasUnsaved) => {

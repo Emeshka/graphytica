@@ -115,3 +115,6 @@ splashscreen/splash.obj
 splashscreen/splash.exe
 splashscreen/splash_log.txt
 splash_log.txt
+
+# VSCode settings
+.vscode/
