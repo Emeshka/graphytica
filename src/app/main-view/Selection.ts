@@ -10,14 +10,12 @@ export class OSelection {
     };
   
     raiseEvent(event) {
-        console.log(this)
       this._handlers[event.type].forEach(function(h) {
         h.call(this, event);
       });
     }
   
     defineIndexProperty(index) {
-        console.log(this)
       if (!(index in this)) {
         Object.defineProperty(this, index, {
           configurable: true,
@@ -38,7 +36,6 @@ export class OSelection {
     }
   
     addEventListener(eventName, handler): void {
-        console.log(this)
       eventName = ("" + eventName).toLowerCase();
       if (!(eventName in this._handlers)) throw new Error("Invalid event name.");
       if (typeof handler !== "function") throw new Error("Invalid handler.");
@@ -46,7 +43,6 @@ export class OSelection {
     }
   
     removeEventListener(eventName, handler): void {
-        console.log(this)
       eventName = ("" + eventName).toLowerCase();
       if (!(eventName in this._handlers)) throw new Error("Invalid event name.");
       if (typeof handler !== "function") throw new Error("Invalid handler.");
@@ -59,29 +55,26 @@ export class OSelection {
       }
     }
   
-    push(): number {
-        console.log(this)
+    push(...args): number {
       var index;
-      for (var i = 0, ln = arguments.length; i < ln; i++) {
-        if (!this._array.includes(arguments[i])) {
-            index = this._array.length;
-            this._array.push(arguments[i]);
-            this.defineIndexProperty(index);
-            this.raiseEvent({
-            type: "itemadded",
-            index: index,
-            item: arguments[i]
-            });
+      for (var i = 0, ln = args.length; i < ln; i++) {
+        if (!this._array.includes(args[i])) {
+          index = this._array.length;
+          this._array.push(args[i]);
+          this.defineIndexProperty(index);
+          this.raiseEvent({
+          type: "itemadded",
+          index: index,
+          item: args[i]
+          });
         }
       }
       return this._array.length;
     }
   
     pop(): any {
-        console.log(this)
       if (this._array.length > -1) {
-        var index = this._array.length - 1,
-          item = this._array.pop();
+        var index = this._array.length - 1, item = this._array.pop();
         delete this[index];
         this.raiseEvent({
           type: "itemremoved",
@@ -92,17 +85,16 @@ export class OSelection {
       }
     }
   
-    unshift(): number {
-        console.log(this)
-      for (var i = 0, ln = arguments.length; i < ln; i++) {
-        if (!this._array.includes(arguments[i])) {
-            this._array.splice(i, 0, arguments[i]);
-            this.defineIndexProperty(this._array.length - 1);
-            this.raiseEvent({
-                type: "itemadded",
-                index: i,
-                item: arguments[i]
-            });
+    unshift(...args): number {
+      for (var i = 0, ln = args.length; i < ln; i++) {
+        if (!this._array.includes(args[i])) {
+          this._array.splice(i, 0, args[i]);
+          this.defineIndexProperty(this._array.length - 1);
+          this.raiseEvent({
+            type: "itemadded",
+            index: i,
+            item: args[i]
+          });
         }
       }
       for (; i < this._array.length; i++) {
@@ -116,7 +108,6 @@ export class OSelection {
     }
   
     shift(): any {
-        console.log(this)
       if (this._array.length > -1) {
         var item = this._array.shift();
         delete this[this._array.length];
@@ -129,8 +120,7 @@ export class OSelection {
       }
     }
   
-    splice(index, howMany /*, element1, element2, ... */ ): any[] {
-        console.log(this)
+    splice(index, howMany, ...args /*, element1, element2, ... */ ): any[] {
       var removed = [], item, pos;
   
       index = index == null ? 0 : index < 0 ? this._array.length + index : index;
@@ -148,16 +138,16 @@ export class OSelection {
         });
       }
   
-      for (var i = 2, ln = arguments.length; i < ln; i++) {
-        if (!this._array.includes(arguments[i])) {
-            this._array.splice(index, 0, arguments[i]);
-            this.defineIndexProperty(this._array.length - 1);
-            this.raiseEvent({
+      for (var i = 0, ln = args.length; i < ln; i++) {
+        if (!this._array.includes(args[i])) {
+          this._array.splice(index, 0, args[i]);
+          this.defineIndexProperty(this._array.length - 1);
+          this.raiseEvent({
             type: "itemadded",
             index: index,
-            item: arguments[i]
-            });
-            index++;
+            item: args[i]
+          });
+          index++;
         }
       }
   
@@ -165,12 +155,10 @@ export class OSelection {
     }
   
     get length() {
-      console.log(this)
       return this._array.length;
     }
   
     set length(value) {
-      console.log(this)
       var n = Number(value);
       var length = this._array.length;
       if (n % 1 === 0 && n >= 0) {        
@@ -186,42 +174,38 @@ export class OSelection {
     }
 
     toString() {
-        console.log('OSelection.toString():', this)
-        return this._array.toString();
+      let str = this._array.toString();
+      console.log('OSelection.toString():', str)
+      return str
     }
   
     /* Новые методы */
 
     private isIterable(collection) {
-        if (collection == null || typeof(collection) == 'string') {
-            return false
-        }
-        return typeof collection[Symbol.iterator] === 'function';
+      if (collection == null || typeof(collection) == 'string') {
+        return false
+      }
+      return typeof collection[Symbol.iterator] === 'function';
     }
 
     pushAll(collection) {
-        if (this.isIterable(collection)) {
-          this.push.apply(this, collection);
-        } else {
-            throw new Error("Invalid argument for pushAll(): not iterable.");
-        }
+      if (this.isIterable(collection)) {
+        this.push.apply(this, collection);
+      } else {
+        throw new Error("Invalid argument for pushAll(): not iterable.");
+      }
     }
 
     getArray() {
       return this._array.map((x) => x);
     }
 
-    /*select = () => {};
-    unselect = () => {};
-
-    setMethods(select, unselect) {
-      this.select = select;
-      this.unselect = unselect;
-    }*/
+    remove(item) {
+      let index = this._array.indexOf(item)
+      if (index >= 0) this.splice(index, 1)
+    }
 
     constructor(items) {
-      console.log('OSelection constructor:', this)
-
       /*Object.getOwnPropertyNames(Array.prototype).forEach(function(name) {
         if (!(name in this)) {
           Object.defineProperty(this, name, {

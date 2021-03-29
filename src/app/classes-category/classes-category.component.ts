@@ -148,7 +148,10 @@ export class ClassesCategoryComponent implements OnInit {
 
   isFieldNameColliding(propName, className) {
     let allProps = this.conn.getAllProps(className)
-    return propName in allProps
+    if (propName in allProps) return true;
+    let descendantsProps = this.conn.getClassWithDescendants(className).map(c => c.properties);
+    descendantsProps = [].concat.apply([], descendantsProps);
+    return propName in descendantsProps;
   }
 
   isFieldNameInvalid(propName) {

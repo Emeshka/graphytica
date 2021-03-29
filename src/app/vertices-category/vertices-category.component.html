@@ -13,36 +13,58 @@
 <div class="section" *ngIf="activeToolId">
     <div>{{toolById[activeToolId].title}}:</div>
     <table>
-        <ng-container *ngFor="let s of toolById[activeToolId].settings; let i = index">
-            <tr *ngIf="s.type == 'select'">
-                <td class="field_name">{{s.name}}</td>
-                <td class="field_value">
-                    <select class="full_width" (change)="setSettingsValue(i, $event.target.value)">
-                        <option *ngFor="let o of s.options" [selected]="o.value == s.value"
-                            value="{{o.value}}">{{o.text}}
-                        </option>
-                    </select>
-                </td>
-            </tr>
+        <ng-container *ngIf="toolById[activeToolId].settings">
+            <ng-container *ngFor="let s of toolById[activeToolId].settings | keyvalue: settingsOrderComparator">
+                <tr *ngIf="s.value.type == 'select'">
+                    <td class="field_name">{{s.value.order}}. {{s.value.name}}</td>
+                    <td class="field_value">
+                        <select class="full_width" (change)="setSettingsValue(s.key, $event.target.value)">
+                            <option *ngFor="let o of s.value.options" [selected]="o.value == s.value.value"
+                                value="{{o.value}}">{{o.text}}
+                            </option>
+                        </select>
+                    </td>
+                </tr>
+            </ng-container>
         </ng-container>
+        <div *ngIf="!toolById[activeToolId].settings" class="inline_info">
+            У этого инструмента нет настроек.
+        </div>
     </table>
 </div>
 
 <div class="section" *ngIf="editSelected === true">
-    <div>Свойства выделенных элементов:</div>
+    <div>Редактировать свойства выделенных элементов:</div>
     <div>
-        <table>
+        <div *ngIf="!entities || entities.length == 0" class="inline_info">
+            Выделение пусто.
+        </div>
+        <table *ngIf="entities && entities.length > 0">
             <tr class="edit_properties_header">
-                <td></td>
+                <td class="field_name">id</td>
                 <td *ngFor="let e of entities">{{e.id}}</td>
             </tr>
             <tr *ngFor="let p of classDefinedProps | keyvalue">
-                <td class="class_defined">{{p.key}}</td>
+                <td class="field_value class_defined">{{p.key}}</td>
                 <td *ngFor="let e of entities">{{e[p.key]}}</td>
             </tr>
+            <tr *ngIf="(classDefinedProps | json) == '{}'">
+                <td colspan="2">
+                    <div class="inline_info">
+                        В классе {{commonClass}} не задано полей.
+                    </div>
+                </td>
+            </tr>
             <tr *ngFor="let p of freeProps">
-                <td class="free">{{p.key}}</td>
-                <td *ngFor="let e of entities">{{e[p.key]}}</td>
+                <td class="field_value free">{{p}}</td>
+                <td *ngFor="let e of entities">{{e[p]}}</td>
+            </tr>
+            <tr *ngIf="freeProps.length == 0">
+                <td colspan="2">
+                    <div class="inline_info">
+                        Нет общих свободных свойств.
+                    </div>
+                </td>
             </tr>
         </table>
     </div>
@@ -61,19 +83,25 @@
         <table>
             <tr *ngFor="let p of classDefinedProps | keyvalue">
                 <td class="field_name class_defined">{{p.key}}</td>
-                <td class="field_value" *ngIf="p.value.type != 'boolean'">
+
+                <td class="field_value" *ngIf="p.value.type == 'number'">
                     <input
-                        class="full_width"
-                        [type]="p.value.type == 'string' ? 'text' : 'number'"
+                        type="number"
                         [value]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : ''"
                         (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
                     >
                 </td>
-                <td *ngIf="p.value.type == 'boolean'">
+                <td class="field_value" *ngIf="p.value.type == 'boolean'">
                     <switch-true-false
                         [currentValue]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : false"
                         (value)="setPropOfNew(p.key, $event, p.value.type)"
                     ></switch-true-false>
+                </td>
+                <td class="field_value" *ngIf="p.value.type == 'string'">
+                    <autosized-textarea
+                        [value]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : ''"
+                        (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
+                    ></autosized-textarea>
                 </td>
             </tr>
         </table>

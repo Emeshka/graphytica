@@ -84,6 +84,7 @@ export class AppComponent {
             dbName: dbName,
             dbLastSavedPath: src,
             data: obj.data,
+            style: obj.style,
             zoom: obj.zoom,
             pan: obj.pan
           }
@@ -128,7 +129,7 @@ export class AppComponent {
     if (this.appView != value) {
       if (value == 'main_view') {
         this._electronService.ipcRenderer.send('full-size', '');
-        console.log('Sent full-size');
+        //console.log('Sent full-size');
       }
       if (value == 'start_view') {
         this.touchedFilepath = false;

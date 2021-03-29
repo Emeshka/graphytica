@@ -23,10 +23,10 @@ export class DbServiceService {
   classesMap = {};
   classesTree = {};
 
-  export(path, data, callback): void {//async
+  export(path, data, callback): void {
     if (!data) {
       if (this.cy) {
-        data = this.cy.elements().jsons();
+        data = this.cy.elements().not(this.cy.$('.edge_bend_point')).jsons();
       } else {
         data = [];
       }
@@ -35,12 +35,12 @@ export class DbServiceService {
     let pan = this.cy ? this.cy.pan() : {x: 100, y: 100};
     let fullData = {
       data: data,
+      style: this.cy ? this.cy.style().json() : '',
       lastId: this.lastId,
       classes: this.classes,
       zoom: zoom,
       pan: pan
     }
-    console.log(callback, typeof callback, fullData)
     this.fs.writeFile(path, JSON.stringify(fullData), function(error) {
       if (error) {
         console.log(error);
@@ -55,7 +55,7 @@ export class DbServiceService {
     });
   }
 
-  import(path, merge, callback): void {//async
+  import(path, merge, callback): void {
     try {
       this.fs.readFile(path, 'utf8', (e, fileContent) => {
         if (e) {
@@ -112,6 +112,7 @@ export class DbServiceService {
           this.update();
           if (typeof callback == 'function') callback(path, {
             data: fullData.data,
+            style: fullData.style,
             zoom: fullData.zoom,
             pan: fullData.pan
           })
@@ -143,7 +144,6 @@ export class DbServiceService {
     function getClassMap(arr) {
       let map = {}, arrElem;
       for(let i = 0, len = arr.length; i < len; i++) {
-        //console.log(i)
         arrElem = arr[i];
         map[arrElem.name] = arrElem;
         map[arrElem.name]['children'] = [];
@@ -155,7 +155,6 @@ export class DbServiceService {
       let tree = [], mappedElem;
 
       for (let id in map) {
-        //console.log(id)
         if (map.hasOwnProperty(id)) {
           mappedElem = map[id];
           if (mappedElem.superClass) {
@@ -271,7 +270,6 @@ export class DbServiceService {
   alterClass(className, params) {
     if (!className || !params) throw `Invalid alterClass() call: className=${className}, params=${params}`
     else {
-      console.log('alterClass():', className, params)
       let c = this.classesMap[className]
       for (let t in params) {
         let changeName = (t == 'name' && params.name != className)
@@ -326,7 +324,7 @@ export class DbServiceService {
     }
   }
 
-  removeClass(name) {//remove specified only. subclasses remain
+  removeClass(name) {
     if (name == 'V' || name == 'E') {
       throw `Failed class removal: class ${name} cannot be removed`
     }

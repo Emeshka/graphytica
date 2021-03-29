@@ -1,4 +1,5 @@
 import { Component, OnInit, Input, OnDestroy, SimpleChanges } from '@angular/core';
+import { KeyValue } from '@angular/common';
 import { DbServiceService } from '../db-service.service';
 
 @Component({
@@ -18,11 +19,12 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
   @Input() toolById;
   @Input() activeToolId: string;
 
-  toolList = ['new_vertex'];
+  toolList = ['new_vertex', 'new_edge'];
 
   editSelected = null;
 
   entities = null;
+  areEdges = false;
   classDefinedProps = null;
   commonClass = '';
   freeProps = null;
@@ -30,23 +32,27 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
   propsOfNew = null;
 
   selectionListener = null;
+  
+  settingsOrderComparator = (a: KeyValue<string,any>, b: KeyValue<string,any>): number => {
+    return a.value.order - b.value.order;
+  }
 
   switchEditSelected(toolId) {
     if (toolId == 'new_vertex' || toolId == 'new_edge') {
-      this.commonClass = this.toolById[toolId].settings[0].value;
+      this.commonClass = this.toolById[toolId].settings['selectClass'].value;
       this.classDefinedProps = this.conn.getAllProps(this.commonClass);
       this.editSelected = false;
-      this.propsOfNew = this.toolById[toolId].settings[1].value
+      this.propsOfNew = this.toolById[toolId].settings['newProps'].value
       if (!this.propsOfNew) {
         this.propsOfNew = {};
         for (let p in this.classDefinedProps) {
           this.propsOfNew[p] = '';
         }
-        this.toolById[toolId].settings[1].value = this.propsOfNew;
+        this.toolById[toolId].settings['newProps'].value = this.propsOfNew;
       }
       this.freeProps = {};
     } else {
-      this.selectionListener();
+      if (this.selectionListener) this.selectionListener();
       this.editSelected = true;
       //this.propsOfNew = {};
     }
@@ -54,18 +60,20 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
   }
 
   callSetTool(toolId) {
-    this.setTool(toolId)/*this.switchEditSelected.bind(this, toolId)*/
-
-    /*console.log(this.activeToolId, this.isActiveTool('new_vertex'), this.editSelected,
-      this.toolById[this.activeToolId].title, this.toolById[this.activeToolId].settings)*/
+    this.setTool(toolId)
   }
 
-  setSettingsValue(i, value) {
-    if ((this.activeToolId == 'new_vertex' || this.activeToolId == 'new_edge') && i == 0) {
+  setSettingsValue(key, value) {
+    if ((this.activeToolId == 'new_vertex' || this.activeToolId == 'new_edge') && key == 'selectClass') {
       this.commonClass = value;
       this.classDefinedProps = this.conn.getAllProps(value);
+      this.propsOfNew = {};
+      for (let p in this.classDefinedProps) {
+        this.propsOfNew[p] = '';
+      }
+      this.toolById[this.activeToolId].settings['newProps'].value = this.propsOfNew;
     }
-    this.toolById[this.activeToolId].settings[i].value = value
+    this.toolById[this.activeToolId].settings[key].value = value
   }
 
   setPropOfNew(key, value, checkType) {
@@ -96,6 +104,7 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
       let arr = this.selection.getArray();
       let commonClass = '';
       let freeCommonProps = [];
+      let areEdges = true;
       // if elements in selection share common class, we can show their fields
       for (let e of arr) {
         let className = e.data('_class');
@@ -110,11 +119,15 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
           }
         }
 
-        let data = Object.keys(e.data()) // array
-        let eClassDefined = Object.keys(this.conn.getAllProps(className)) // array
-        let eFreeProps = [] // array
+        let data = Object.keys(e.data())
+        let eClassDefined = Object.keys(this.conn.getAllProps(className))
+        let meta = ['_class', 'id']
+        if (e.isEdge()) meta.push('target', 'source');
+        else areEdges = false;
+        let eFreeProps = []
+
         for (let d of data) {
-          if (d != '_class' && d != 'id' && !eClassDefined.includes(d)) {
+          if (!meta.includes(d) && !eClassDefined.includes(d)) {
             eFreeProps.push(d)
           }
         }
@@ -134,6 +147,7 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
       this.commonClass = commonClass;
       this.freeProps = freeCommonProps.length > 0 ? freeCommonProps : [];
       this.entities = arr.length > 0 ? arr.map(e => e.data()) : [];
+      this.areEdges = areEdges;
       console.log('vertices-category.selectionListener():', this.entities, this.classDefinedProps, this.freeProps)
     }
     this.selectionListener = f.bind(this)

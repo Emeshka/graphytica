@@ -48,3 +48,11 @@ td:first-child {
 .full_width {
     width: calc(100% - 20px);
 }
+
+.inline_info {
+    display: inline-block;
+    width: 100%;
+    padding: 5px 0px;
+    text-align: center;
+    font-style: italic;
+}

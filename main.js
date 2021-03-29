@@ -129,7 +129,7 @@ locker.lock().then(() => {
 			win.setResizable(false)
 
 			ipcMain.on('fixed-size', (event, arg) => {
-				console.log('Received fixed-size poisition '+x+' '+y)
+				//console.log('Received fixed-size poisition '+x+' '+y)
 				if (process.platform == 'linux') {
 					win.setResizable(true)
 					win.unmaximize();
@@ -140,11 +140,11 @@ locker.lock().then(() => {
 					win.unmaximize();
 					win.setSize(initialWidth,initialHeight);
 				}
-				console.log('Executed fixed-size')
+				//console.log('Executed fixed-size')
 			})
 
 			ipcMain.on('full-size', (event, arg) => {
-				console.log('Received full-size')
+				//console.log('Received full-size')
 				if (process.platform == 'linux') {
 					win.setResizable(true)
 					win.setSize(width,height)
@@ -153,7 +153,7 @@ locker.lock().then(() => {
 				} else if (process.platform == 'win32') {
 					win.maximize()
 				}
-				console.log('Executed full-size '+width+' '+height)
+				//console.log('Executed full-size '+width+' '+height)
 			})
 		
 			ipcMain.on('has-unsaved-changes', (event, hasUnsaved) => {

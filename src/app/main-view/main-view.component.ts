@@ -66,7 +66,6 @@ export class MainViewComponent {
     });
   };
    private successListener = (exportedPath) => {
-    //console.log('main-view received export-success =', exportedPath);
     this._updateRecentService.updateRecentProjects(exportedPath);
     if (exportedPath) {
       this.unsavedChanges = false;
@@ -106,7 +105,7 @@ export class MainViewComponent {
     select_move_any: {
       icon: 'assets/img/select.png',
       title: 'Выделение и перемещение элементов',
-      appliableTo: 'node, edge',//cytoscape selector
+      appliableTo: 'node, edge',
       oninit: () => {
         this.cy.autoungrabify(false);
         this.cy.autounselectify(false);
@@ -170,48 +169,114 @@ export class MainViewComponent {
     new_vertex: {
       icon: 'assets/img/new_vertex.png',
       title: 'Создать вершину',
-      settings: [
-        {
+      settings: {
+        selectClass: {
           name: 'Класс новой вершины',
+          order: 1,
           type: 'select',
           options: [],
           optionsConstructor: () => {
-            //console.log(this)
             return this.conn.getClassWithDescendants('V').map(c => {
               return {text: c.name, value: c.name}
             });
           },
           value: 'V'
         },
-        {
+        newProps: {
           type: 'hidden',
           value: {}
         }
-      ],
+      },
       oninit: () => {
         this.cy.autoungrabify(true);
         this.cy.autounselectify(true);
         this.cy.userPanningEnabled(true);
       },
       onclick: (evt) => {
-        let cl = this.toolById.new_vertex.settings[0].value
+        let cl = this.toolById.new_vertex.settings['selectClass'].value
         let data = {
           id: this.conn.nextId(),
           _class: cl
         };
-        /*let props = this.conn.getClass(cl).properties
-        for (let p in props) {
-          data[p] = null
-        }*/
-        let propsOfNew: any = this.toolById.new_vertex.settings[1].value
+        let propsOfNew: any = this.toolById.new_vertex.settings['newProps'].value
         for (let p in propsOfNew) {
           data[p] = propsOfNew[p]
         }
-        //console.log('new_vertex: class='+cl+', data:', data)
         this.cy.add([
           { group: 'nodes', data: data, position: evt.position }
         ]);
-        this.unsavedChanges = true;
+      }
+    },
+    new_edge: {
+      icon: 'assets/img/new_edge.png',
+      title: 'Создать ребро',
+      appliableTo: 'node',
+      settings: {
+        selectClass: {
+          name: 'Класс нового ребра',
+          order: 1,
+          type: 'select',
+          options: [],
+          optionsConstructor: () => {
+            return this.conn.getClassWithDescendants('E').map(c => {
+              return {text: c.name, value: c.name}
+            });
+          },
+          value: 'E'
+        },
+        newProps: {
+          type: 'hidden',
+          value: {}
+        },
+        moved: {
+          type: 'hidden',
+          value: false
+        },
+        source: {
+          type: 'hidden',
+          value: null
+        }
+      },
+      oninit: () => {
+        this.cy.autoungrabify(true);
+        this.cy.autounselectify(true);
+        this.cy.userPanningEnabled(true);
+      },
+      onmousedown: (evt) => {
+        console.log('new edge mousedown', evt.target)
+        if (evt.target && evt.target != this.cy && evt.target.isNode()) {
+          this.toolById.new_edge.settings['source'].value = evt.target;
+        }
+      },
+      onmousemove: (evt) => {
+        if (this.toolById.new_edge.settings['source'].value) {
+          console.log('new edge mousemove')
+          this.toolById.new_edge.settings['moved'].value = true;
+        }
+      },
+      onmouseup: (evt) => {
+        console.log('new edge mouseup', evt.target)
+        let moved = this.toolById.new_edge.settings['moved'].value;
+        let source = this.toolById.new_edge.settings['source'].value;
+        if (evt.target && evt.target != this.cy && evt.target.isNode() && source && moved) {
+          console.log('create edge')
+          let cl = this.toolById.new_edge.settings['selectClass'].value
+          let data = {
+            id: this.conn.nextId(),
+            _class: cl,
+            source: source.data('id'),
+            target: evt.target.data('id')
+          };
+          let propsOfNew: any = this.toolById.new_edge.settings['newProps'].value
+          for (let p in propsOfNew) {
+            data[p] = propsOfNew[p]
+          }
+          this.cy.add([
+            { group: 'edges', data: data }
+          ]);
+        }
+        this.toolById.new_edge.settings['moved'].value = false;
+        this.toolById.new_edge.settings['source'].value = null;
       }
     }
   };
@@ -226,6 +291,8 @@ export class MainViewComponent {
     if (this.activeToolId) {
       this.cy.removeListener('tap');
       this.cy.removeListener('tapdrag');
+      this.cy.removeListener('tapstart');
+      this.cy.removeListener('tapend');
       this.cy.removeListener('mouseover');
       this.cy.removeListener('mouseout');
       this.cy.autoungrabify(true);
@@ -241,44 +308,60 @@ export class MainViewComponent {
     let cursorPath = tool.icon.substring(0, tool.icon.length - 4) + '_cur_30x30.png';
 
     if (tool.oninit) tool.oninit();
+    let funByEvent = {
+      tap: tool.onclick,
+      tapdrag: tool.onmousemove,
+      tapstart: tool.onmousedown,
+      tapend: tool.onmouseup,
+      mouseover: (evt) => {
+        this._nz.run(() => {
+          if (!tool.appliableTo && evt.target != this.cy) return;
+          this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
+        })
+      },
+      mouseout: (evt) => {
+        this._nz.run(() => {
+          if (!tool.appliableTo && evt.target != this.cy) return;
+          this.graphField.nativeElement.style.cursor = `default`;
+        })
+      }
+    }
+    for (let event in funByEvent) {
+      if (funByEvent[event]) {
+        this.cy.on(event,
+          tool.appliableTo ? tool.appliableTo : funByEvent[event],
+          tool.appliableTo ? funByEvent[event] : undefined
+        )
+      }
+    }
+/*
     if (tool.appliableTo) {
       if (tool.onclick) this.cy.on('tap', tool.appliableTo, tool.onclick);
       if (tool.ondrag) this.cy.on('tapdrag', tool.appliableTo, tool.ondrag);
       //иконка инструмента
-      this.cy.on('mouseover', tool.appliableTo, () => {
-        this._nz.run(() => {
-          //console.log(`tool mouseover`)
-          this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
-        })
-      });
-      this.cy.on('mouseout', tool.appliableTo, () => {
-        this._nz.run(() => {
-          //console.log(`tool mouseout`)
-          this.graphField.nativeElement.style.cursor = `default`;
-        })
-      });
+      this.cy.on('mouseover', tool.appliableTo, );
+      this.cy.on('mouseout', tool.appliableTo, );
     } else {
       if (tool.onclick) this.cy.on('tap', tool.onclick);
       if (tool.ondrag) this.cy.on('tapdrag', tool.ondrag);
       this.cy.on('mouseover', (evt) => {
         this._nz.run(() => {
           if (evt.target != this.cy) return;
-          //console.log(`tool mouseover`)
           this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
         })
       });
       this.cy.on('mouseout', (evt) => {
         this._nz.run(() => {
           if (evt.target != this.cy) return;
-          //console.log(`tool mouseout`)
           this.graphField.nativeElement.style.cursor = `default`;
         })
       });
     }
-
+*/
     if (tool.settings) {
-      for (let s of tool.settings) {
-        if (s.optionsConstructor) s.options = s.optionsConstructor();
+      for (let s in tool.settings) {
+        let obj = tool.settings[s]
+        if (obj.optionsConstructor) obj.options = obj.optionsConstructor();
       }
     }
   }
@@ -288,40 +371,53 @@ export class MainViewComponent {
   }
 
   // полный ререндер. вызывать только в случае импорта, sql запроса или другого изменения графа не через cytoscape
-  render = (data, zoom, pan) => {
+  render = (data, style, zoom, pan) => {
     this.isRendering = true;
-    //console.log(data);
-    this.cy = cytoscape({
-      container: this.graphField.nativeElement,
-      elements: data,
-      layout: {
-        name: 'preset',
-        fit: true
-      },
-      style: [
+    if (!style) {
+      style = [
+        {
+          selector: 'core',
+          style: {
+            'active-bg-size': 0
+          }
+        },
         {
           selector: 'node',
           style: {
             'background-color': '#ffaa33',
             'label': 'data(id)'
           }
-        }, {
+        },
+        {
           selector: 'edge',
           style: {
             'width': 3,
+            'label': 'data(id)',
             'line-color': '#000000',
             'target-arrow-color': '#000000',
             'target-arrow-shape': 'triangle',
-            'curve-style': 'bezier'
+            'curve-style': 'unbundled-bezier',
+            'control-point-distances': '50 -50',
+            'control-point-weights': '0.2 0.6'
+          }
+        },
+        {
+          selector: '.edge_bend_point',
+          style: {
+            'label': '',
+            'shape': 'square',
+            'width': 10,
+            'height': 10,
+            'background-color': '#ffdddd',
+            'border-width': 1,
+            'border-style': 'solid',
+            'border-color': 'grey'
           }
         },
         {
           selector: ':selected',
-          css: {
-            'background-color': '#228c15',//'#ff6333',
-            /*'border-width': '1px',
-            'border-style': 'solid',
-            'border-color': '#ddddff',*/
+          style: {
+            'background-color': '#228c15',
             'line-color': '#0000aa',
             'target-arrow-color': '#0000aa',
             'source-arrow-color': '#0000aa'
@@ -329,74 +425,136 @@ export class MainViewComponent {
         },
         {
           selector: '.cy_hidden',
-          css: {
-            'opacity': '0'
+          style: {
+            'opacity': '0.1'
           }
         },
         {
           selector: '.cy_edit_hidden',
-          css: {
+          style: {
             'opacity': '0.25'
           }
         }
-      ],
+      ]
+    }
+    console.log('style:', style)
+    this.cy = cytoscape({
+      container: this.graphField.nativeElement,
+      elements: data,
+      layout: {
+        name: 'preset',
+        fit: true
+      },
+      style: style,
       userZoomingEnabled: false,
       userPanningEnabled: true,
       autoungrabify: true,
       autounselectify: true
-    });
-    this.cy.gridGuide({
-      // On/Off Modules
-      /* From the following four snap options, at most one should be true at a given time */
-      snapToGridOnRelease: false, // Snap to grid on release
-      snapToGridDuringDrag: false, // Snap to grid during drag
-      snapToAlignmentLocationOnRelease: false, // Snap to alignment location on release
-      snapToAlignmentLocationDuringDrag: false, // Snap to alignment location during drag
-
-      distributionGuidelines: false, // Distribution guidelines
-      geometricGuideline: false, // Geometric guidelines
-      initPosAlignment: false, // Guideline to initial mouse position
-      centerToEdgeAlignment: false, // Center to edge alignment
-      resize: false, // Adjust node sizes to cell sizes
-      parentPadding: false, // Adjust parent sizes to cell sizes by padding
-      drawGrid: true, // Draw grid background
-  
-      // General
-      gridSpacing: 20, // Distance between the lines of the grid.
-      snapToGridCenter: true, // Snaps nodes to center of gridlines. When false, snaps to gridlines themselves. Note that either snapToGridOnRelease or snapToGridDuringDrag must be true.
-  
-      // Draw Grid
-      zoomDash: true, // Determines whether the size of the dashes should change when the drawing is zoomed in and out if grid is drawn.
-      panGrid: true, // Determines whether the grid should move then the user moves the graph if grid is drawn.
-      gridStackOrder: -1, // Namely z-index
-      gridColor: '#dedede', // Color of grid lines
-      lineWidth: 1.0, // Width of grid lines
-  
-      // Guidelines
-      guidelinesStackOrder: 4, // z-index of guidelines
-      guidelinesTolerance: 2.00, // Tolerance distance for rendered positions of nodes' interaction.
-      guidelinesStyle: { // Set ctx properties of line. Properties are here:
-          strokeStyle: "#8b7d6b", // color of geometric guidelines
-          geometricGuidelineRange: 400, // range of geometric guidelines
-          range: 100, // max range of distribution guidelines
-          minDistRange: 10, // min range for distribution guidelines
-          distGuidelineOffset: 10, // shift amount of distribution guidelines
-          horizontalDistColor: "#ff0000", // color of horizontal distribution alignment
-          verticalDistColor: "#00ff00", // color of vertical distribution alignment
-          initPosAlignmentColor: "#0000ff", // color of alignment to initial mouse location
-          lineDash: [0, 0], // line style of geometric guidelines
-          horizontalDistLine: [0, 0], // line style of horizontal distribution guidelines
-          verticalDistLine: [0, 0], // line style of vertical distribution guidelines
-          initPosAlignmentLine: [0, 0], // line style of alignment to initial mouse position
-      },
-  
-      // Parent Padding
-      parentSpacing: -1 // -1 to set paddings of parents to gridSpacing
     })
-    // cy.(un)select => Selection obj change
-    let selectionUpdate = () => {
-      this.selection.pushAll(this.cy.$(':selected'));
-      console.log('this.selectionEdges: ', this.selection);
+    this.cy.gridGuide({
+      snapToGridOnRelease: false,
+      snapToGridDuringDrag: false,
+      snapToAlignmentLocationOnRelease: false,
+      snapToAlignmentLocationDuringDrag: false,
+      panGrid: true
+    })
+
+    this.selection.pushAll(this.cy.$(':selected'));
+    let checkEdgeCurveEdit = () => {
+      let sel = this.selection.getArray()
+      let listeners = {
+        tapstart: {},
+        tapend: []
+      };
+      if (sel.length == 1 && sel[0].isEdge() && this.activeToolId == 'select_move_any') {
+        let e = sel[0]
+        function findDistance(A, B) {
+          return Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2))
+        }
+        function findAngle(A,B,C) {
+          let atanA = Math.atan2(A.x - B.x, A.y - B.y);
+          let atanC = Math.atan2(C.x - B.x, C.y - B.y);
+          let diff = atanC - atanA;
+          if (diff > Math.PI) diff -= 2*Math.PI;
+          else if (diff < -Math.PI) diff += 2*Math.PI;
+          return diff
+        }
+        let bendCoordinates = e.controlPoints()
+        let bendDistances = e.style('control-point-distances')
+        if (!bendDistances) bendDistances = [];
+        else bendDistances = bendDistances.split(' ');
+        let bendWeights = e.style('control-point-weights')
+        if (!bendWeights) bendWeights = [];
+        else bendWeights = bendWeights.split(' ');
+
+        for (let i = 0; i < bendCoordinates.length; i++) {
+          let moveBendPoint = false
+          let tapStart = (evt) => {
+            moveBendPoint = true
+          }
+          let tapEnd = (evt) => {
+            if (moveBendPoint) {
+              let angle = findAngle(evt.target.position(), e.source().position(), e.target().position())
+              let AC = findDistance(evt.target.position(), e.source().position())
+              console.log('positions: control:',
+                evt.target.position(),
+                ', edge source:',
+                e.source().position(),
+                ', edge target:',
+                e.target().position(),
+                '; angle=', angle, ', AC=', AC
+              )
+              let d = Math.floor(Math.sin(angle) * AC)
+              let w = Math.cos(angle) * AC / findDistance(e.source().position(), e.target().position())
+              console.log('new d:', d, '; new w:', w)
+              bendDistances[i] = d
+              bendWeights[i] = w
+              this.cy.style().selector(`[id = '${e.data('id')}']`).style({
+                'control-point-distances': bendDistances.join(' '),
+                'control-point-weights': bendWeights.join(' ')
+              }).update()
+              console.log('control bend point: id:', e.data('id'), '; d:',
+                e.style('control-point-distances'), '; w:', e.style('control-point-weights'))
+            }
+            moveBendPoint = false
+          }
+          let id = 'move-bend-'+i
+          let selector = `[id = '${id}']`
+          this.cy.on('tapstart', selector, tapStart)
+          listeners['tapstart'][selector] = tapStart
+
+          this.cy.on('tapend', tapEnd)
+          listeners['tapend'].push(tapEnd)
+
+          this.cy.add([
+            {
+              group: 'nodes',
+              data: {
+                id: id
+              },
+              classes: ['edge_bend_point'],
+              position: bendCoordinates[i]
+            }
+          ]);
+        }
+      } else {
+        this.cy.remove('.edge_bend_point')
+        for (let selector in listeners.tapstart) {
+          this.cy.removeListener('tapstart', selector, listeners['tapstart'][selector])
+        }
+        for (let listener of listeners.tapend) {
+          this.cy.removeListener('tapend', listener)
+        }
+      }
+    }
+    let selectionUpdate = (event) => {
+      if (event.type == 'select') {
+        this.selection.push(event.target);
+      } else if (event.type == 'unselect' || event.type == 'remove') {
+        this.selection.remove(event.target);
+      }
+      checkEdgeCurveEdit()
+      console.log('this.selection: ', this.selection);
     }
     this.cy.on('select', selectionUpdate)
     this.cy.on('unselect', selectionUpdate)
@@ -407,14 +565,15 @@ export class MainViewComponent {
     });
 
     let catchChanges = (event) => {
-      //console.log(event)
-      this.unsavedChanges = true
+      if (!event.target.hasClass('edge_bend_point')) {
+        this.unsavedChanges = true
+      }
     }
     this.cy.on('add remove move select unselect tapselect tapunselect boxselect box lock', catchChanges)
-    this.cy.elements().on('data', catchChanges)
+    this.cy.on('data', 'node, edge', catchChanges)
+    checkEdgeCurveEdit();
     
     this.conn.cy = this.cy;
-    //console.log(this.conn.cy.elements().jsons());
     this.isRendering = false;
     this.setTool('pan_view');
   }
@@ -445,7 +604,7 @@ export class MainViewComponent {
       this.setWaiting('Восстановление проекта...');
       this.conn.import(this.dbLastSavedPath, false, (src, obj) => {
         this.unsavedChanges = false;
-        this.render(obj.data, obj.zoom, obj.pan);
+        this.render(obj.data, obj.style, obj.zoom, obj.pan);
         this.setWaiting('');
       })
     }
@@ -531,6 +690,7 @@ export class MainViewComponent {
         item.id = newIdMap[item.id]
       })
       this.cy.add(newData)
+      this.cy.style().fromJson().update()
     });
   }
 
@@ -557,9 +717,11 @@ export class MainViewComponent {
   private onClose = (callback) => {
     this.ipcRenderer.removeListener('has-unsaved-changes', this.hasUnsavedChangesListener);
     this.ipcRenderer.removeListener('quit-request', this.quitRequestListener);
-    this.cy.destroy();
-    this.conn.cy = null;
-    this.cy = null;
+    if (this.cy) {
+      this.cy.destroy();
+      this.conn.cy = null;
+      this.cy = null;
+    }
     if (callback) callback();
   }
 
@@ -571,13 +733,12 @@ export class MainViewComponent {
     }
     this.setWindowTitle();
     this.conn.change.subscribe( value => {
-      //console.log(value)
       this.unsavedChanges = value
     });
 
     this.ipcRenderer.on('has-unsaved-changes', this.hasUnsavedChangesListener);
     this.ipcRenderer.on('quit-request', this.quitRequestListener);
 
-    this.render(params.data, params.zoom, params.pan);
+    this.render(params.data, params.style, params.zoom, params.pan);
   }
 }

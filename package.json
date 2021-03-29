@@ -32,7 +32,6 @@
     "@angular/platform-browser": "~10.2.0",
     "@angular/platform-browser-dynamic": "~10.2.0",
     "@angular/router": "~10.2.0",
-    "@types/orientjs": "^3.0.11",
     "cytoscape": "^3.17.0",
     "cytoscape-cola": "^2.4.0",
     "cytoscape-grid-guide": "^2.3.2",
