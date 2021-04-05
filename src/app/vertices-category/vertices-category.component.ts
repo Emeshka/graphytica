@@ -22,13 +22,11 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
   toolList = ['new_vertex', 'new_edge'];
 
   editSelected = null;
-
   entities = null;
   areEdges = false;
   classDefinedProps = null;
   commonClass = '';
   freeProps = null;
-
   propsOfNew = null;
 
   selectionListener = null;
@@ -88,8 +86,15 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
         if (typeof value == 'boolean') this.propsOfNew[key] = value;
       } else if (checkType == 'string') {
         this.propsOfNew[key] = value;
+      } else if (checkType == 'date' || checkType == 'time' || checkType == 'datetime') {
+        this.propsOfNew[key] = value;
+        console.log(this.propsOfNew[key])
       }
     }
+  }
+
+  panToElement(id) {
+    this.conn.cy.center(this.conn.getById(id))
   }
         
   ngOnChanges(changes: SimpleChanges) {
@@ -103,8 +108,9 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
     let f = () => {
       let arr = this.selection.getArray();
       let commonClass = '';
-      let freeCommonProps = [];
+      let freeCommonProps = null;
       let areEdges = true;
+      let areVertices = true;
       // if elements in selection share common class, we can show their fields
       for (let e of arr) {
         let className = e.data('_class');
@@ -121,17 +127,23 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
 
         let data = Object.keys(e.data())
         let eClassDefined = Object.keys(this.conn.getAllProps(className))
-        let meta = ['_class', 'id']
-        if (e.isEdge()) meta.push('target', 'source');
-        else areEdges = false;
+        let meta = ['_class', 'id', 'parent']
+        if (e.isEdge()) {
+          meta.push('target', 'source');
+        }
+        console.log(e.json(), e.isNode(), e.isEdge())
+        areEdges = areEdges && e.isEdge();
+        areVertices = areVertices && e.isNode();
         let eFreeProps = []
 
         for (let d of data) {
           if (!meta.includes(d) && !eClassDefined.includes(d)) {
-            eFreeProps.push(d)
+            if (e.data(d) !== null && e.data(d) !== undefined) {
+              eFreeProps.push(d)
+            }
           }
         }
-        if (freeCommonProps.length > 0) {
+        if (freeCommonProps) {
           let i = 0
           while (i < freeCommonProps.length) {
             let f = freeCommonProps[i]
@@ -145,9 +157,21 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
       }
       this.classDefinedProps = commonClass ? this.conn.getAllProps(commonClass) : {};
       this.commonClass = commonClass;
-      this.freeProps = freeCommonProps.length > 0 ? freeCommonProps : [];
-      this.entities = arr.length > 0 ? arr.map(e => e.data()) : [];
-      this.areEdges = areEdges;
+      this.freeProps = (freeCommonProps && freeCommonProps.length > 0) ? freeCommonProps : [];
+      this.entities = arr.length > 0 ? arr.map(e => {
+        let data = e.data()
+        if (e.isEdge()) {
+          data.source = e.source().data('id')
+          data.target = e.target().data('id')
+        }
+        return data
+      }) : [];
+      if (this.entities.length == 0) {
+        this.areEdges = null
+      } else {
+        this.areEdges = areEdges ? true : (areVertices ? false : null);
+      }
+      console.log(this.areEdges, areVertices, areEdges)
       console.log('vertices-category.selectionListener():', this.entities, this.classDefinedProps, this.freeProps)
     }
     this.selectionListener = f.bind(this)
@@ -156,9 +180,6 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
     this.selection.addEventListener('itemremoved', this.selectionListener)
 
     this.switchEditSelected(this.activeToolId)
-
-    /*console.log('vertices-category.ngOnInit():', this.activeToolId, this.isActiveTool('new_vertex'), this.editSelected,
-      this.toolById[this.activeToolId].title, this.toolById[this.activeToolId].settings)*/
   }
 
   ngOnDestroy(): void {

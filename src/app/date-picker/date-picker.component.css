@@ -1,0 +1,16 @@
+:host {
+    display: inline-block;
+}
+
+input {
+    font-size: 12pt;
+    margin: 0;
+}
+
+.two_digit {
+    width: 30pt;
+}
+
+.four_digit {
+    width: 60pt;
+}

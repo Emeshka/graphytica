@@ -5,18 +5,18 @@ import { Component, OnInit, Input } from '@angular/core';
   templateUrl: './icon-button.component.html',
   styleUrls: ['./icon-button.component.css']
 })
-export class IconButtonComponent implements OnInit {
+export class IconButtonComponent {
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
 
   @Input() title: string;
   @Input() iconSrc: string;
   @Input() active: any = false;
   @Input() callback: () => {};
-  get isActive() {
+
+  afterViewInit = false
+
+  isActive() {
     if (typeof this.active == 'function') return this.active();
     else return !!this.active;
   }

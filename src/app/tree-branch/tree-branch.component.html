@@ -8,7 +8,7 @@
     >
         <div>
             <div class="class_name" (click)="selectElement(item.name)">{{item.name}}</div>
-            <div class="hor_spacer">{{level}}</div>
+            <div class="hor_spacer"></div>
             <tiny-button *ngIf="!fakeEditableChild"
                 title="Создать подкласс"
                 iconSrc="assets/img/add_subclass.png"
@@ -24,13 +24,10 @@
             [selectElement]="selectElement"
         ></tree-branch>
         <div *ngIf="fakeEditableChild && item.name == newSubclassSuper"
-            [ngStyle]="{marginLeft: (level ? 20 : 0) + 'px'}"
+            [ngStyle]="{marginLeft: '20px'}"
             class="tree_branch"
         >
-            <!--
-                [style.margin-left]="((level + 1) * 20) + 'px'"
-                [style.width]="'calc(100% - ' + ((level + 1) * 20 + 9) + 'px)'"-->
-            <div id="class_name_textfield">
+            <div id="class_name_textfield" class="vertical_spacer_el_middle">
                 <autosized-textarea
                     value=""
                     placeholder="Имя класса"
@@ -40,11 +37,14 @@
                     [isMasked]="false"
                 ></autosized-textarea>
             </div>
-            <tiny-button
-                title="Не создавать"
-                iconSrc="assets/img/close.png"
-                [callback]="hideFakeField.bind(this)"
-            ></tiny-button>
+            <div class="vertical_spacer_el_middle">
+                <tiny-button
+                    title="Не создавать"
+                    iconSrc="assets/img/close.png"
+                    [callback]="hideFakeField.bind(this)"
+                ></tiny-button>
+            </div>
+            <div class="vertical_spacer"></div>
         </div>
     </div>
 </div>

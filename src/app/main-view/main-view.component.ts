@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, NgZone } from '@angular/core';
+import { Component, Input, ViewChild, NgZone, OnInit } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
 import { DbServiceService } from '../db-service.service';
 import { UpdateRecentService } from '../update-recent.service';
@@ -15,7 +15,7 @@ gridGuide( cytoscape );
   styleUrls: ['./main-view.component.css']
 })
 
-export class MainViewComponent {
+export class MainViewComponent implements OnInit {
   /* ---------------------------------------------------- private --------------------------------------------------- */
   constructor(
     private _electronService: ElectronService,
@@ -334,40 +334,106 @@ export class MainViewComponent {
         )
       }
     }
-/*
-    if (tool.appliableTo) {
-      if (tool.onclick) this.cy.on('tap', tool.appliableTo, tool.onclick);
-      if (tool.ondrag) this.cy.on('tapdrag', tool.appliableTo, tool.ondrag);
-      //иконка инструмента
-      this.cy.on('mouseover', tool.appliableTo, );
-      this.cy.on('mouseout', tool.appliableTo, );
-    } else {
-      if (tool.onclick) this.cy.on('tap', tool.onclick);
-      if (tool.ondrag) this.cy.on('tapdrag', tool.ondrag);
-      this.cy.on('mouseover', (evt) => {
-        this._nz.run(() => {
-          if (evt.target != this.cy) return;
-          this.graphField.nativeElement.style.cursor = `url('${cursorPath}'), pointer`;
-        })
-      });
-      this.cy.on('mouseout', (evt) => {
-        this._nz.run(() => {
-          if (evt.target != this.cy) return;
-          this.graphField.nativeElement.style.cursor = `default`;
-        })
-      });
-    }
-*/
+
     if (tool.settings) {
       for (let s in tool.settings) {
         let obj = tool.settings[s]
         if (obj.optionsConstructor) obj.options = obj.optionsConstructor();
       }
     }
+    this.checkEdgeCurveEdit()
   }
 
   isActiveTool = (id) => {
     return this.activeToolId == id;
+  }
+  
+  checkEdgeCurveEdit = () => {
+    let sel = this.selection.getArray()
+    let listeners = {
+      tapstart: {},
+      tapend: []
+    };
+    if (sel.length == 1 && sel[0].isEdge() && this.activeToolId == 'select_move_any') {
+      let e = sel[0]
+      function findDistance(A, B) {
+        return Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2))
+      }
+      function findAngle(A,B,C) {
+        let atanA = Math.atan2(A.x - B.x, A.y - B.y);
+        let atanC = Math.atan2(C.x - B.x, C.y - B.y);
+        let diff = atanC - atanA;
+        if (diff > Math.PI) diff -= 2*Math.PI;
+        else if (diff < -Math.PI) diff += 2*Math.PI;
+        return diff
+      }
+      let bendCoordinates = e.controlPoints()
+      let bendDistances = e.style('control-point-distances')
+      if (!bendDistances) bendDistances = [];
+      else bendDistances = bendDistances.split(' ');
+      let bendWeights = e.style('control-point-weights')
+      if (!bendWeights) bendWeights = [];
+      else bendWeights = bendWeights.split(' ');
+
+      for (let i = 0; i < bendCoordinates.length; i++) {
+        let moveBendPoint = false
+        let tapStart = (evt) => {
+          moveBendPoint = true
+        }
+        let tapEnd = (evt) => {
+          if (moveBendPoint) {
+            let angle = findAngle(evt.target.position(), e.source().position(), e.target().position())
+            let AC = findDistance(evt.target.position(), e.source().position())
+            console.log('positions: control:',
+              evt.target.position(),
+              ', edge source:',
+              e.source().position(),
+              ', edge target:',
+              e.target().position(),
+              '; angle=', angle, ', AC=', AC
+            )
+            let d = Math.floor(Math.sin(angle) * AC)
+            let w = Math.cos(angle) * AC / findDistance(e.source().position(), e.target().position())
+            console.log('new d:', d, '; new w:', w)
+            bendDistances[i] = d
+            bendWeights[i] = w
+            this.cy.style().selector(`[id = '${e.data('id')}']`).style({
+              'control-point-distances': bendDistances.join(' '),
+              'control-point-weights': bendWeights.join(' ')
+            }).update()
+            console.log('control bend point: id:', e.data('id'), '; d:',
+              e.style('control-point-distances'), '; w:', e.style('control-point-weights'))
+          }
+          moveBendPoint = false
+        }
+        let id = 'move-bend-'+i
+        let selector = `[id = '${id}']`
+        this.cy.on('tapstart', selector, tapStart)
+        listeners['tapstart'][selector] = tapStart
+
+        this.cy.on('tapend', tapEnd)
+        listeners['tapend'].push(tapEnd)
+
+        this.cy.add([
+          {
+            group: 'nodes',
+            data: {
+              id: id
+            },
+            classes: ['edge_bend_point'],
+            position: bendCoordinates[i]
+          }
+        ]);
+      }
+    } else {
+      this.cy.remove('.edge_bend_point')
+      for (let selector in listeners.tapstart) {
+        this.cy.removeListener('tapstart', selector, listeners['tapstart'][selector])
+      }
+      for (let listener of listeners.tapend) {
+        this.cy.removeListener('tapend', listener)
+      }
+    }
   }
 
   // полный ререндер. вызывать только в случае импорта, sql запроса или другого изменения графа не через cytoscape
@@ -408,7 +474,7 @@ export class MainViewComponent {
             'shape': 'square',
             'width': 10,
             'height': 10,
-            'background-color': '#ffdddd',
+            'background-color': '#ddddff',
             'border-width': 1,
             'border-style': 'solid',
             'border-color': 'grey'
@@ -437,7 +503,7 @@ export class MainViewComponent {
         }
       ]
     }
-    console.log('style:', style)
+    //console.log('style:', style)
     this.cy = cytoscape({
       container: this.graphField.nativeElement,
       elements: data,
@@ -460,100 +526,13 @@ export class MainViewComponent {
     })
 
     this.selection.pushAll(this.cy.$(':selected'));
-    let checkEdgeCurveEdit = () => {
-      let sel = this.selection.getArray()
-      let listeners = {
-        tapstart: {},
-        tapend: []
-      };
-      if (sel.length == 1 && sel[0].isEdge() && this.activeToolId == 'select_move_any') {
-        let e = sel[0]
-        function findDistance(A, B) {
-          return Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2))
-        }
-        function findAngle(A,B,C) {
-          let atanA = Math.atan2(A.x - B.x, A.y - B.y);
-          let atanC = Math.atan2(C.x - B.x, C.y - B.y);
-          let diff = atanC - atanA;
-          if (diff > Math.PI) diff -= 2*Math.PI;
-          else if (diff < -Math.PI) diff += 2*Math.PI;
-          return diff
-        }
-        let bendCoordinates = e.controlPoints()
-        let bendDistances = e.style('control-point-distances')
-        if (!bendDistances) bendDistances = [];
-        else bendDistances = bendDistances.split(' ');
-        let bendWeights = e.style('control-point-weights')
-        if (!bendWeights) bendWeights = [];
-        else bendWeights = bendWeights.split(' ');
-
-        for (let i = 0; i < bendCoordinates.length; i++) {
-          let moveBendPoint = false
-          let tapStart = (evt) => {
-            moveBendPoint = true
-          }
-          let tapEnd = (evt) => {
-            if (moveBendPoint) {
-              let angle = findAngle(evt.target.position(), e.source().position(), e.target().position())
-              let AC = findDistance(evt.target.position(), e.source().position())
-              console.log('positions: control:',
-                evt.target.position(),
-                ', edge source:',
-                e.source().position(),
-                ', edge target:',
-                e.target().position(),
-                '; angle=', angle, ', AC=', AC
-              )
-              let d = Math.floor(Math.sin(angle) * AC)
-              let w = Math.cos(angle) * AC / findDistance(e.source().position(), e.target().position())
-              console.log('new d:', d, '; new w:', w)
-              bendDistances[i] = d
-              bendWeights[i] = w
-              this.cy.style().selector(`[id = '${e.data('id')}']`).style({
-                'control-point-distances': bendDistances.join(' '),
-                'control-point-weights': bendWeights.join(' ')
-              }).update()
-              console.log('control bend point: id:', e.data('id'), '; d:',
-                e.style('control-point-distances'), '; w:', e.style('control-point-weights'))
-            }
-            moveBendPoint = false
-          }
-          let id = 'move-bend-'+i
-          let selector = `[id = '${id}']`
-          this.cy.on('tapstart', selector, tapStart)
-          listeners['tapstart'][selector] = tapStart
-
-          this.cy.on('tapend', tapEnd)
-          listeners['tapend'].push(tapEnd)
-
-          this.cy.add([
-            {
-              group: 'nodes',
-              data: {
-                id: id
-              },
-              classes: ['edge_bend_point'],
-              position: bendCoordinates[i]
-            }
-          ]);
-        }
-      } else {
-        this.cy.remove('.edge_bend_point')
-        for (let selector in listeners.tapstart) {
-          this.cy.removeListener('tapstart', selector, listeners['tapstart'][selector])
-        }
-        for (let listener of listeners.tapend) {
-          this.cy.removeListener('tapend', listener)
-        }
-      }
-    }
     let selectionUpdate = (event) => {
       if (event.type == 'select') {
         this.selection.push(event.target);
       } else if (event.type == 'unselect' || event.type == 'remove') {
         this.selection.remove(event.target);
       }
-      checkEdgeCurveEdit()
+      this.checkEdgeCurveEdit()
       console.log('this.selection: ', this.selection);
     }
     this.cy.on('select', selectionUpdate)
@@ -571,11 +550,10 @@ export class MainViewComponent {
     }
     this.cy.on('add remove move select unselect tapselect tapunselect boxselect box lock', catchChanges)
     this.cy.on('data', 'node, edge', catchChanges)
-    checkEdgeCurveEdit();
+    this.checkEdgeCurveEdit();
     
     this.conn.cy = this.cy;
     this.isRendering = false;
-    this.setTool('pan_view');
   }
 
   // переключатель категорий на панели инструментов
@@ -725,12 +703,13 @@ export class MainViewComponent {
     if (callback) callback();
   }
 
-  ngAfterViewInit(): void {
+  ngOnInit(): void {
     let params = this.getParams();
     let renderParams = ['data', 'zoom', 'pan'];
     for (let p in params) {
       if (!renderParams.includes(p)) this[p] = params[p]
     }
+    this.activeToolId = 'pan_view';//prevent expression changed after checked in icon-button
     this.setWindowTitle();
     this.conn.change.subscribe( value => {
       this.unsavedChanges = value
@@ -738,7 +717,11 @@ export class MainViewComponent {
 
     this.ipcRenderer.on('has-unsaved-changes', this.hasUnsavedChangesListener);
     this.ipcRenderer.on('quit-request', this.quitRequestListener);
+  }
 
+  ngAfterViewInit(): void {
+    let params = this.getParams();
     this.render(params.data, params.style, params.zoom, params.pan);
+    this.setTool('pan_view');
   }
 }

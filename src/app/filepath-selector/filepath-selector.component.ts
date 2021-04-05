@@ -43,7 +43,7 @@ export class FilepathSelectorComponent implements OnInit {
       })
       .then((result) => {
         if (result && result.filePaths && result.filePaths[0]) {
-          console.log('result.filePaths:', result.filePaths)
+          //console.log('result.filePaths:', result.filePaths)
           let path = result.filePaths[0];
           this._lastDirectoryService.value = path.substring(0, path.lastIndexOf(this.separator));
           this.callback(result.filePaths);

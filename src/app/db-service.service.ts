@@ -16,7 +16,7 @@ export class DbServiceService {
   cy = null;
   change: BehaviorSubject<boolean> = new BehaviorSubject(false);
   readonly supportedAttributes = ['type'];
-  readonly supportedTypes = ['string', 'number', 'boolean'];
+  readonly supportedTypes = ['string', 'number', 'boolean', 'date'/*, 'time', 'datetime'*/];
 
   private lastId = -1;
   classes = [];
@@ -33,15 +33,25 @@ export class DbServiceService {
     }
     let zoom = this.cy ? this.cy.zoom() : 1;
     let pan = this.cy ? this.cy.pan() : {x: 100, y: 100};
+    let cloneClasses = this.classes.map(c => {
+      return {
+        name: c.name,
+        superClass: c.superClass,
+        properties: c.properties
+      }
+    })
+    console.log(cloneClasses)
     let fullData = {
       data: data,
-      style: this.cy ? this.cy.style().json() : '',
+      style: this.cy ? this.cy.style().json() : [],
       lastId: this.lastId,
-      classes: this.classes,
+      classes: cloneClasses,
       zoom: zoom,
       pan: pan
     }
-    this.fs.writeFile(path, JSON.stringify(fullData), function(error) {
+    this.fs.writeFile(path, JSON.stringify(fullData, (key, value) => {
+      if (value !== null) return value;
+    }), function(error) {
       if (error) {
         console.log(error);
         if (typeof callback == 'function') callback(null, null)
@@ -67,10 +77,7 @@ export class DbServiceService {
         if (!fullData || !(fullData.data instanceof Array) || !(typeof fullData.lastId == 'number')) {
           if (typeof callback == 'function') callback(null, null)
         } else {
-          if (!merge) {
-            this.lastId = fullData.lastId
-            this.classes = fullData.classes
-          } else {
+          if (merge) {
             for (let c of fullData.classes) {
               if (c.name != 'V' && c.name != 'E') {
                 if (this.classesMap[c.name]) {
@@ -108,8 +115,25 @@ export class DbServiceService {
                 }
               }
             }
+          } else {
+            this.lastId = fullData.lastId
+            this.classes = fullData.classes
           }
           this.update();
+          let dateTypes = ['date', 'time', 'datetime']
+          for (let e of fullData.data) {
+            for (let p in e.data) {
+              let standard = p == 'id' || p == '_class' || p == 'parent'
+              let standardEdges = e.group == 'edges' && (p == 'target' || p == 'source')
+              if (standard || standardEdges || !e.data[p]) continue;
+              //let c = this.classesMap[e.data['_class']]
+              let props = this.getAllProps(e.data['_class']);
+              //console.log(e.data.id, p, props[p])
+              if (props[p] && dateTypes.includes(props[p].type)) {
+                e.data[p] = new Date(e.data[p])
+              }
+            }
+          }
           if (typeof callback == 'function') callback(path, {
             data: fullData.data,
             style: fullData.style,
@@ -128,12 +152,12 @@ export class DbServiceService {
     this.classes = [
       {
         name: 'V',
-        superClass: null,
+        superClass: "",
         properties: {}
       },
       {
         name: 'E',
-        superClass: null,
+        superClass: "",
         properties: {}
       }
     ];
@@ -195,9 +219,19 @@ export class DbServiceService {
     }
   }
 
-  /*getClass(name) {
-    return this.classes.find(c => c.name == name)
-  }*/
+  getAllInstances(className) {
+    let accum = this.getClassWithDescendants(className).map(c => c.name);
+    let descendantsSelector = '[_class = "'+accum.join('"], [_class = "')+'"]';
+    return this.cy.$(descendantsSelector);
+  }
+
+  getDirectInstances(className) {
+    return this.cy.$(`[_class = '${className}']`)
+  }
+
+  getById(id) {
+    return this.cy.$(`[id = '${id}']`)
+  }
 
   getClassWithDescendants(className) {
     let map = this.classesMap;
@@ -221,12 +255,6 @@ export class DbServiceService {
     if (!c1) throw `Invalid getClosestCommonAncestor() call: first class ${className1} doesn't exist`
     if (!c2) throw `Invalid getClosestCommonAncestor() call: second class ${className2} doesn't exist`
 
-    /*let classAncestors1 = [className1];
-    let superName1 = c1.superClass;
-    while (superName1) {
-      classAncestors1.push(superName1)
-      superName1 = this.classesMap[superName1].superClass;
-    }*/
     let classAncestors1 = [className1].concat(this.getSuperStack(className1).map(c => c.name))
 
     let superName2 = className2;
@@ -280,17 +308,24 @@ export class DbServiceService {
           }
           if (t == 'name' && this.cy) {
             // done refactor
-            let elements = this.cy.elements();
+            /*let elements = this.cy.elements();
             for (let e of elements) {
               if (e.data('_class') == className) {
                 e.data('_class', params.name)
               }
-            }
+            }*/
+            let elements = this.getDirectInstances(className)
+            elements.data('_class', params.name)
           }
           c[t] = params[t];
           this.update();
         } else if (t == 'addProperties') {
-          for (let propName in params[t]) c.properties[propName] = params[t][propName]
+          let elements = this.getAllInstances(className)
+          for (let propName in params[t]) {
+            c.properties[propName] = params[t][propName]
+            c.properties[propName].owner = className
+            elements.data(propName, '')
+          }
         } else if (t == 'removeProperties') {
           for (let propName of params[t]) delete c.properties[propName]
         }
@@ -311,11 +346,19 @@ export class DbServiceService {
           c.properties[params.name] = p;
           delete c.properties[propName];
           // done refactor
-          let elements = this.cy.elements();
+          /*let elements = this.cy.elements();
           for (let e of elements) {
             if (e.data('_class') == className && e.data(propName)) {
               e.data(params.name, e.data(propName))
               e.removeData(propName)
+            }
+          }*/
+          let elements = this.getAllInstances(className)
+          for (let el of elements) {
+            let value = el.data(propName)
+            if (value) {
+              el.data(params.name, value)
+              el.removeData(propName)
             }
           }
         }
@@ -332,9 +375,7 @@ export class DbServiceService {
     let index = this.classes.indexOf(cl)
     if (index >= 0) {
       let names = this.getClassWithDescendants(name).map(c => c.name);
-      let descendantsSelector = '[_class = "'+names.join('"], [_class = "')+'"]';
-      let eles = this.cy.$(descendantsSelector);
-      eles.data('_class', cl.superClass);
+      this.getAllInstances(name).data('_class', cl.superClass);
 
       for (let name of names) {
         this.classes.splice(index, 1)

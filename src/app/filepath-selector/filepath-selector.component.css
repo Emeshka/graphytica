@@ -1,12 +1,19 @@
 :host {
     display: block;
-    width: 100%;
+    width: 98%;
     padding: 0px 20px;
 }
 
+.input_container {
+    width: 98%;
+}
+
 .filepath_selector_textfield {/*100% - host padding - button width - button margin - button border - self border*/
-    width: calc(100% - 40px - 50px - 10px - 2px - 2px);
+    width: calc(100% - 40px - 40px - 10px - 2px - 2px);
     vertical-align: middle;
+    height: 30px;
+    line-height: 30px;
+    padding: 0px 5px
 }
 
 .filepath_selector_button {

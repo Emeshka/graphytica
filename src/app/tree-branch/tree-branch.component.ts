@@ -11,7 +11,7 @@ export class TreeBranchComponent implements OnInit {
 
   constructor(
     private conn: DbServiceService,
-    private _electronService: ElectronService,
+    private _electronService: ElectronService
   ) { }
   @Input() tree: any = null;
   @Input() level: number = 0;

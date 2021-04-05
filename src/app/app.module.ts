@@ -1,9 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { NgForm } from '@angular/forms';
-//import {TextFieldModule} from '@angular/cdk/text-field';
-//import { MatFormFieldModule } from '@angular/material/form-field';
+import { FormsModule, NgForm } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -25,7 +22,8 @@ import { SelectionCategoryComponent } from './selection-category/selection-categ
 import { TinyButtonComponent } from './tiny-button/tiny-button.component';
 import { ViewCategoryComponent } from './view-category/view-category.component';
 import { SwitchTrueFalseComponent } from './switch-true-false/switch-true-false.component';
-import { AutosizedTextareaComponent } from './autosized-textarea/autosized-textarea.component'
+import { AutosizedTextareaComponent } from './autosized-textarea/autosized-textarea.component';
+import { DatePickerComponent } from './date-picker/date-picker.component'
 
 @NgModule({
   declarations: [
@@ -44,15 +42,14 @@ import { AutosizedTextareaComponent } from './autosized-textarea/autosized-texta
     TinyButtonComponent,
     ViewCategoryComponent,
     SwitchTrueFalseComponent,
-    AutosizedTextareaComponent
+    AutosizedTextareaComponent,
+    DatePickerComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     NgxElectronModule,
-    //TextFieldModule,
     AutosizeModule,
-    //MatFormFieldModule,
     FormsModule
   ],
   providers: [LastDirectoryService],

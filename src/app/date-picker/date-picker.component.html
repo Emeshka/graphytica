@@ -1,0 +1,41 @@
+<input #day_field
+    type="number"
+    min="1"
+    [attr.max]="daysInMonth()"
+    placeholder="--"
+    class="two_digit vertical_spacer_el_middle"
+    (input)="onInput('day', $event)"
+    (keydown)="onKeyDown('day', $event)"
+    (change)="onChange()"
+>
+.
+<input #month_field
+    type="number"
+    min="1"
+    max="12"
+    placeholder="--"
+    class="two_digit vertical_spacer_el_middle"
+    (input)="onInput('month', $event)"
+    (keydown)="onKeyDown('month', $event)"
+    (change)="onChange()"
+>
+.
+<input #year_field
+    type="number"
+    min="1901"
+    max="2200"
+    placeholder="----"
+    class="four_digit vertical_spacer_el_middle"
+    (input)="onInput('year', $event)"
+    (keydown)="onKeyDown('year', $event)"
+    (change)="onChange()"
+>
+<div class="vertical_spacer_el_middle">
+    <tiny-button
+        *ngIf="currentValue"
+        title="Сбросить значение"
+        iconSrc="assets/img/close.png"
+        [callback]="emitValue.bind(this, null)"
+    ></tiny-button>
+</div>
+<div class="vertical_spacer"></div>

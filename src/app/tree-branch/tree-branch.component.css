@@ -47,6 +47,5 @@
 }
 
 #class_name_textfield {
-    display: inline-block;
     width: calc(100% - 20px);
 }

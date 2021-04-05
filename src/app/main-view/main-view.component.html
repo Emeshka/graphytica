@@ -72,7 +72,7 @@
     <app-icon-button *ngFor="let id of controlsToolList"
         [title]="toolById[id].title"
         [iconSrc]="toolById[id].icon"
-        [active]="isActiveTool.bind(this, id)"
+        [active]="isActiveTool(id)"
         [callback]="setTool.bind(this, id)"
     ></app-icon-button>
   </div>

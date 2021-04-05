@@ -1,10 +1,19 @@
-<label class="switch">
-    <input type="checkbox" [checked]="currentValue" (change)="setValue($event.target.checked)">
-    <span [class.unset]="currentValue === ''" class="slider round"></span>
+<label class="switch vertical_spacer_el_middle">
+    <input
+        type="checkbox"
+        (change)="setValue($event.target.checked)">
+    <span
+        [class.unset]="currentValue === ''"
+        [class.checked]="currentValue === true"
+        class="slider round"
+    ></span>
 </label>
-<tiny-button
-    *ngIf="currentValue !== ''"
-    title="Сбросить значение"
-    iconSrc="assets/img/close.png"
-    [callback]="setValue.bind(this, '')"
-></tiny-button>
+<div class="vertical_spacer_el_middle">
+    <tiny-button
+        *ngIf="currentValue !== ''"
+        title="Сбросить значение"
+        iconSrc="assets/img/close.png"
+        [callback]="setValue.bind(this, '')"
+    ></tiny-button>
+</div>
+<div class="vertical_spacer"></div>

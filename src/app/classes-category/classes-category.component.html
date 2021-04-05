@@ -63,6 +63,11 @@
                     <option *ngFor="let type of conn.supportedTypes" [selected]="type == cl.value.type" 
                         value="{{type}}">{{type}}</option>
                 </select>
+                <tiny-button
+                    title="Удалить поле"
+                    iconSrc="assets/img/close.png"
+                    [callback]="removeField.bind(this, cl.key)"
+                ></tiny-button>
             </td>
         </tr>
 

@@ -9,16 +9,19 @@ export class SwitchTrueFalseComponent implements OnInit {
 
   constructor() { }
 
-  @Input() currentValue: any = '';
+  @Input() firstValue: any = '';
+  currentValue: any = '';
   @Output() value = new EventEmitter<any>();
 
   setValue(value) {
-    console.log('switch-true-false emit', value)
     this.currentValue = value;
+    console.log('switch-true-false: set current value', this.currentValue)
     this.value.emit(value);
   }
 
   ngOnInit(): void {
+    if (this.firstValue === false || this.firstValue === true) this.currentValue = this.firstValue;
+    else this.currentValue = '';
   }
 
 }

@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, ViewChildren } from '@angular/core';
 import { DbServiceService } from '../db-service.service';
-//import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { ElectronService } from 'ngx-electron';
+import { threadId } from 'worker_threads';
 
 @Component({
   selector: 'app-classes-category',
@@ -9,16 +10,13 @@ import { DbServiceService } from '../db-service.service';
 })
 export class ClassesCategoryComponent implements OnInit {
   constructor(
-    public conn: DbServiceService
+    public conn: DbServiceService,
+    private _electronService: ElectronService
   ) { }
   @Input() selection: any = [];
-  /*@ViewChildren('vcSuperClass') vcSuperClass;
-  @ViewChildren('vcAlterFieldName') vcAlterFieldName;
-  @Input('cdkTextareaAutosize') enabled: boolean
-  @Input('cdkAutosizeMaxRows') maxRows: number
-  @Input('cdkAutosizeMinRows') minRows: number*/
 
   public selectedClass = '';
+  public isEdge = false;
 
   countEntities = -1;
   countDirectEntities = -1;
@@ -37,19 +35,13 @@ export class ClassesCategoryComponent implements OnInit {
       this.selectedFieldList = this.conn.classesMap[value].properties;
       this.selectedDirectChildren = this.conn.classesMap[value].children.map(cl => cl.name);
 
-      this.countDirectEntities = this.conn.cy.$(`[_class = '${value}']`).length;
-      let accum = this.conn.getClassWithDescendants(value).map(c => c.name);
-      this.selectedDescendantsSelector = '[_class = "'+accum.join('"], [_class = "')+'"]';
-      this.countEntities = this.conn.cy.$(this.selectedDescendantsSelector).length;
+      this.countDirectEntities = this.conn.getDirectInstances(value).length;
+      this.countEntities = this.conn.getAllInstances(value).length;
+      let superStack = this.conn.getSuperStack(value).map(c => c.name);
+      this.isEdge = superStack.includes('E')
     }
 
     this.selectedClass = value || '';
-
-    /*this.textareaFitContent(this.vcSuperClass.toArray()[0].nativeElement);
-    let alterFields = this.vcAlterFieldName.toArray();
-    for (let f of alterFields) {
-      this.textareaFitContent(f.nativeElement)
-    }*/
   }
 
   addToSelection = () => {
@@ -144,6 +136,25 @@ export class ClassesCategoryComponent implements OnInit {
     this.clearModifiedInvalid(event)
   }
 
+  removeField(propName) {
+    const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+      type: 'question',
+      buttons: ['Cancel', 'Удалить также и данные (необратимо)', 'Только убрать из модели'],
+      title: 'Удалить поле',
+      message: `Экземпляры класса "${this.selectedClass}" могут иметь установленные значения
+в поле "${propName}". Вы хотите только убрать поле "${propName}" из модели класса
+(данные останутся и станут свободными свойствами) или также безвозвратно стереть значения поля?`
+    });
+    console.log(choice);
+    if (choice === 1 || choice === 2) {
+      this.conn.alterClass(this.selectedClass, {removeProperties: [propName]})
+      if (choice === 1) {
+        let classInstances = this.conn.getAllInstances(this.selectedClass);
+        classInstances.removeData(propName);
+      }
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////
 
   isFieldNameColliding(propName, className) {
@@ -154,11 +165,23 @@ export class ClassesCategoryComponent implements OnInit {
     return propName in descendantsProps;
   }
 
+  hasForbidden(propOrClassName) {
+    let forbidden = ['\n', '\t', '\r', '\0']
+    let hasForbidden = forbidden.reduce((accum, current) => {
+      return accum && propOrClassName.indexOf(current) >= 0
+    }, true)
+    return hasForbidden
+  }
+
   isFieldNameInvalid(propName) {
     //console.log(propName)
     propName = this.cutForbidden(this.trim(propName))
+    let hasForbidden = this.hasForbidden(propName)
+    let commonForbidden = propName == 'id' || propName == '_class' || propName == 'parent'
+    let edgesForbidden = this.isEdge && (propName == 'source' || propName == 'target')
+    if (!propName || hasForbidden || commonForbidden || edgesForbidden) return true;
     let colliding = this.isFieldNameColliding(propName, this.selectedClass)
-    return (propName == '' || propName.indexOf('\n') >= 0 || propName.indexOf('\r') >= 0 || colliding)
+    return colliding;
   }
 
   isNewSuperClassInvalid(newSuperClass) {
@@ -182,16 +205,7 @@ export class ClassesCategoryComponent implements OnInit {
     let parent = element.parentElement.parentElement;
     parent.className = parent.className.replace(/\s*invalid_input/g, '');
     parent.className = parent.className.replace(/\s*modified_input/g, '');
-    //console.log('parent css class =', parent.className)
-    //event.resizeToFitContent();
   }
-
-  /*textareaFitContent(element) {
-    element.style.height = "";
-    let sh = element.scrollHeight;
-    element.style.height = (sh + 20) + "px";
-    console.log(element, sh);
-  }*/
 
   trim(string) {
     return string.trim().replace(/\s\s+/g, ' ')

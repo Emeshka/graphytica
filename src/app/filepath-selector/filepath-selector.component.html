@@ -1,4 +1,4 @@
-<div>
+<div class="input_container">
     <input placeholder="Выберите путь..." class="filepath_selector_textfield" [value]="inputValue()" (input)="updatePaths($event.target.value)">
     <div class="filepath_selector_button" (click)="openClickListener()" (keydown)="openEnterListener($event)" tabindex="0"></div>
 </div>

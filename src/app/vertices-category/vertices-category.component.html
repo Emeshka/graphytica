@@ -34,37 +34,54 @@
 </div>
 
 <div class="section" *ngIf="editSelected === true">
-    <div>Редактировать свойства выделенных элементов:</div>
-    <div>
+    <div>Редактировать свойства выделенных 
+        {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}:
+    </div>
+    <div class="big_table">
         <div *ngIf="!entities || entities.length == 0" class="inline_info">
             Выделение пусто.
         </div>
-        <table *ngIf="entities && entities.length > 0">
+        <div *ngIf="entities && entities.length > 0 && !commonClass" class="inline_info">
+            Выделенные элементы не разделяют общий класс.
+        </div>
+        <table *ngIf="entities && entities.length > 0"
+            [class.vertices_table]="areEdges === false"
+            [class.edges_table]="areEdges === true"
+            [class.elements_table]="areEdges === null"
+        >
             <tr class="edit_properties_header">
-                <td class="field_name">id</td>
-                <td *ngFor="let e of entities">{{e.id}}</td>
-            </tr>
-            <tr *ngFor="let p of classDefinedProps | keyvalue">
-                <td class="field_value class_defined">{{p.key}}</td>
-                <td *ngFor="let e of entities">{{e[p.key]}}</td>
-            </tr>
-            <tr *ngIf="(classDefinedProps | json) == '{}'">
-                <td colspan="2">
+                <td class="field_name">
+                    <span *ngIf="commonClass" class="class_name">{{commonClass}}</span>
+                </td>
+                <td class="field_value class_defined" *ngIf="areEdges">Начало</td>
+                <td class="field_value class_defined" *ngIf="areEdges">Конец</td>
+                <td class="field_value class_defined" *ngFor="let p of classDefinedProps | keyvalue">
+                    {{p.key}} <sup class="class_name">{{p.value.owner}}</sup>
+                </td>
+                <td *ngIf="commonClass && (classDefinedProps | json) == '{}'" [attr.rowspan]="entities.length + 1">
                     <div class="inline_info">
                         В классе {{commonClass}} не задано полей.
                     </div>
                 </td>
-            </tr>
-            <tr *ngFor="let p of freeProps">
-                <td class="field_value free">{{p}}</td>
-                <td *ngFor="let e of entities">{{e[p]}}</td>
-            </tr>
-            <tr *ngIf="freeProps.length == 0">
-                <td colspan="2">
+                <td class="field_value free" *ngFor="let p of freeProps">{{p}}</td>
+                <td *ngIf="freeProps.length == 0" [attr.rowspan]="entities.length + 1">
                     <div class="inline_info">
                         Нет общих свободных свойств.
                     </div>
                 </td>
+            </tr>
+            <tr *ngFor="let e of entities">
+                <td class="field_name element_id" (click)="panToElement(e.id)">{{e.id}}</td>
+                <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.source)">
+                    {{e.source}}
+                </td>
+                <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.target)">
+                    {{e.target}}
+                </td>
+                <td class="field_value" *ngFor="let p of classDefinedProps | keyvalue">
+                    {{ e[p.key] }}
+                </td>
+                <td class="field_value" *ngFor="let p of freeProps">{{ e[p] }}</td>
             </tr>
         </table>
     </div>
@@ -79,29 +96,67 @@
             Создать новое ребро со свойствами:
         </div>
     </div>
-    <div>
-        <table>
+    <div class="big_table">
+        <div class="inline_info" *ngIf="(classDefinedProps | json) == '{}'">
+            В классе {{commonClass}} не задано полей.
+        </div>
+        <table *ngIf="propsOfNew">
             <tr *ngFor="let p of classDefinedProps | keyvalue">
                 <td class="field_name class_defined">{{p.key}}</td>
 
                 <td class="field_value" *ngIf="p.value.type == 'number'">
                     <input
                         type="number"
-                        [value]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : ''"
+                        class="full_width"
+                        [value]="propsOfNew[p.key] ? propsOfNew[p.key] : ''"
                         (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
                     >
                 </td>
                 <td class="field_value" *ngIf="p.value.type == 'boolean'">
                     <switch-true-false
-                        [currentValue]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : false"
+                        [currentValue]="propsOfNew[p.key] ? propsOfNew[p.key] : false"
                         (value)="setPropOfNew(p.key, $event, p.value.type)"
                     ></switch-true-false>
                 </td>
                 <td class="field_value" *ngIf="p.value.type == 'string'">
                     <autosized-textarea
-                        [value]="propsOfNew && propsOfNew[p.key] ? propsOfNew[p.key] : ''"
+                        [value]="propsOfNew[p.key] ? propsOfNew[p.key] : ''"
                         (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
                     ></autosized-textarea>
+                </td>
+                <td class="field_value" *ngIf="p.value.type == 'date'">
+                    <date-picker
+                        class="full_width"
+                        [firstValue]="propsOfNew[p.key] ? propsOfNew[p.key] : null"
+                        (value)="setPropOfNew(p.key, $event, p.value.type)"
+                    ></date-picker>
+                    <!--<input
+                        type="date"
+                        max="9999-12-31"
+                        class="full_width"
+                        [value]="propsOfNew[p.key] ? propsOfNew[p.key].toISOString().substring(0, 10) : ''"
+                        (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
+                    >-->
+                </td>
+                <td class="field_value" *ngIf="p.value.type == 'time'">
+                    <!--<input
+                        type="time"
+                        step="0.001"
+                        class="full_width"
+                        [value]="propsOfNew[p.key] ? propsOfNew[p.key].toISOString().substring(11, propsOfNew[p.key].toISOString().length-1) : ''"
+                        (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
+                    >-->
+                </td>
+                <td class="field_value" *ngIf="p.value.type == 'datetime'">
+                    <!--<input
+                        type="datetime-local"
+                        step="0.001"
+                        max="9999-12-31"
+                        class="full_width"
+                        value="{{propsOfNew[p.key] ? propsOfNew[p.key].toISOString().substring(0, propsOfNew[p.key].toISOString().length-1) : ''}}"
+                        (keyup)="setPropOfNew(p.key, $event.target.value, p.value.type)"
+                        (click)="setPropOfNew(p.key, $event.target.value, p.value.type)"
+                    >-->
                 </td>
             </tr>
         </table>
