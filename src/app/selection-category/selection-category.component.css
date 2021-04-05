@@ -1,0 +1,105 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.free {
+    font-style: italic;
+}
+
+.class_defined {
+    font-style: italic;
+    font-weight: bold;
+}
+
+.element_id {
+    /*background-size: 13px;
+    background-repeat: no-repeat;
+    background-position: right;*/
+    cursor: pointer;
+}
+
+.element_id:hover {
+    text-decoration: underline;
+    color: #222222;
+    /*background-image: url('../../assets/img/radar.png');*/
+}
+
+table {
+    border-collapse: collapse;
+    border-radius: 3px;
+    margin: 5px auto;
+    width: 95%;
+}
+
+.edges_table tr:nth-child(odd) {
+    background: #cae7ff;
+}
+
+.edges_table tr:nth-child(even) {
+    background: #eaf4ff;
+}
+
+.vertices_table tr:nth-child(odd) {
+    background: #ffe6c3;
+}
+
+.vertices_table tr:nth-child(even) {
+    background: #fff7ed;
+}
+
+.elements_table tr:nth-child(odd) {
+    background: #e0e0e0;
+}
+
+.elements_table tr:nth-child(even) {
+    background: #f1f1f1;
+}
+
+td {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 5px 15px;
+    width: min(auto, 70%);
+    overflow: auto;
+    vertical-align: middle;
+}
+
+td:first-child {
+    text-align: right;
+}
+
+.field_name {
+    width: 35%;
+}
+
+.field_value {
+    width: 65%;
+}
+
+.full_width {
+    width: calc(100% - 20px);
+}
+
+.inline_info {
+    display: inline-block;
+    width: 100%;
+    padding: 5px 0px;
+    text-align: center;
+    font-style: italic;
+}
+
+.big_table {
+    overflow: auto;
+    width: 100%;
+    max-width: 100%;
+}
+
+.class_name {
+    font-size: 10pt;
+    font-family: monospace;
+    overflow-wrap: anywhere;
+}
+
+sup.class_name {
+    font-size: 6pt;
+}

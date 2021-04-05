@@ -2,6 +2,7 @@ import { Component, Input, ViewChild, NgZone, OnInit } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
 import { DbServiceService } from '../db-service.service';
 import { UpdateRecentService } from '../update-recent.service';
+import { LastDirectoryService } from '../last-directory.service';
 import { OSelection } from './Selection';
 import cytoscape from 'cytoscape';
 import cola from 'cytoscape-cola';
@@ -21,7 +22,9 @@ export class MainViewComponent implements OnInit {
     private _electronService: ElectronService,
     private _updateRecentService: UpdateRecentService,
     private conn: DbServiceService,
-    private _nz: NgZone) { }
+    private _lastDirectoryService: LastDirectoryService,
+    private _nz: NgZone
+  ) { }
 
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
@@ -97,10 +100,10 @@ export class MainViewComponent implements OnInit {
   public selection: OSelection = new OSelection([]);
 
   // инструменты, выделение
-  openedCategory : string = 'file';
+  openedCategory : string = 'selection';
   isRendering : boolean = false;
   //graphClickListener = () => {};//активный инструмент: что делать по клику на cy
-  zoomStep = 0.3;
+  zoomStep = 0.4;
   readonly toolById = {
     select_move_any: {
       icon: 'assets/img/select.png',
@@ -280,7 +283,8 @@ export class MainViewComponent implements OnInit {
       }
     }
   };
-  readonly controlsToolList = ['zoom_out', 'zoom_in', 'zoom_auto', 'select_move_any', 'pan_view'];
+  readonly controlsToolList = Object.keys(this.toolById);
+  /*['zoom_out', 'zoom_in', 'zoom_auto', 'select_move_any', 'pan_view'];*/
   activeToolId = '';
 
   /* ---------------------------------------------------- public functions --------------------------------------------------- */
@@ -298,12 +302,13 @@ export class MainViewComponent implements OnInit {
       this.cy.autoungrabify(true);
       this.cy.userPanningEnabled(true);
     }
-    if (toolId || this.toolById[toolId]) this.activeToolId = toolId;
-    else {
+    if (!this.toolById[toolId]) {
       console.log(`Warning: tried to set unknown tool '${toolId}'`);
       return;
     }
+    let different = this.activeToolId != toolId
 
+    this.activeToolId = toolId;
     let tool = this.toolById[toolId];
     let cursorPath = tool.icon.substring(0, tool.icon.length - 4) + '_cur_30x30.png';
 
@@ -340,6 +345,9 @@ export class MainViewComponent implements OnInit {
         let obj = tool.settings[s]
         if (obj.optionsConstructor) obj.options = obj.optionsConstructor();
       }
+    }
+    if (different && (toolId == 'new_vertex' || toolId == 'new_edge')) {
+      this.openedCategory = 'edit'
     }
     this.checkEdgeCurveEdit()
   }
@@ -597,8 +605,27 @@ export class MainViewComponent implements OnInit {
     return !this.unsavedChanges;
   }
 
+  saveAsProjectListener() {
+    const remote = this._electronService.remote;
+    remote.dialog.showSaveDialog(remote.getCurrentWindow(), {
+        title: 'Сохранить как',
+        filters: [
+          { name: 'Graphytica projects (.gph)', extensions: ['gph'] },
+          { name: 'All files', extensions: ['*'] }
+        ],
+        defaultPath: this._lastDirectoryService.value || remote.app.getPath('documents') || remote.app.getPath('home') || ".",
+      })
+      .then((result) => {
+        if (result && result.filePath) {
+          let path = result.filePath;
+          this._lastDirectoryService.value = path.substring(0, path.lastIndexOf(this.path.sep));
+          this.saveAs(result.filePath);
+        }
+      });
+  }
+
   // сохранить как
-  saveAsProjectListener = (fp) => {
+  saveAs = (fp) => {
     this.setWaiting('Сохранение проекта...');
     let pathWasAlreadyWithExtension = false;
     if (fp.endsWith('.gph')) {

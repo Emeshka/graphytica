@@ -1,15 +1,3 @@
-<div class="section">
-    <div>Инструменты:</div>
-    <div id="tools">
-        <app-icon-button *ngFor="let id of toolList"
-            [title]="toolById[id].title"
-            [iconSrc]="toolById[id].icon"
-            [active]="isActiveTool.bind(this, id)"
-            [callback]="callSetTool.bind(this, id)"
-        ></app-icon-button>
-    </div>
-</div>
-
 <div class="section" *ngIf="activeToolId">
     <div>{{toolById[activeToolId].title}}:</div>
     <table>
@@ -31,60 +19,6 @@
             У этого инструмента нет настроек.
         </div>
     </table>
-</div>
-
-<div class="section" *ngIf="editSelected === true">
-    <div>Редактировать свойства выделенных 
-        {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}:
-    </div>
-    <div class="big_table">
-        <div *ngIf="!entities || entities.length == 0" class="inline_info">
-            Выделение пусто.
-        </div>
-        <div *ngIf="entities && entities.length > 0 && !commonClass" class="inline_info">
-            Выделенные элементы не разделяют общий класс.
-        </div>
-        <table *ngIf="entities && entities.length > 0"
-            [class.vertices_table]="areEdges === false"
-            [class.edges_table]="areEdges === true"
-            [class.elements_table]="areEdges === null"
-        >
-            <tr class="edit_properties_header">
-                <td class="field_name">
-                    <span *ngIf="commonClass" class="class_name">{{commonClass}}</span>
-                </td>
-                <td class="field_value class_defined" *ngIf="areEdges">Начало</td>
-                <td class="field_value class_defined" *ngIf="areEdges">Конец</td>
-                <td class="field_value class_defined" *ngFor="let p of classDefinedProps | keyvalue">
-                    {{p.key}} <sup class="class_name">{{p.value.owner}}</sup>
-                </td>
-                <td *ngIf="commonClass && (classDefinedProps | json) == '{}'" [attr.rowspan]="entities.length + 1">
-                    <div class="inline_info">
-                        В классе {{commonClass}} не задано полей.
-                    </div>
-                </td>
-                <td class="field_value free" *ngFor="let p of freeProps">{{p}}</td>
-                <td *ngIf="freeProps.length == 0" [attr.rowspan]="entities.length + 1">
-                    <div class="inline_info">
-                        Нет общих свободных свойств.
-                    </div>
-                </td>
-            </tr>
-            <tr *ngFor="let e of entities">
-                <td class="field_name element_id" (click)="panToElement(e.id)">{{e.id}}</td>
-                <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.source)">
-                    {{e.source}}
-                </td>
-                <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.target)">
-                    {{e.target}}
-                </td>
-                <td class="field_value" *ngFor="let p of classDefinedProps | keyvalue">
-                    {{ e[p.key] }}
-                </td>
-                <td class="field_value" *ngFor="let p of freeProps">{{ e[p] }}</td>
-            </tr>
-        </table>
-    </div>
 </div>
 
 <div class="section" *ngIf="editSelected === false">

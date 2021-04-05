@@ -5,15 +5,16 @@ import { Component, OnInit, Input } from '@angular/core';
   templateUrl: './tiny-button.component.html',
   styleUrls: ['./tiny-button.component.css']
 })
-export class TinyButtonComponent implements OnInit {
+export class TinyButtonComponent {
 
   constructor() { }
-
-  ngOnInit(): void {
-  }
-
 
   @Input() title: string;
   @Input() iconSrc: string;
   @Input() callback: () => {};
+  @Input() disabled: boolean;
+
+  onclick() {
+    if (typeof this.callback == 'function' && !this.disabled) this.callback();
+  }
 }

@@ -14,9 +14,17 @@
     background-repeat: no-repeat;
     background-size: contain;
     cursor: default;
-    opacity: 0.5;
+    opacity: 0.7;
 }
 
 .tiny_button:hover {
     opacity: 1;
+}
+
+.tiny_button.disabled {
+    opacity: 0.4;
+}
+
+.tiny_button.disabled:hover {
+    opacity: 0.4;
 }
