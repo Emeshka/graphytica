@@ -87,6 +87,7 @@ export class MainViewComponent implements OnInit {
 
   @Input() getParams: any;
   @Input() backToStartView: () => {};
+  @Input() reopenProject: (src) => {};
   @Input() setWaiting: (text) => {};
   @ViewChild('graph_field') graphField;
 
@@ -102,7 +103,11 @@ export class MainViewComponent implements OnInit {
   // инструменты, выделение
   openedCategory : string = 'selection';
   isRendering : boolean = false;
-  //graphClickListener = () => {};//активный инструмент: что делать по клику на cy
+  edgeCurveEditingListeners : any = {
+    id: null,
+    tapstart: {},
+    tapend: []
+  };
   zoomStep = 0.4;
   readonly toolById = {
     select_move_any: {
@@ -358,12 +363,29 @@ export class MainViewComponent implements OnInit {
   
   checkEdgeCurveEdit = () => {
     let sel = this.selection.getArray()
-    let listeners = {
-      tapstart: {},
-      tapend: []
-    };
-    if (sel.length == 1 && sel[0].isEdge() && this.activeToolId == 'select_move_any') {
+    let listeners = this.edgeCurveEditingListeners;
+
+    if (sel.length != 1 || !sel[0].isEdge() || sel[0].data('id') != listeners.id
+            || this.activeToolId != 'select_move_any') {
+      this.cy.remove('.edge_bend_point')
+      for (let selector in listeners.tapstart) {
+        console.log('remove tapstart', selector, listeners['tapstart'][selector], 'element id:', listeners.id)
+        this.cy.removeListener('tapstart', selector, listeners['tapstart'][selector])
+      }
+      for (let listener of listeners.tapend) {
+        console.log('remove tapend', listener, 'element id:', listeners.id)
+        this.cy.removeListener('tapend', listener)
+      }
+      
+      listeners.id = null
+      listeners.tapstart = {}
+      listeners.tapend = []
+    }
+
+    if (sel.length == 1 && sel[0].isEdge() && sel[0].data('id') != listeners.id
+             && this.activeToolId == 'select_move_any') {
       let e = sel[0]
+      listeners.id = e.data('id')
       function findDistance(A, B) {
         return Math.sqrt(Math.pow(B.x-A.x,2)+ Math.pow(B.y-A.y,2))
       }
@@ -389,28 +411,29 @@ export class MainViewComponent implements OnInit {
           moveBendPoint = true
         }
         let tapEnd = (evt) => {
+          console.log('tapEnd:', evt, 'element id:', e.data('id'))
           if (moveBendPoint) {
             let angle = findAngle(evt.target.position(), e.source().position(), e.target().position())
             let AC = findDistance(evt.target.position(), e.source().position())
-            console.log('positions: control:',
+            /*console.log('positions: control:',
               evt.target.position(),
               ', edge source:',
               e.source().position(),
               ', edge target:',
               e.target().position(),
               '; angle=', angle, ', AC=', AC
-            )
+            )*/
             let d = Math.floor(Math.sin(angle) * AC)
             let w = Math.cos(angle) * AC / findDistance(e.source().position(), e.target().position())
-            console.log('new d:', d, '; new w:', w)
+            //console.log('new d:', d, '; new w:', w)
             bendDistances[i] = d
             bendWeights[i] = w
             this.cy.style().selector(`[id = '${e.data('id')}']`).style({
               'control-point-distances': bendDistances.join(' '),
               'control-point-weights': bendWeights.join(' ')
             }).update()
-            console.log('control bend point: id:', e.data('id'), '; d:',
-              e.style('control-point-distances'), '; w:', e.style('control-point-weights'))
+            /*console.log('control bend point: id:', e.data('id'), '; d:',
+              e.style('control-point-distances'), '; w:', e.style('control-point-weights'))*/
           }
           moveBendPoint = false
         }
@@ -432,14 +455,6 @@ export class MainViewComponent implements OnInit {
             position: bendCoordinates[i]
           }
         ]);
-      }
-    } else {
-      this.cy.remove('.edge_bend_point')
-      for (let selector in listeners.tapstart) {
-        this.cy.removeListener('tapstart', selector, listeners['tapstart'][selector])
-      }
-      for (let listener of listeners.tapend) {
-        this.cy.removeListener('tapend', listener)
       }
     }
   }
@@ -533,6 +548,8 @@ export class MainViewComponent implements OnInit {
       panGrid: true
     })
 
+    // импорт не вызывает рендер, вызывает только инит и восстановление, поэтому очищаем
+    this.selection.splice(0, this.selection.length);
     this.selection.pushAll(this.cy.$(':selected'));
     let selectionUpdate = (event) => {
       if (event.type == 'select') {
@@ -561,6 +578,7 @@ export class MainViewComponent implements OnInit {
     this.checkEdgeCurveEdit();
     
     this.conn.cy = this.cy;
+    this.setTool(this.activeToolId);
     this.isRendering = false;
   }
 
@@ -588,10 +606,8 @@ export class MainViewComponent implements OnInit {
     });
     if (choice === 1) {
       this.setWaiting('Восстановление проекта...');
-      this.conn.import(this.dbLastSavedPath, false, (src, obj) => {
-        this.unsavedChanges = false;
-        this.render(obj.data, obj.style, obj.zoom, obj.pan);
-        this.setWaiting('');
+      this.onClose(() => {
+        this.reopenProject(this.dbLastSavedPath)
       })
     }
   }
@@ -686,16 +702,23 @@ export class MainViewComponent implements OnInit {
     this.conn.import(this.importPath, true, (obj) => {
       let newIdMap = {};
       let newData = obj.data;
-      newData.forEach((item) => newIdMap[item.id] = this.conn.nextId())
+      newData.forEach((item) => newIdMap[item.data.id] = this.conn.nextId())
       newData.forEach((item) => {
         if (item.target && item.source) {
           item.target = newIdMap[item.target]
           item.source = newIdMap[item.source]
         }
-        item.id = newIdMap[item.id]
+        item.data.id = newIdMap[item.data.id]
+        item.selected = false
       })
       this.cy.add(newData)
-      this.cy.style().fromJson().update()
+      for (let entry of obj.style) {
+        //`[id = '${id}']`
+        entry.selector.replace(/\[id = ([a-z\d]+)\]/g, (match, id) => {
+          return `[id = '${newIdMap[id]}']`
+        })
+      }
+      this.cy.style().fromJson(obj.style).update()
     });
   }
 
@@ -749,6 +772,5 @@ export class MainViewComponent implements OnInit {
   ngAfterViewInit(): void {
     let params = this.getParams();
     this.render(params.data, params.style, params.zoom, params.pan);
-    this.setTool('pan_view');
   }
 }

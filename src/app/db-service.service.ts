@@ -40,10 +40,12 @@ export class DbServiceService {
         properties: c.properties
       }
     })
+    let styleObj = this.cy ? this.cy.style().json() : []
+    styleObj = styleObj.filter((entry) => entry.selector != '._gridParentPadding')
     console.log(cloneClasses)
     let fullData = {
       data: data,
-      style: this.cy ? this.cy.style().json() : [],
+      style: styleObj,
       lastId: this.lastId,
       classes: cloneClasses,
       zoom: zoom,
@@ -324,7 +326,27 @@ export class DbServiceService {
           for (let propName in params[t]) {
             c.properties[propName] = params[t][propName]
             c.properties[propName].owner = className
-            elements.data(propName, '')
+            //elements.data(propName, '')
+            for (let e of elements) {
+              let oldValue = e.data(propName)
+              if (!oldValue) {
+                e.data('')
+              } else {
+                let type = c.properties[propName].type
+                let newValue
+                switch (type) {
+                  case 'number': newValue = oldValue*1; break;
+                  case 'string': newValue = ''+oldValue; break;
+                  case 'boolean': newValue = !!(oldValue && oldValue != 'false'); break;
+                  case 'number': newValue = new Date(oldValue); break;
+                }
+                if (isNaN(newValue)) {
+                  e.data('')
+                } else {
+                  e.data(newValue)
+                }
+              }
+            }
           }
         } else if (t == 'removeProperties') {
           for (let propName of params[t]) delete c.properties[propName]

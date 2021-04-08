@@ -223,10 +223,11 @@ export class ClassesCategoryComponent implements OnInit {
     var element = event.target || event.srcElement || event.currentTarget;
     let parent = element.parentElement.parentElement;
 
-    if (element.value.endsWith('\n') || element.value.endsWith('\r')) {
+    if (element.value.includes('\n') || element.value.includes('\r')) {
       element.value = this.cutForbidden(element.value)
       if (trim) element.value = this.trim(element.value)
-      element.dispatchEvent(new Event('change', { 'bubbles': true }))
+      //element.dispatchEvent(new Event('change', { 'bubbles': true }))
+      element.blur()
       return;
     }
     element.value = this.cutForbidden(element.value)

@@ -70,9 +70,10 @@ export class TreeBranchComponent implements OnInit {
   checkClassName(event) {
     var element = event.target || event.srcElement || event.currentTarget;
     
-    if (element.value.endsWith('\n') || element.value.endsWith('\r')) {
+    if (element.value.includes('\n') || element.value.includes('\r')) {
       element.value = this.trim(this.cutForbidden(element.value))
-      element.dispatchEvent(new Event('change', { 'bubbles': true }))
+      //element.dispatchEvent(new Event('change', { 'bubbles': true }))
+      element.blur()
       //console.log('dispatched event')
       return;
     }

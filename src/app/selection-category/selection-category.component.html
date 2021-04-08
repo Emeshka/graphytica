@@ -2,52 +2,176 @@
     <div>Редактировать свойства выделенных 
         {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}:
     </div>
-    <div class="big_table">
-        <div *ngIf="!entities || entities.length == 0" class="inline_info">
-            Выделение пусто.
-        </div>
-        <div *ngIf="entities && entities.length > 0 && !commonClass" class="inline_info">
-            Выделенные элементы не разделяют общий класс.
-        </div>
+    <!--<div class="loading_voile_full_screen" *ngIf="expandTable"></div>-->
+    <div *ngIf="!entities || entities.length == 0" class="inline_info">
+        Выделение пусто.
+    </div>
+    <div *ngIf="entities && entities.length > 0 && !commonClass" class="inline_info">
+        Выделенные элементы не разделяют общий класс.
+    </div>
+
+    <div *ngIf="entities && entities.length > 0 && commonClass" id="common_class">
+        Общий класс: 
+        <span *ngIf="commonClass" class="class_name">{{commonClass}}</span>
+    </div>
+    <div
+        class="big_table"
+        [class.expand_table]="expandTable"
+        [ngStyle]="!expandTable && {'width': '100%', 'height': 'auto'}"
+    >
+        <div
+            *ngIf="expandTable"
+            class="expand_table_header"
+        >
+            <tiny-button
+                title="Свернуть"
+                iconSrc="assets/img/close.png"
+                [callback]="toggleExpand.bind(this)"
+            ></tiny-button>
+        </div><!--
+            (mousedown)="onmousedownExpandTable()"
+            (mousemove)="onmousemoveExpandTable($event)"
+            (mouseup)="onmouseupExpandTable()"
+        -->
         <table *ngIf="entities && entities.length > 0"
             [class.vertices_table]="areEdges === false"
             [class.edges_table]="areEdges === true"
             [class.elements_table]="areEdges === null"
         >
-            <tr class="edit_properties_header">
-                <td class="field_name">
-                    <span *ngIf="commonClass" class="class_name">{{commonClass}}</span>
+            <tr>
+                <td class="field_name" rowspan="2">
+                    <tiny-button
+                        [title]="expandTable ? 'Свернуть' : 'Развернуть'"
+                        [iconSrc]="expandTable ? 'assets/img/minimize.png' : 'assets/img/maximize.png'"
+                        [callback]="toggleExpand.bind(this)"
+                    ></tiny-button>
                 </td>
-                <td class="field_value class_defined" *ngIf="areEdges">Начало</td>
-                <td class="field_value class_defined" *ngIf="areEdges">Конец</td>
-                <td class="field_value class_defined" *ngFor="let p of classDefinedProps | keyvalue">
-                    {{p.key}} <sup class="class_name">{{p.value.owner}}</sup>
+                <td 
+                    *ngFor="let ownerAndColspan of classDefinedPropsColspanOwnerByOrder"
+                    [attr.colspan]="ownerAndColspan.colspan"
+                >
+                    <span class="class_name">{{ownerAndColspan.owner}}</span>
+                </td>
+            </tr>
+            <tr class="edit_properties_header">
+                <td class="column_name class_defined" *ngIf="areEdges">Начало</td>
+                <td class="column_name class_defined" *ngIf="areEdges">Конец</td>
+                <td class="column_name class_defined" *ngFor="let p of classDefinedProps | keyvalue: classPropsOrderComparator">
+                    {{p.key}}
                 </td>
                 <td *ngIf="commonClass && (classDefinedProps | json) == '{}'" [attr.rowspan]="entities.length + 1">
                     <div class="inline_info">
                         В классе {{commonClass}} не задано полей.
                     </div>
                 </td>
-                <td class="field_value free" *ngFor="let p of freeProps">{{p}}</td>
-                <td *ngIf="freeProps.length == 0" [attr.rowspan]="entities.length + 1">
-                    <div class="inline_info">
+                <td class="column_name free" *ngFor="let p of freeProps">
+                    {{p}}
+                    <tiny-button
+                        iconSrc="assets/img/close.png"
+                        title="Удалить"
+                        [callback]="deleteFree.bind(this, p)"
+                    ></tiny-button>
+                </td>
+                <td *ngIf="showCreateFreeField">
+                    <autosized-textarea
+                        placeholder="Имя свойства"
+                        (change)="setNewFreePropName($event)"
+                        (input)="checkNewFreePropName($event)"
+                    ></autosized-textarea>
+                    <tiny-button
+                        iconSrc="assets/img/close.png"
+                        title="Не создавать"
+                        [callback]="toggleFakeField.bind(this)"
+                    ></tiny-button>
+                </td>
+                <td *ngIf="!showCreateFreeField" class="free_prop_empty_column" [attr.rowspan]="entities.length + 1">
+                    <div *ngIf="freeProps.length == 0" class="inline_info">
                         Нет общих свободных свойств.
                     </div>
+                    <tiny-button
+                        iconSrc="assets/img/green_plus.png"
+                        title="Создать новое свободное свойство"
+                        [callback]="toggleFakeField.bind(this)"
+                    ></tiny-button>
                 </td>
             </tr>
             <tr *ngFor="let e of entities">
-                <td class="field_name element_id" (click)="panToElement(e.id)">{{e.id}}</td>
+                <td class="field_name element_id" (click)="panToElement(e.id)">
+                    {{e.id}}
+                </td>
                 <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.source)">
                     {{e.source}}
                 </td>
                 <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.target)">
                     {{e.target}}
                 </td>
-                <td class="field_value" *ngFor="let p of classDefinedProps | keyvalue">
+                <td class="field_value" *ngFor="let p of classDefinedProps | keyvalue: classPropsOrderComparator">
                     {{ e[p.key] }}
                 </td>
-                <td class="field_value" *ngFor="let p of freeProps">{{ e[p] }}</td>
+                <td class="field_value" *ngFor="let p of freeProps">
+                    {{ e[p] }}
+                </td>
             </tr>
         </table>
     </div>
 </div>
+
+<!--<div class="section" *ngIf="!showBasicTable">
+    <table>
+        <tr *ngFor="let cl of conn.classesMap[selectedClass].properties | keyvalue">
+            <td class="field_name">
+                <autosized-textarea
+                    [value]="cl.key"
+                    placeholder="Имя поля"
+                    (change)="alterFieldName(cl.key, $event)"
+                    (input)="checkInvalid($event, cl.key, true, isFieldNameInvalid.bind(this))"
+                ></autosized-textarea>
+            </td>
+            <td class="field_value">
+                <select class="masked_input" value="{{cl.value.type}}"
+                    (change)="alterField(cl.key, 'type', $event.target.value)">
+                    <option *ngFor="let type of conn.supportedTypes" [selected]="type == cl.value.type" 
+                        value="{{type}}">{{type}}</option>
+                </select>
+                <tiny-button
+                    title="Удалить поле"
+                    iconSrc="assets/img/close.png"
+                    [callback]="removeField.bind(this, cl.key)"
+                ></tiny-button>
+            </td>
+        </tr>
+
+        <tr *ngIf="fakeNewField">
+            <td class="field_name">
+                <autosized-textarea
+                    placeholder="Имя поля" 
+                    (change)="setNewFieldName($event)"
+                    (input)="checkInvalid($event, newFieldName, true, isFieldNameInvalid.bind(this))"
+                ></autosized-textarea>
+            </td>
+            <td class="field_value">
+                <select value=""
+                    (change)="setNewFieldType($event.target.value)"
+                    class="full_width"
+                >
+                    <option selected disabled value="">Тип данных</option>
+                    <option *ngFor="let type of conn.supportedTypes" value="{{type}}">{{type}}</option>
+                </select>
+                <tiny-button
+                    title="Не создавать"
+                    iconSrc="assets/img/close.png"
+                    [callback]="hideFakeField.bind(this)"
+                ></tiny-button>
+            </td>
+        </tr>
+        <tr *ngIf="!fakeNewField">
+            <td colspan=2 class="add_field">
+                <tiny-button
+                    iconSrc="assets/img/green_plus.png"
+                    title="Создать новое поле"
+                    [callback]="addFakeField.bind(this)"
+                ></tiny-button>
+            </td>
+        </tr>
+    </table>
+</div>-->

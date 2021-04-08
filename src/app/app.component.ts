@@ -262,7 +262,7 @@ export class AppComponent {
   }
 
   reopenProject = (projectPath) => {
-    //this.switchAppView('start_view');
+    this.switchAppView('start_view');
     this.openProjectPath = projectPath;
     this.openProject();
   }

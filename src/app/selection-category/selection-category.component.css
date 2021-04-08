@@ -5,11 +5,13 @@
 
 .free {
     font-style: italic;
+    text-align: left;
 }
 
 .class_defined {
     font-style: italic;
     font-weight: bold;
+    text-align: left;
 }
 
 .element_id {
@@ -27,9 +29,9 @@
 
 table {
     border-collapse: collapse;
-    border-radius: 3px;
-    margin: 5px auto;
-    width: 95%;
+    /*border-radius: 3px;
+    margin: 5px auto;*/
+    width: 100%;
 }
 
 .edges_table tr:nth-child(odd) {
@@ -56,10 +58,14 @@ table {
     background: #f1f1f1;
 }
 
+.free_prop_empty_column {
+    background: #ffffff;
+    text-align: center;
+}
+
 td {
     border: 1px solid rgba(0, 0, 0, 0.2);
     padding: 5px 15px;
-    width: min(auto, 70%);
     overflow: auto;
     vertical-align: middle;
 }
@@ -68,13 +74,13 @@ td:first-child {
     text-align: right;
 }
 
-.field_name {
+/*.field_name {
     width: 35%;
 }
 
 .field_value {
     width: 65%;
-}
+}*/
 
 .full_width {
     width: calc(100% - 20px);
@@ -94,12 +100,40 @@ td:first-child {
     max-width: 100%;
 }
 
+.expand_table {
+    position: absolute;
+    /*width: 80vw;
+    height: 60vh;
+    border-radius: 4px;*/
+    min-width: 50vw;
+    min-height: 20px;
+    max-width: calc(100vw - 30% - 60px);
+    max-height: 99vh;
+    left: calc(30%);
+    top: 0vh;
+    border: 1px solid grey;
+    background-color: white;
+    resize: both;
+    z-index: 100;
+}
+
+.expand_table_header {
+    width: 100%;
+    background: grey;
+    height: 20px;
+}/**/
+
 .class_name {
     font-size: 10pt;
     font-family: monospace;
     overflow-wrap: anywhere;
 }
 
-sup.class_name {
-    font-size: 6pt;
+.column_name {
+    text-align: center;
+}
+
+#common_class {
+    display: inline-block;
+    padding: 10px;
 }
