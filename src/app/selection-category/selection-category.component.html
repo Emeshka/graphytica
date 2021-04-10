@@ -39,7 +39,7 @@
             [class.elements_table]="areEdges === null"
         >
             <tr>
-                <td class="field_name" rowspan="2">
+                <td class="column_name" rowspan="2">
                     <tiny-button
                         [title]="expandTable ? 'Свернуть' : 'Развернуть'"
                         [iconSrc]="expandTable ? 'assets/img/minimize.png' : 'assets/img/maximize.png'"
@@ -49,6 +49,7 @@
                 <td 
                     *ngFor="let ownerAndColspan of classDefinedPropsColspanOwnerByOrder"
                     [attr.colspan]="ownerAndColspan.colspan"
+                    class="column_name"
                 >
                     <span class="class_name">{{ownerAndColspan.owner}}</span>
                 </td>
@@ -57,7 +58,53 @@
                 <td class="column_name class_defined" *ngIf="areEdges">Начало</td>
                 <td class="column_name class_defined" *ngIf="areEdges">Конец</td>
                 <td class="column_name class_defined" *ngFor="let p of classDefinedProps | keyvalue: classPropsOrderComparator">
-                    {{p.key}}
+                    <span *ngIf="replaceAllPropName != p.key">{{p.key}}</span>
+                    
+                    <ng-container *ngIf="replaceAllPropName == p.key">
+                        <input *ngIf="p.value.type == 'number'"
+                            type="number"
+                            placeholder="{{p.key}}"
+                            title="{{p.key}}"
+                            class="full_width"
+                            (input)="setReplaceAllValue($event.target.value, p.value.type)"
+                        >
+                        <switch-true-false *ngIf="p.value.type == 'boolean'"
+                            title="{{p.key}}"
+                            (value)="setReplaceAllValue($event, p.value.type)"
+                        ></switch-true-false>
+                        <autosized-textarea *ngIf="p.value.type == 'string'"
+                            placeholder="{{p.key}}"
+                            title="{{p.key}}"
+                            [isMasked]="false"
+                            class="full_width"
+                            (input)="setReplaceAllValue($event.target.value, p.value.type)"
+                        ></autosized-textarea>
+                        <date-picker *ngIf="p.value.type == 'date'"
+                            title="{{p.key}}"
+                            (value)="setReplaceAllValue($event, p.value.type)"
+                        ></date-picker>
+
+                        <div>
+                            <tiny-button
+                                iconSrc="assets/img/close.png"
+                                title="Отмена"
+                                [callback]="replaceAll.bind(this, null)"
+                            ></tiny-button>
+                            <tiny-button
+                                iconSrc="assets/img/ok.png"
+                                title="Заменить"
+                                [callback]="applyReplaceAllValue.bind(this)"
+                            ></tiny-button>
+                        </div>
+                    </ng-container>
+                    <div>
+                        <tiny-button
+                            *ngIf="!replaceAllPropName"
+                            iconSrc="assets/img/edit.png"
+                            title="Заменить значение"
+                            [callback]="replaceAll.bind(this, p.key)"
+                        ></tiny-button>
+                    </div>
                 </td>
                 <td *ngIf="commonClass && (classDefinedProps | json) == '{}'" [attr.rowspan]="entities.length + 1">
                     <div class="inline_info">
@@ -65,16 +112,47 @@
                     </div>
                 </td>
                 <td class="column_name free" *ngFor="let p of freeProps">
-                    {{p}}
-                    <tiny-button
-                        iconSrc="assets/img/close.png"
-                        title="Удалить"
-                        [callback]="deleteFree.bind(this, p)"
-                    ></tiny-button>
+                    <span *ngIf="replaceAllPropName != p">{{p}}</span>
+                    <ng-container *ngIf="replaceAllPropName == p">
+                        <autosized-textarea
+                            placeholder="{{p}}"
+                            title="{{p}}"
+                            [isMasked]="false"
+                            class="full_width"
+                            (input)="setReplaceAllValue($event.target.value, 'string')"
+                        ></autosized-textarea>
+                        <div>
+                            <tiny-button
+                                iconSrc="assets/img/close.png"
+                                title="Отмена"
+                                [callback]="replaceAll.bind(this, null)"
+                            ></tiny-button>
+                            <tiny-button
+                                iconSrc="assets/img/ok.png"
+                                title="Заменить"
+                                [callback]="applyReplaceAllValue.bind(this)"
+                            ></tiny-button>
+                        </div>
+                    </ng-container>
+                    <div>
+                        <tiny-button
+                            *ngIf="replaceAllPropName != p"
+                            iconSrc="assets/img/close.png"
+                            title="Удалить"
+                            [callback]="deleteFree.bind(this, p)"
+                        ></tiny-button>
+                        <tiny-button
+                            *ngIf="!replaceAllPropName"
+                            iconSrc="assets/img/edit.png"
+                            title="Заменить значение"
+                            [callback]="replaceAll.bind(this, p)"
+                        ></tiny-button>
+                    </div>
                 </td>
-                <td *ngIf="showCreateFreeField">
+                <td class="column_name" *ngIf="showCreateFreeField">
                     <autosized-textarea
                         placeholder="Имя свойства"
+                        [isMasked]="false"
                         (change)="setNewFreePropName($event)"
                         (input)="checkNewFreePropName($event)"
                     ></autosized-textarea>
@@ -105,11 +183,42 @@
                 <td class="field_value element_id" *ngIf="areEdges" (click)="panToElement(e.target)">
                     {{e.target}}
                 </td>
-                <td class="field_value" *ngFor="let p of classDefinedProps | keyvalue: classPropsOrderComparator">
-                    {{ e[p.key] }}
+                <td class="field_value"
+                    *ngFor="let p of classDefinedProps | keyvalue: classPropsOrderComparator"
+                    [ngStyle]="p.value.type == 'date' && {'width': 'auto'}"
+                >
+                    <input *ngIf="p.value.type == 'number'"
+                        type="number"
+                        placeholder="{{p.key}}"
+                        title="[{{e.id}}] {{p.key}}"
+                        class="full_width"
+                        [value]="e[p.key]"
+                        (input)="setPropOfExisting(e.id, p.key, $event.target.value, p.value.type)"
+                    >
+                    <switch-true-false *ngIf="p.value.type == 'boolean'"
+                        [firstValue]="e[p.key]"
+                        title="[{{e.id}}] {{p.key}}"
+                        (value)="setPropOfExisting(e.id, p.key, $event, p.value.type)"
+                    ></switch-true-false>
+                    <autosized-textarea *ngIf="p.value.type == 'string'"
+                        placeholder="{{p.key}}"
+                        title="[{{e.id}}] {{p.key}}"
+                        [value]="e[p.key]"
+                        (input)="setPropOfExisting(e.id, p.key, $event.target.value, p.value.type)"
+                    ></autosized-textarea>
+                    <date-picker *ngIf="p.value.type == 'date'"
+                        title="[{{e.id}}] {{p.key}}"
+                        [firstValue]="e[p.key]"
+                        (value)="setPropOfExisting(e.id, p.key, $event, p.value.type)"
+                    ></date-picker>
                 </td>
                 <td class="field_value" *ngFor="let p of freeProps">
-                    {{ e[p] }}
+                    <autosized-textarea
+                        placeholder="{{p}}"
+                        title="[{{e.id}}] {{p}}"
+                        [value]="e[p]"
+                        (input)="setPropOfExisting(e.id, p, $event.target.value, 'string')"
+                    ></autosized-textarea>
                 </td>
             </tr>
         </table>

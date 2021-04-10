@@ -8,7 +8,7 @@
     border: none;
     margin: 10px 20px;
     font-size: 15px;
-    font-family: "Arimo", 'Times New Roman';
+    font-family: "Arimo", sans-serif;
     text-align: center;
     transition: .3s;
 }

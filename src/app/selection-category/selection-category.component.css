@@ -15,27 +15,25 @@
 }
 
 .element_id {
-    /*background-size: 13px;
+    /**/background-size: 13px;
     background-repeat: no-repeat;
-    background-position: right;*/
+    background-position: 10%;
     cursor: pointer;
 }
 
 .element_id:hover {
     text-decoration: underline;
     color: #222222;
-    /*background-image: url('../../assets/img/radar.png');*/
+    background-image: url('../../assets/img/radar.png');/**/
 }
 
 table {
     border-collapse: collapse;
-    /*border-radius: 3px;
-    margin: 5px auto;*/
     width: 100%;
 }
 
 .edges_table tr:nth-child(odd) {
-    background: #cae7ff;
+    background: #f7fcff;
 }
 
 .edges_table tr:nth-child(even) {
@@ -43,7 +41,7 @@ table {
 }
 
 .vertices_table tr:nth-child(odd) {
-    background: #ffe6c3;
+    background: #fffbf6;
 }
 
 .vertices_table tr:nth-child(even) {
@@ -65,13 +63,14 @@ table {
 
 td {
     border: 1px solid rgba(0, 0, 0, 0.2);
-    padding: 5px 15px;
+    padding: 5px 3px;
+    min-width: 80px;
     overflow: auto;
     vertical-align: middle;
 }
 
 td:first-child {
-    text-align: right;
+    text-align: center;
 }
 
 /*.field_name {
@@ -107,14 +106,21 @@ td:first-child {
     border-radius: 4px;*/
     min-width: 50vw;
     min-height: 20px;
-    max-width: calc(100vw - 30% - 60px);
+    max-width: calc(100vw - 60px);
     max-height: 99vh;
-    left: calc(30%);
+    width: calc(100vw - 30% - 60px);
+    /*left: calc(30%);
+    */
+    right: 60px;
     top: 0vh;
     border: 1px solid grey;
     background-color: white;
     resize: both;
+    direction: rtl;
     z-index: 100;
+}
+.expand_table * {
+    direction: ltr;
 }
 
 .expand_table_header {
@@ -130,6 +136,7 @@ td:first-child {
 }
 
 .column_name {
+    font-size: 11pt;
     text-align: center;
 }
 

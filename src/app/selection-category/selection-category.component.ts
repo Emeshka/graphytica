@@ -19,10 +19,12 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   @Input() toolById;
   @Input() activeToolId: string;
 
-  showBasicTable = true;
-  expandTable = false;
+  showBasicTable: boolean = true;
+  expandTable: boolean = false;
   selectionListener = null;
-  showCreateFreeField = false;
+  showCreateFreeField: boolean = false;
+  replaceAllPropName: string = null;
+  replaceAllValue: any = '';
 
   entities = null;
   areEdges = null;
@@ -30,7 +32,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
   classDefinedProps = null;
   freeProps = null;
-  unifyFreeProps = null;
+  //unifyFreeProps = null;
   classDefinedPropsColspanOwnerByOrder = null;
   
   static hideColumnsList = [];
@@ -92,6 +94,51 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     }
   }
 
+  replaceAll(propName) {
+    this.replaceAllPropName = propName
+  }
+
+  setReplaceAllValue(value, type) {
+    if (value === '' || value === null) {
+      this.replaceAllValue = ''
+    } else {
+      if (type == 'number') {
+        let v = value*1
+        if (!isNaN(v)) this.replaceAllValue = v
+      } else if (type == 'boolean') {
+        if (typeof value == 'boolean') this.replaceAllValue = value;
+      } else if (type == 'string') {
+        this.replaceAllValue = value
+      } else if (type == 'date' || type == 'time' || type == 'datetime') {
+        this.replaceAllValue = value
+      }
+    }
+  }
+
+  applyReplaceAllValue() {
+    this.selection.getArray().forEach((e) => e.data(this.replaceAllPropName, this.replaceAllValue))
+    this.replaceAllPropName = null
+    this.replaceAllValue = ''
+  }
+
+  setPropOfExisting(elementId, propName, value, type) {
+    if (value === '' || value === null) {
+      this.conn.cy.$(`[id = '${elementId}']`).data(propName, '');
+    } else {
+      if (type == 'number') {
+        let v = value*1
+        if (!isNaN(v)) this.conn.cy.$(`[id = '${elementId}']`).data(propName, v);
+      } else if (type == 'boolean') {
+        if (typeof value == 'boolean') this.conn.cy.$(`[id = '${elementId}']`).data(propName, value);
+      } else if (type == 'string') {
+        this.conn.cy.$(`[id = '${elementId}']`).data(propName, value);
+      } else if (type == 'date' || type == 'time' || type == 'datetime') {
+        this.conn.cy.$(`[id = '${elementId}']`).data(propName, value);
+        //console.log(this.propsOfNew[key])
+      }
+    }
+  }
+
   /* --------------------------------------- Создание свободного свойства -------------------------- */
 
   toggleFakeField() {
@@ -134,7 +181,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     if (!propName || hasForbidden || commonForbidden || edgesForbidden) return true;
     let colliding = this.isFieldNameColliding(propName, this.commonClass)
     if (colliding) return true;
-    return this.unifyFreeProps.has(propName);
+    return false;//this.unifyFreeProps.has(propName);
   }
   
   checkNewFreePropName(event) {
@@ -160,10 +207,13 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
   setNewFreePropName(event) {
     console.log('setNewFreePropName', event)
-    if (!this.isFieldNameInvalid(event.target.value)) {
+    let propName = event.target.value
+    if (!this.isFieldNameInvalid(propName)) {
       console.log('setNewFreePropName: name valid')
-      this.selection.getArray().forEach((e) => e.data(event.target.value, ''))
-      this.freeProps.push(event.target.value)
+      this.selection.getArray().forEach((e) => {
+        if (!e.data(propName)) e.data(propName, '');
+      })
+      this.freeProps.push(propName)
       this.showCreateFreeField = false;
   
       var element = event.target || event.srcElement || event.currentTarget;
@@ -179,11 +229,11 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
       let f = () => {
         let arr = this.selection.getArray();
-        let commonClass = '';
+        let commonClass = null;
         let freeCommonProps = null;
         let areEdges = true;
         let areVertices = true;
-        this.unifyFreeProps = new Set([]);
+        //this.unifyFreeProps = new Set([]);
         
         for (let e of arr) {
           console.log(e.data('id'), e.isNode(), e.isEdge())
@@ -191,7 +241,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
           areVertices = areVertices && e.isNode();
   
           let className = e.data('_class');
-          if (!commonClass) commonClass = className;
+          if (commonClass === null) commonClass = className;
           else {
             let common = this.conn.getClosestCommonAncestor(commonClass, className)
             if (common) {
@@ -212,7 +262,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
             if (!meta.includes(d) && !eClassDefined.includes(d)) {
               if (e.data(d) !== null && e.data(d) !== undefined) {
                 eFreeProps.push(d)
-                this.unifyFreeProps.add(d)
+                //this.unifyFreeProps.add(d)
               }
             }
           }
@@ -249,7 +299,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
         })
         this.classDefinedPropsColspanOwnerByOrder = ownerByOrder
 
-        this.commonClass = commonClass;
+        this.commonClass = (commonClass === null) ? '' : commonClass;
         this.freeProps = (freeCommonProps && freeCommonProps.length > 0) ? freeCommonProps.sort((a,b) => {
           return a.localeCompare(b)
         }) : [];

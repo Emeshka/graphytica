@@ -1,7 +1,7 @@
 :host {
     display: block;
     height:100%;
-    font-family: sans-serif;
+    font-family: "Arimo", sans-serif;
     font-size: 12pt;
 }
 #start_screen, #new_project_dialog, #import_screen_1, #import_screen_2, #open_screen {

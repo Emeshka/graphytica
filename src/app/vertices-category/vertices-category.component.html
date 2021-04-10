@@ -48,7 +48,7 @@
                 </td>
                 <td class="field_value" *ngIf="p.value.type == 'boolean'">
                     <switch-true-false
-                        [currentValue]="propsOfNew[p.key] ? propsOfNew[p.key] : false"
+                        [firstValue]="propsOfNew[p.key] ? propsOfNew[p.key] : ''"
                         (value)="setPropOfNew(p.key, $event, p.value.type)"
                     ></switch-true-false>
                 </td>
@@ -64,13 +64,6 @@
                         [firstValue]="propsOfNew[p.key] ? propsOfNew[p.key] : null"
                         (value)="setPropOfNew(p.key, $event, p.value.type)"
                     ></date-picker>
-                    <!--<input
-                        type="date"
-                        max="9999-12-31"
-                        class="full_width"
-                        [value]="propsOfNew[p.key] ? propsOfNew[p.key].toISOString().substring(0, 10) : ''"
-                        (input)="setPropOfNew(p.key, $event.target.value, p.value.type)"
-                    >-->
                 </td>
                 <td class="field_value" *ngIf="p.value.type == 'time'">
                     <!--<input

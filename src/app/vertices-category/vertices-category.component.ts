@@ -66,7 +66,7 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
 
   setPropOfNew(key, value, checkType) {
     //console.log(key, value, checkType)
-    if (value === '') {
+    if (value === '' || value === null) {
       this.propsOfNew[key] = '';
     } else {
       if (checkType == 'number') {
@@ -78,7 +78,7 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
         this.propsOfNew[key] = value;
       } else if (checkType == 'date' || checkType == 'time' || checkType == 'datetime') {
         this.propsOfNew[key] = value;
-        console.log(this.propsOfNew[key])
+        //console.log(this.propsOfNew[key])
       }
     }
   }

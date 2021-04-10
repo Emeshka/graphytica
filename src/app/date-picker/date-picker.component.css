@@ -1,16 +1,95 @@
 :host {
     display: inline-block;
+    min-height: 38pt;
+    white-space: nowrap;
+}
+
+#date_inputs {
+    display:inline-block;
+    padding: 14pt 0px;
 }
 
 input {
-    font-size: 12pt;
+    font-size: 11pt;
     margin: 0;
 }
 
+input:focus {
+    background-color: white;
+    border-left: #ffaa33 solid 1px;
+    border-right: #ffaa33 solid 1px;
+    border-top: none;
+    border-bottom: none;
+    outline: none;
+    border-radius: 0px;
+}
+
 .two_digit {
-    width: 30pt;
+    text-align: center;
+    width: 1.3em;
 }
 
 .four_digit {
-    width: 60pt;
+    text-align: center;
+    width: 2.6em;
 }
+
+.masked_input {
+    background-color: rgba(0,0,0,0);
+    border-radius: 0px;
+    border: none;
+    margin: 0px;
+    background-size: 13px;
+    background-repeat: no-repeat;
+    background-position: right;
+}
+
+.masked_input:hover:not(:focus) {
+    background-image: url('../../assets/img/edit.png');
+}
+
+.part {
+    display: inline-block;
+    position: relative;
+}
+
+input:focus + div {
+    display: inline-block;
+}
+
+input:focus + div + div {
+    display: inline-block;
+}
+
+.buttons {
+    display: none;
+    position: absolute;
+    left: 0px;
+    padding: 1px 2px 1px 2px;
+    height: 12pt;
+    border-left: #ffaa33 solid 1px;
+    border-right: #ffaa33 solid 1px;
+    cursor: default;
+    font-size: 11pt;
+    font-weight: normal;
+    text-decoration: none;
+    font-style: normal;
+}
+
+.buttons:hover {
+    color:#555;
+}
+
+.increase {
+    top: -11pt;
+    background-image: linear-gradient(to top, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 50%, rgba(0,0,0,0) 100%);
+}
+
+.decrease {
+    top: 11pt;
+    background-image: linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 50%, rgba(0,0,0,0) 100%);
+}
+
+/*.masked_input.two_digit:not(:focus), .masked_input.four_digit:not(:focus) {
+    width: auto;
+}*/

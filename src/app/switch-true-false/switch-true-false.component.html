@@ -1,7 +1,7 @@
-<label class="switch vertical_spacer_el_middle">
+<label class="switch vertical_spacer_el_middle" title="{{title}}">
     <input
         type="checkbox"
-        (change)="setValue($event.target.checked)">
+        (change)="setValue(!currentValue)">
     <span
         [class.unset]="currentValue === ''"
         [class.checked]="currentValue === true"
@@ -10,9 +10,9 @@
 </label>
 <div class="vertical_spacer_el_middle">
     <tiny-button
-        *ngIf="currentValue !== ''"
+        [ngStyle]="(currentValue === '') && {'visibility': 'hidden'}"
         title="Сбросить значение"
-        iconSrc="assets/img/close.png"
+        iconSrc="assets/img/clear.png"
         [callback]="setValue.bind(this, '')"
     ></tiny-button>
 </div>

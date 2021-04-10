@@ -1,40 +1,79 @@
-<input #day_field
-    type="number"
-    min="1"
-    [attr.max]="daysInMonth()"
-    placeholder="--"
-    class="two_digit vertical_spacer_el_middle"
-    (input)="onInput('day', $event)"
-    (keydown)="onKeyDown('day', $event)"
-    (change)="onChange()"
->
-.
-<input #month_field
-    type="number"
-    min="1"
-    max="12"
-    placeholder="--"
-    class="two_digit vertical_spacer_el_middle"
-    (input)="onInput('month', $event)"
-    (keydown)="onKeyDown('month', $event)"
-    (change)="onChange()"
->
-.
-<input #year_field
-    type="number"
-    min="1901"
-    max="2200"
-    placeholder="----"
-    class="four_digit vertical_spacer_el_middle"
-    (input)="onInput('year', $event)"
-    (keydown)="onKeyDown('year', $event)"
-    (change)="onChange()"
->
+<div id="date_inputs"><!--
+--><div class="part" *ngIf="daysInMonth() as maxDays"><!--
+    --><input #day_field
+            maxlength="2"
+            title="{{title}} (число)"
+            data-min="1"
+            [attr.data-max]="maxDays"
+            [class.masked_input]="isMasked"
+            placeholder="--"
+            class="two_digit vertical_spacer_el_middle"
+            (input)="onInput('day', $event.target)"
+            (keydown)="onKeyDown('day', $event)"
+            (change)="onChange()"
+        ><div
+            class="buttons increase two_digit"
+            [ngStyle]="(day > maxDays || day == maxDays) && {'display': 'none'}"
+            (mousedown)="onInputClick($event, 'day', 'increase')"
+        >{{day == null ? 1 : (day + 1)}}</div><div
+            class="buttons decrease two_digit"
+            [ngStyle]="(day < 1 || day == 1 || day == null) && {'display': 'none'}"
+            (mousedown)="onInputClick($event, 'day', 'decrease')"
+        >{{day - 1}}</div><!--
+--></div><!--
+-->.<!--
+--><div class="part"><!--
+    --><input #month_field
+            maxlength="2"
+            title="{{title}} (месяц)"
+            data-min="1"
+            data-max="12"
+            [class.masked_input]="isMasked"
+            placeholder="--"
+            class="two_digit vertical_spacer_el_middle"
+            (input)="onInput('month', $event.target)"
+            (keydown)="onKeyDown('month', $event)"
+            (change)="onChange()"
+        ><div
+            class="buttons increase two_digit"
+            [ngStyle]="(month > 11 || month == 11) && {'display': 'none'}"
+            (mousedown)="onInputClick($event, 'month', 'increase')"
+        >{{month == null ? 1 : (month + 2)}}</div><div
+            class="buttons decrease two_digit"
+            [ngStyle]="(month < 0 || month == 0 || month == null) && {'display': 'none'}"
+            (mousedown)="onInputClick($event, 'month', 'decrease')"
+        >{{month}}</div><!--
+--></div><!--
+-->.<!--
+--><div class="part"><!--
+    --><input #year_field
+            size="4"
+            maxlength="4"
+            title="{{title}} (год)"
+            data-min="1901"
+            data-max="2200"
+            [class.masked_input]="isMasked"
+            placeholder="----"
+            class="four_digit vertical_spacer_el_middle"
+            (input)="onInput('year', $event.target)"
+            (keydown)="onKeyDown('year', $event)"
+            (change)="onChange()"
+        ><div
+            class="buttons increase four_digit"
+            [ngStyle]="(year > 2200 || year == 2200) && {'display': 'none'}"
+            (mousedown)="onInputClick($event, 'year', 'increase')"
+        >{{year == null ? 1901 : (year + 1)}}</div><div
+            class="buttons decrease four_digit"
+            [ngStyle]="(year < 1901 || year == 1901 || year == null) && {'display': 'none'}"
+            (mousedown)="onInputClick($event, 'year', 'decrease')"
+        >{{year - 1}}</div><!--
+--></div>
+</div>
 <div class="vertical_spacer_el_middle">
     <tiny-button
-        *ngIf="currentValue"
+        [ngStyle]="(!day && !month && !year && !currentValue) && {'visibility': 'hidden'}"
         title="Сбросить значение"
-        iconSrc="assets/img/close.png"
+        iconSrc="assets/img/clear.png"
         [callback]="emitValue.bind(this, null)"
     ></tiny-button>
 </div>

@@ -11,6 +11,7 @@ export class AutosizedTextareaComponent {
 
   @Input() value: string = '';
   @Input() placeholder: string = '';
+  @Input() title: string = '';
   @Input() autofocus: boolean = false;
   @Input() isMasked: boolean = true;
 }
