@@ -456,6 +456,85 @@ export class MainViewComponent implements OnInit {
           }
         ]);
       }
+
+      let moveSourcePoint = false
+      let sourceTapStart = (evt) => {
+        moveSourcePoint = true
+      }
+      let sourceTapEnd = (evt) => {
+        if (moveSourcePoint) {
+          moveSourcePoint = false
+          if (evt.target && evt.target != this.cy && evt.target.isNode() && !evt.target.data('id').startsWith('move-')) {
+            console.log(evt.target)
+            e.move({
+              source: evt.target.data('id')
+            });
+            e.unselect()
+            e.select()
+          } else {
+            this.conn.getById('move-source').position(e.sourceEndpoint())
+          }
+        }
+      }
+      let sourceId = 'move-source'
+      let sourceSelector = `[id = '${sourceId}']`
+      this.cy.on('tapstart', sourceSelector, sourceTapStart)
+      listeners['tapstart'][sourceSelector] = sourceTapStart
+
+      this.cy.on('tapend', sourceTapEnd)
+      listeners['tapend'].push(sourceTapEnd)
+
+      this.cy.add([
+        {
+          group: 'nodes',
+          data: {
+            id: sourceId
+          },
+          classes: ['edge_bend_point'],
+          position: e.sourceEndpoint()
+        }
+      ]);
+
+      let moveTargetPoint = false
+      let targetTapStart = (evt) => {
+        moveTargetPoint = true
+      }
+      let targetTapEnd = (evt) => {
+        if (moveTargetPoint) {
+          moveTargetPoint = false
+          if (evt.target && evt.target != this.cy && evt.target.isNode() && !evt.target.data('id').startsWith('move-')) {
+            console.log(evt.target)
+            e.move({
+              target: evt.target.data('id')
+            });
+            e.unselect()
+            e.select()
+          } else {
+            this.conn.getById('move-target').position(e.targetEndpoint())
+          }
+        }
+      }
+      let targetId = 'move-target'
+      let targetSelector = `[id = '${targetId}']`
+      this.cy.on('tapstart', targetSelector, targetTapStart)
+      listeners['tapstart'][targetSelector] = targetTapStart
+
+      this.cy.on('tapend', targetTapEnd)
+      listeners['tapend'].push(targetTapEnd)
+
+      this.cy.add([
+        {
+          group: 'nodes',
+          data: {
+            id: targetId
+          },
+          classes: ['edge_bend_point'],
+          position: e.targetEndpoint()
+        }
+      ]);
+
+      this.conn.getById('move-source').lock()
+      this.conn.getById('move-target').lock()
     }
   }
 
@@ -487,7 +566,7 @@ export class MainViewComponent implements OnInit {
             'target-arrow-shape': 'triangle',
             'curve-style': 'unbundled-bezier',
             'control-point-distances': '50 -50',
-            'control-point-weights': '0.2 0.6'
+            'control-point-weights': '0.2 0.8'
           }
         },
         {
