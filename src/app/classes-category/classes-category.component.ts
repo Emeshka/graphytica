@@ -42,7 +42,7 @@ export class ClassesCategoryComponent implements OnInit {
 
     this.selectedClass = value || '';
   }
-
+/*
   addToSelection = () => {
     let oldValue = this.conn.cy.autounselectify();
     this.conn.cy.autounselectify(false);
@@ -56,7 +56,7 @@ export class ClassesCategoryComponent implements OnInit {
     this.conn.cy.$(this.selectedDescendantsSelector).unselect()
     this.conn.cy.autounselectify(oldValue);
   };
-
+*/
   addFakeField = () => {
     this.fakeNewField = true;
   }

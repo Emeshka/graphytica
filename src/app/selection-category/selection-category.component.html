@@ -2,8 +2,14 @@
     <div>Действия над выделением:</div>
     <app-icon-button title="Дублировать" iconSrc="assets/img/duplicate.png"
         [callback]="duplicate.bind(this)"></app-icon-button>
-    <app-icon-button title="Удалить" iconSrc="assets/img/delete_project.png"
+    <app-icon-button title="Удалить" iconSrc="assets/img/red_cross.png"
         [callback]="delete.bind(this)"></app-icon-button>
+    <app-icon-button title="Центрировать на выделение" iconSrc="assets/img/radar.png"
+        [callback]="panToSelection.bind(this)"></app-icon-button>
+    <app-icon-button title="Заблокировать/разблокировать" iconSrc="assets/img/pin_unpin.png"
+        [callback]="pinUnpin.bind(this)"></app-icon-button>
+    <app-icon-button title="Сбросить выделение" iconSrc="assets/img/reset_selection.png"
+        [callback]="resetSelection.bind(this)"></app-icon-button>
 </div>
     
 <div class="section" *ngIf="showBasicTable">

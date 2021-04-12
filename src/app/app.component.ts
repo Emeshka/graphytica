@@ -1,5 +1,5 @@
-import { Component, NgZone, ViewChild } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { Component, NgZone, ViewChild, OnInit } from '@angular/core';
+//import { FormsModule, NgForm } from '@angular/forms';
 import { ElectronService } from 'ngx-electron';
 //import { LastDirectoryService } from './last-directory.service'
 import { DbServiceService } from './db-service.service'
@@ -10,7 +10,7 @@ import { UpdateRecentService } from './update-recent.service'
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   /* ------------------------------------- Импорт, драйверы ------------------------------------------ */
   
   constructor(
@@ -95,6 +95,12 @@ export class AppComponent {
     }
   };
 
+  ngOnInit() {
+    this._updateRecentService.change.subscribe( value => {
+      this.recent = [].concat(this._updateRecentService.recentPathArray)
+    });
+  }
+
   ngAfterViewInit(){
     var ipcRenderer = this._electronService.ipcRenderer;
     //отвечаем на запросы выхода, только если main_view не построен
@@ -112,9 +118,6 @@ export class AppComponent {
         //console.log('renderer app component sends q-r')
         ipcRenderer.send('quit-request', true);
       }
-    });
-    this._updateRecentService.change.subscribe( value => {
-      this.recent = [].concat(this._updateRecentService.recentPathArray)
     });
     this.setWaiting('');
   }

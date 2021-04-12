@@ -227,8 +227,12 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   duplicate() {
     let newIdMap = {};
     let oldSelected = this.conn.cy.$(':selected')
-    let newData = oldSelected.jsons();
+    let oldValue = this.conn.cy.autounselectify();
+    this.conn.cy.autounselectify(false);
     oldSelected.unselect()
+    this.conn.cy.autounselectify(oldValue);
+
+    let newData = oldSelected.jsons();
     newData.forEach((item) => newIdMap[item.data.id] = this.conn.nextId())
     newData.forEach((item) => {
       if (item.target && item.source) {
@@ -265,6 +269,24 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     if (choice === 1) {
       this.conn.cy.$(':selected').remove();
     }
+  }
+
+  panToSelection() {
+    this.conn.cy.center(this.conn.cy.$(':selected'))
+  }
+
+  resetSelection() {
+    let oldValue = this.conn.cy.autounselectify();
+    this.conn.cy.autounselectify(false);
+    this.conn.cy.$(':selected').unselect()
+    this.conn.cy.autounselectify(oldValue);
+  }
+
+  pinUnpin() {
+    let sel = this.conn.cy.$(':selected').filter(e => e.isNode());
+    let allLocked = sel.reduce((accum, current) => accum && current.locked(), true)
+    if (allLocked) sel.unlock();
+    else sel.lock();
   }
   
   /* ----------------------------------------- Инициализация ------------------------------------ */
