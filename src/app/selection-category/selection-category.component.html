@@ -1,4 +1,12 @@
 <div class="section" *ngIf="showBasicTable">
+    <div>Действия над выделением:</div>
+    <app-icon-button title="Дублировать" iconSrc="assets/img/duplicate.png"
+        [callback]="duplicate.bind(this)"></app-icon-button>
+    <app-icon-button title="Удалить" iconSrc="assets/img/delete_project.png"
+        [callback]="delete.bind(this)"></app-icon-button>
+</div>
+    
+<div class="section" *ngIf="showBasicTable">
     <div>Редактировать свойства выделенных 
         {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}:
     </div>

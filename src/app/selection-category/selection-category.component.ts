@@ -176,7 +176,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   isFieldNameInvalid(propName) {
     propName = this.cutForbidden(this.trim(propName))
     let hasForbidden = this.hasForbidden(propName)
-    let commonForbidden = propName == 'id' || propName == '_class' || propName == 'parent'
+    let commonForbidden = propName == 'id' || propName == 'class' || propName == 'parent'
     let edgesForbidden = this.areEdges && (propName == 'source' || propName == 'target')
     if (!propName || hasForbidden || commonForbidden || edgesForbidden) return true;
     let colliding = this.isFieldNameColliding(propName, this.commonClass)
@@ -221,6 +221,51 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
       parent.className = parent.className.replace(/\s*invalid_input/g, '');
     }
   }
+
+  /* ---------------------------------------- Действия ------------------------------------------ */
+
+  duplicate() {
+    let newIdMap = {};
+    let oldSelected = this.conn.cy.$(':selected')
+    let newData = oldSelected.jsons();
+    oldSelected.unselect()
+    newData.forEach((item) => newIdMap[item.data.id] = this.conn.nextId())
+    newData.forEach((item) => {
+      if (item.target && item.source) {
+        item.target = newIdMap[item.target]
+        item.source = newIdMap[item.source]
+      }
+      item.data.id = newIdMap[item.data.id]
+      item.selected = true
+    })
+    this.conn.cy.add(newData)
+
+    let duplicateStyle = this.conn.cy.style().json()
+    let regexp = /\[id = ([a-z\d]+)\]/g
+    for (let entry of duplicateStyle) {
+      //`[id = '${id}']`
+      if (regexp.test(entry.selector)) {
+        entry = JSON.parse(JSON.stringify(entry))
+        entry.selector.replace(regexp, (match, id) => {
+          return `[id = '${newIdMap[id]}']`
+        })
+        duplicateStyle.push(entry)
+      }
+    }
+    this.conn.cy.style().fromJson(duplicateStyle).update()
+  }
+
+  delete() {
+    const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+      type: 'question',
+      buttons: ['No', 'Yes'],
+      title: 'Удалить элементы',
+      message: `Вы уверены, что хотите безвозвратно удалить все выделенные элементы?`
+    });
+    if (choice === 1) {
+      this.conn.cy.$(':selected').remove();
+    }
+  }
   
   /* ----------------------------------------- Инициализация ------------------------------------ */
 
@@ -240,7 +285,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
           areEdges = areEdges && e.isEdge();
           areVertices = areVertices && e.isNode();
   
-          let className = e.data('_class');
+          let className = e.data('class');
           if (commonClass === null) commonClass = className;
           else {
             let common = this.conn.getClosestCommonAncestor(commonClass, className)
@@ -251,7 +296,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
             }
           }
 
-          let meta = ['_class', 'id', 'parent']
+          let meta = ['class', 'id', 'parent']
           if (e.isEdge()) {
             meta.push('target', 'source');
           }

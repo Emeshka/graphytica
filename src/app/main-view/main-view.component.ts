@@ -204,7 +204,7 @@ export class MainViewComponent implements OnInit {
         let cl = this.toolById.new_vertex.settings['selectClass'].value
         let data = {
           id: this.conn.nextId(),
-          _class: cl
+          class: cl
         };
         let propsOfNew: any = this.toolById.new_vertex.settings['newProps'].value
         for (let p in propsOfNew) {
@@ -271,7 +271,7 @@ export class MainViewComponent implements OnInit {
           let cl = this.toolById.new_edge.settings['selectClass'].value
           let data = {
             id: this.conn.nextId(),
-            _class: cl,
+            class: cl,
             source: source.data('id'),
             target: evt.target.data('id')
           };

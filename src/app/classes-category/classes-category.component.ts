@@ -1,7 +1,6 @@
 import { Component, OnInit, Input, ViewChildren } from '@angular/core';
 import { DbServiceService } from '../db-service.service';
 import { ElectronService } from 'ngx-electron';
-import { threadId } from 'worker_threads';
 
 @Component({
   selector: 'app-classes-category',
@@ -177,7 +176,7 @@ export class ClassesCategoryComponent implements OnInit {
     //console.log(propName)
     propName = this.cutForbidden(this.trim(propName))
     let hasForbidden = this.hasForbidden(propName)
-    let commonForbidden = propName == 'id' || propName == '_class' || propName == 'parent'
+    let commonForbidden = propName == 'id' || propName == 'class' || propName == 'parent'
     let edgesForbidden = this.isEdge && (propName == 'source' || propName == 'target')
     if (!propName || hasForbidden || commonForbidden || edgesForbidden) return true;
     let colliding = this.isFieldNameColliding(propName, this.selectedClass)

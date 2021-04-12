@@ -89,8 +89,8 @@ export class DbServiceService {
                     newClassName = c.name + (Math.floor(Math.random() * 1000))
                   }
                   for (let e of fullData.data) {
-                    if (e.data['_class'] == c.name) {
-                      e.data['_class'] = newClassName
+                    if (e.data['class'] == c.name) {
+                      e.data['class'] = newClassName
                     }
                   }
                   c.name = newClassName
@@ -107,7 +107,7 @@ export class DbServiceService {
                   if (newPropName != p) {
                     // done refactor data
                     for (let e of fullData.data) {
-                      if (e.data['_class'] == c.name && e.data[p]) {
+                      if (e.data['class'] == c.name && e.data[p]) {
                         e.data[newPropName] = e.data[p]
                         delete e.data[p];
                       }
@@ -125,11 +125,11 @@ export class DbServiceService {
           let dateTypes = ['date', 'time', 'datetime']
           for (let e of fullData.data) {
             for (let p in e.data) {
-              let standard = p == 'id' || p == '_class' || p == 'parent'
+              let standard = p == 'id' || p == 'class' || p == 'parent'
               let standardEdges = e.group == 'edges' && (p == 'target' || p == 'source')
               if (standard || standardEdges || !e.data[p]) continue;
-              //let c = this.classesMap[e.data['_class']]
-              let props = this.getAllProps(e.data['_class']);
+              //let c = this.classesMap[e.data['class']]
+              let props = this.getAllProps(e.data['class']);
               //console.log(e.data.id, p, props[p])
               if (props[p] && dateTypes.includes(props[p].type)) {
                 e.data[p] = new Date(e.data[p])
@@ -223,12 +223,12 @@ export class DbServiceService {
 
   getAllInstances(className) {
     let accum = this.getClassWithDescendants(className).map(c => c.name);
-    let descendantsSelector = '[_class = "'+accum.join('"], [_class = "')+'"]';
+    let descendantsSelector = '[class = "'+accum.join('"], [class = "')+'"]';
     return this.cy.$(descendantsSelector);
   }
 
   getDirectInstances(className) {
-    return this.cy.$(`[_class = '${className}']`)
+    return this.cy.$(`[class = '${className}']`)
   }
 
   getById(id) {
@@ -312,12 +312,12 @@ export class DbServiceService {
             // done refactor
             /*let elements = this.cy.elements();
             for (let e of elements) {
-              if (e.data('_class') == className) {
-                e.data('_class', params.name)
+              if (e.data('class') == className) {
+                e.data('class', params.name)
               }
             }*/
             let elements = this.getDirectInstances(className)
-            elements.data('_class', params.name)
+            elements.data('class', params.name)
           }
           c[t] = params[t];
           this.update();
@@ -370,7 +370,7 @@ export class DbServiceService {
           // done refactor
           /*let elements = this.cy.elements();
           for (let e of elements) {
-            if (e.data('_class') == className && e.data(propName)) {
+            if (e.data('class') == className && e.data(propName)) {
               e.data(params.name, e.data(propName))
               e.removeData(propName)
             }
@@ -397,7 +397,7 @@ export class DbServiceService {
     let index = this.classes.indexOf(cl)
     if (index >= 0) {
       let names = this.getClassWithDescendants(name).map(c => c.name);
-      this.getAllInstances(name).data('_class', cl.superClass);
+      this.getAllInstances(name).data('class', cl.superClass);
 
       for (let name of names) {
         this.classes.splice(index, 1)
