@@ -23,130 +23,194 @@ export class DbServiceService {
   classesMap = {};
   classesTree = {};
 
-  export(path, data, callback): void {
-    if (!data) {
-      if (this.cy) {
-        data = this.cy.elements().not(this.cy.$('.edge_bend_point')).jsons();
-      } else {
-        data = [];
+  export(path, data, callback, onerror): void {
+    try {
+      if (!data) {
+        if (this.cy) {
+          data = this.cy.elements().not(this.cy.$('.edge_bend_point')).jsons();
+        } else {
+          data = [];
+        }
       }
+      let zoom = this.cy ? this.cy.zoom() : 1;
+      let pan = this.cy ? this.cy.pan() : {x: 100, y: 100};
+      let cloneClasses = this.classes.map(c => {
+        return {
+          name: c.name,
+          superClass: c.superClass,
+          properties: c.properties
+        }
+      })
+      let styleObj = this.cy ? this.cy.style().json() : []
+      styleObj = styleObj.filter((entry) => entry.selector != '._gridParentPadding')
+      console.log(cloneClasses)
+      let fullData = {
+        data: data,
+        style: styleObj,
+        lastId: this.lastId,
+        classes: cloneClasses,
+        zoom: zoom,
+        pan: pan
+      }
+      this.fs.writeFile(path, JSON.stringify(fullData, (key, value) => {
+        if (value !== null) return value;
+      }), function(error) {
+        if (error) {
+          console.log(error);
+          if (typeof callback == 'function') callback(null, null)
+        } else {
+          if (typeof callback == 'function') callback(path, {
+            data: data,
+            zoom: zoom,
+            pan: pan
+          })
+        }
+      });
+    } catch (err) {
+      console.log(err);
+      if (typeof callback == 'function') callback(null, null)
+      if (onerror) onerror(err)
     }
-    let zoom = this.cy ? this.cy.zoom() : 1;
-    let pan = this.cy ? this.cy.pan() : {x: 100, y: 100};
-    let cloneClasses = this.classes.map(c => {
-      return {
-        name: c.name,
-        superClass: c.superClass,
-        properties: c.properties
-      }
-    })
-    let styleObj = this.cy ? this.cy.style().json() : []
-    styleObj = styleObj.filter((entry) => entry.selector != '._gridParentPadding')
-    console.log(cloneClasses)
-    let fullData = {
-      data: data,
-      style: styleObj,
-      lastId: this.lastId,
-      classes: cloneClasses,
-      zoom: zoom,
-      pan: pan
-    }
-    this.fs.writeFile(path, JSON.stringify(fullData, (key, value) => {
-      if (value !== null) return value;
-    }), function(error) {
-      if (error) {
-        console.log(error);
-        if (typeof callback == 'function') callback(null, null)
-      } else {
-        if (typeof callback == 'function') callback(path, {
-          data: data,
-          zoom: zoom,
-          pan: pan
-        })
-      }
-    });
   }
 
-  import(path, merge, callback): void {
+  import(path, merge, callback, onerror): void {
     try {
       this.fs.readFile(path, 'utf8', (e, fileContent) => {
         if (e) {
           console.log(e);
           if (typeof callback == 'function') callback(null, null)
+          if (onerror) onerror(e)
           return;
         }
-        let fullData = JSON.parse(fileContent);
-        if (!fullData || !(fullData.data instanceof Array) || !(typeof fullData.lastId == 'number')) {
-          if (typeof callback == 'function') callback(null, null)
-        } else {
-          if (merge) {
-            for (let c of fullData.classes) {
-              if (c.name != 'V' && c.name != 'E') {
-                if (this.classesMap[c.name]) {
-                  // done refactor data
-                  let newClassName = c.name
-                  while (newClassName in this.classesMap) {
-                    newClassName = c.name + (Math.floor(Math.random() * 1000))
+
+        try {
+          let fullData = JSON.parse(fileContent);
+          if (!fullData || !(fullData.data instanceof Array) || !(typeof fullData.lastId == 'number')) {
+            if (typeof callback == 'function') callback(null, null)
+          } else {
+            if (merge) {
+              let toRefactor = {}
+              for (let c of fullData.classes) {
+                if (c.name != 'V' && c.name != 'E') {
+                  if (this.classesMap[c.name]) {
+                    let newClassName = c.name
+                    while (newClassName in this.classesMap) {
+                      newClassName = c.name + '_' + (Math.floor(Math.random() * 100000))
+                    }
+                    toRefactor[c.name] = {
+                      renameInNew: newClassName
+                    }
+                    c.name = newClassName
                   }
-                  for (let e of fullData.data) {
-                    if (e.data['class'] == c.name) {
-                      e.data['class'] = newClassName
+                  
+                  this.classes.push(c);
+                } else {
+                  let oldProps = this.classesMap[c.name].properties;
+                  let newProps = c.properties;
+                  for (let p in newProps) {
+                    let newPropName = p
+                    while (newPropName in oldProps) {
+                      newPropName = p + '_' + (Math.floor(Math.random() * 100000))
+                    }
+
+                    if (!toRefactor[c.name]) toRefactor[c.name] = {}
+
+                    if (newPropName == p) {
+                      if (!toRefactor[c.name].addPropertiesToOld) {
+                        toRefactor[c.name].addPropertiesToOld = {}
+                      }
+                      toRefactor[c.name].addPropertiesToOld[p] = ''
+                    } else {
+                      if (!toRefactor[c.name].renameProperties) {
+                        toRefactor[c.name].renameProperties = {}
+                      }
+                      toRefactor[c.name].renameProperties[p] = newPropName
+                    }
+                    
+                    oldProps[newPropName] = newProps[p]
+                  }
+                  for (let p in oldProps) {
+                    if (!(p in newProps)) {
+                      if (!toRefactor[c.name].addPropertiesToNew) {
+                        toRefactor[c.name].addPropertiesToNew = []
+                      }
+                      toRefactor[c.name].addPropertiesToNew.push(p)
                     }
                   }
-                  c.name = newClassName
                 }
-                this.classes.push(c);
-              } else {
-                let oldProps = this.classesMap[c.name].properties;
-                let newProps = c.properties;
-                for (let p in newProps) {
-                  let newPropName = p
-                  while (newPropName in oldProps) {
-                    newPropName = p + (Math.floor(Math.random() * 1000))
-                  }
-                  if (newPropName != p) {
-                    // done refactor data
-                    for (let e of fullData.data) {
-                      if (e.data['class'] == c.name && e.data[p]) {
-                        e.data[newPropName] = e.data[p]
-                        delete e.data[p];
+              }
+
+              //refactor new
+              for (let e of fullData.data) {
+                for (let cName in toRefactor) {
+                  if (e.data['class'] == cName) {
+                    let r = toRefactor[cName]
+                    if (r.renameInNew) {
+                      e.data['class'] = toRefactor[cName].renameInNew
+                    }
+
+                    if (r.renameProperties) {
+                      for (let p in r.renameProperties) {
+                        if (e.data[p]) {
+                          let newPropName = r.renameProperties[p]
+                          e.data[newPropName] = e.data[p]
+                          delete e.data[p];
+                        }
+                      }
+                    }
+
+                    if (r.addPropertiesToNew) {
+                      for (let p of r.addPropertiesToNew) {
+                        e.data[p] = ''
                       }
                     }
                   }
-                  oldProps[newPropName] = newProps[p]
+                }
+              }
+
+              //refactor old
+              if (toRefactor['V'].addPropertiesToOld) {
+                this.getDirectInstances('V').data(toRefactor['V'].addPropertiesToOld)
+              }
+              if (toRefactor['E'].addPropertiesToOld) {
+                this.getDirectInstances('E').data(toRefactor['E'].addPropertiesToOld)
+              }
+            } else {
+              this.lastId = fullData.lastId
+              this.classes = fullData.classes
+            }
+            this.update();
+            let dateTypes = ['date', 'time', 'datetime']
+            for (let e of fullData.data) {
+              for (let p in e.data) {
+                let standard = p == 'id' || p == 'class' || p == 'parent'
+                let standardEdges = e.group == 'edges' && (p == 'target' || p == 'source')
+                if (standard || standardEdges || !e.data[p]) continue;
+                //let c = this.classesMap[e.data['class']]
+                let props = this.getAllProps(e.data['class']);
+                //console.log(e.data.id, p, props[p])
+                if (props[p] && dateTypes.includes(props[p].type)) {
+                  e.data[p] = new Date(e.data[p])
                 }
               }
             }
-          } else {
-            this.lastId = fullData.lastId
-            this.classes = fullData.classes
+            if (typeof callback == 'function') callback(path, {
+              data: fullData.data,
+              style: fullData.style,
+              zoom: fullData.zoom,
+              pan: fullData.pan
+            })
           }
-          this.update();
-          let dateTypes = ['date', 'time', 'datetime']
-          for (let e of fullData.data) {
-            for (let p in e.data) {
-              let standard = p == 'id' || p == 'class' || p == 'parent'
-              let standardEdges = e.group == 'edges' && (p == 'target' || p == 'source')
-              if (standard || standardEdges || !e.data[p]) continue;
-              //let c = this.classesMap[e.data['class']]
-              let props = this.getAllProps(e.data['class']);
-              //console.log(e.data.id, p, props[p])
-              if (props[p] && dateTypes.includes(props[p].type)) {
-                e.data[p] = new Date(e.data[p])
-              }
-            }
-          }
-          if (typeof callback == 'function') callback(path, {
-            data: fullData.data,
-            style: fullData.style,
-            zoom: fullData.zoom,
-            pan: fullData.pan
-          })
+        } catch (err) {
+          console.log(err);
+          if (typeof callback == 'function') callback(null, null)
+          if (onerror) onerror(err)
         }
       });
     } catch (err) {
-        console.log(err);
-        if (typeof callback == 'function') callback(null, null)
+      console.log(err);
+      if (typeof callback == 'function') callback(null, null)
+      if (onerror) onerror(err)
     }
   }
 
@@ -338,7 +402,7 @@ export class DbServiceService {
                   case 'number': newValue = oldValue*1; break;
                   case 'string': newValue = ''+oldValue; break;
                   case 'boolean': newValue = !!(oldValue && oldValue != 'false'); break;
-                  case 'number': newValue = new Date(oldValue); break;
+                  case 'date': newValue = new Date(oldValue); break;
                 }
                 if (isNaN(newValue)) {
                   e.data('')

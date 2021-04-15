@@ -60,10 +60,7 @@ export class TreeBranchComponent implements OnInit {
   }
 
   cutForbidden(string) {
-    string = string.replace('\n', ' ')
-    string = string.replace('\r', ' ')
-    string = string.replace('\t', ' ')
-    string = string.replace('\0', '')
+    string = string.replace(/[\n\r\t\0]/g, ' ')
     return string
   }
   

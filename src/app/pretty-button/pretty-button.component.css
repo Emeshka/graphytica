@@ -1,3 +1,6 @@
+:host {
+    display: inline-block;
+}
 .pretty_button {
     text-decoration: none;
     display: inline-block;

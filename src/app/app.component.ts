@@ -55,8 +55,8 @@ export class AppComponent implements OnInit {
   successListener = (src, obj) => {
     if (this.appView != 'main_view') {
       this.setWaiting('Почти готово...');
-      console.log('app received import or export success =', src);
-      if (!src) {
+      //console.log('app received import or export success =', src);
+      if (!src || !obj) {
         this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
           type: 'warning',
           buttons: ['OK'],
@@ -198,7 +198,14 @@ export class AppComponent implements OnInit {
         // первый экспорт пустой базы данных
         this.setWaiting('Сохранение проекта...');
         this.conn.initializeNew();
-        this.conn.export(prExportPath, null, this.successListener);
+        this.conn.export(prExportPath, null, this.successListener, (err) => {
+          this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+            type: 'warning',
+            buttons: ['OK'],
+            title: 'Ошибка',
+            message: `Не удалось сохранить проект по указанному пути:\n${prExportPath}\n${err.message}`
+          });
+        });
       }
     });
   }
@@ -261,7 +268,15 @@ export class AppComponent implements OnInit {
 
   openProject = () => {
     this.setWaiting('Открытие проекта...');
-    this.conn.import(this.openProjectPath, false, this.successListener)
+    this.conn.import(this.openProjectPath, false, this.successListener, (err) => {
+      this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+        type: 'warning',
+        buttons: ['OK'],
+        title: 'Ошибка',
+        message: `При открытии проекта по пути ${this.openProjectPath} возникла ошибка. \n${err.message}
+          Возможно вы пытаетесь открыть не проект Graphytica или файл поврежден.`
+      })
+    })
   }
 
   reopenProject = (projectPath) => {

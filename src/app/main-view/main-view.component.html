@@ -35,39 +35,6 @@
       ></tiny-button>
     </div>
     <div id="instrument_panel_content">
-      <div class="center_block">
-        <div class="icon_button_container" *ngIf="openedCategory == 'file'">
-            <!--<app-tile-button
-              text="Сохранить проект"
-              iconSrc="assets/img/save.png"
-              [disabled]="saveDisabled.bind(this)"
-              [callback]="saveProjectListener.bind(this)"
-            ></app-tile-button>
-            <app-save-file-tile-button
-              text="Сохранить как"
-              iconSrc="assets/img/saveas.png"
-              [selectFolders]="false"
-              [multiselection]="false"
-              [callback]="saveAsProjectListener.bind(this)"
-            ></app-save-file-tile-button>
-            <app-tile-button
-              text="Импорт"
-              iconSrc="assets/img/import.png"
-              [callback]="switchDialog.bind(this, 'import_dialog')"
-            ></app-tile-button>
-            <app-tile-button
-              text="Восстановить из сохранения"
-              iconSrc="assets/img/reload.png"
-              [disabled]="saveDisabled.bind(this)"
-              [callback]="restoreProjectFromDisk.bind(this)"
-            ></app-tile-button>
-            <app-tile-button
-              text="Закрыть проект"
-              iconSrc="assets/img/close.png"
-              [callback]="closeProjectListener.bind(this)"
-            ></app-tile-button>-->
-        </div>
-      </div>
       <edit-category
         *ngIf="openedCategory == 'edit'"
         [selection]="selection"
@@ -111,16 +78,304 @@
   <div class="vertical_spacer"></div>
   <div class="main_dialog vertical_spacer_el_middle" *ngIf="mainDialog == 'import_dialog'">
     <h1>Импорт - добавить к текущему графу</h1>
-    <app-filepath-selector
-      [callback]="importProjectPathUpdateCallback"
-      [selectFolders]="false"
-      [multiselection]="false"
-    ></app-filepath-selector>
-    <div class="form_error" *ngIf="!importPath">
-      Обязательное поле.
+    <ng-container *ngIf="!importSettings.isTipOpened">
+      <app-filepath-selector
+        [callback]="importProjectPathUpdateCallback"
+        [selectFolders]="false"
+        [multiselection]="false"
+      ></app-filepath-selector>
+      <div class="main_dialog_padding form_error" *ngIf="!importSettings.path">
+        Обязательное поле.
+      </div>
+      <div class="main_dialog_padding">
+        Тип файла:
+        <select (change)="setImportFormat($event.target.value)">
+          <option [selected]="importSettings.format == ''" value="">Проект Graphytica (.gph)</option>
+          <option [selected]="importSettings.format == 'csv'" value="csv">CSV (Comma Separated Values)</option>
+        </select>
+      </div>
+      <div class="main_dialog_padding" *ngIf="importSettings.format == ''">
+        <div class="nota_bene">
+          Если в импортируемом проекте Graphytica содержатся классы с именами,
+          уже использующимися в этом проекте, будет предпринята попытка переименовать данные классы путем добавления
+          случайных цифр в конец имени.
+        </div>
+        <div class="nota_bene">
+          Классы V и E будут объединены. Совпадающие по имени свойства будут переименованы аналогично классам.
+        </div>
+      </div>
+      <div class="main_dialog_padding" *ngIf="importSettings.params && importSettings.params.length > 0">
+        <div id="import_settings_container" class="import_two_columns">
+          <div class="nota_bene">Чтобы увидеть подсказку, наведите на параметр.
+            <span *ngIf="importSettings.format == 'csv'">Все параметры являются опциональными.</span>
+          </div>
+          <table id="import_settings">
+            <tr>
+              <td colspan="2">
+                <span class="grey_link" (click)="importOpenExternalDocs(importSettings.format)">
+                  Подробнее о значении параметров</span> | 
+                <span class="grey_link" (click)="importSwitchValueTip()">Как вводить значения?</span>
+              </td>
+            </tr>
+            <tr *ngFor="let param of importSettings.params" title="{{param.title}}">
+              <td>
+                <div>{{param.name}}</div>
+                <div *ngIf="param.activeType">
+                  <select
+                    class="active_type_select"
+                    value="param.activeType"
+                    (change)="setImportActiveParamType(param.name, t)"
+                  >
+                    <option *ngFor="let t of param.type" [value]="t" [selected]="param.activeType == t">{{t}}</option>
+                  </select>
+                  <!--<div *ngFor="let t of param.type">
+                    <label>
+                      <input
+                        type="radio"
+                        name="{{param.name}}_active_type"
+                        [checked]="param.activeType == t"
+                        (change)="setImportActiveParamType(param.name, t)"
+                      >
+                      {{t}}
+                    </label>
+                  </div>-->
+                </div>
+              </td>
+              <td>
+                <input *ngIf="param.type == 'integer'"
+                  type="number"
+                  placeholder="{{param.activeType || param.type}}"
+                  class="full_width"
+                  value="param.value"
+                  (input)="setImportSettings(param.name, $event.target)"
+                  min="0"
+                  step="1"
+                >
+                <div class="checkbox_full_width_container">
+                  <input *ngIf="param.activeType == 'boolean' || param.type == 'boolean'"
+                    type="checkbox"
+                    title="{{param.activeType || param.type}}"
+                    class="full_width"
+                    [checked]="param.value"
+                    (change)="setImportSettings(param.name, $event.target)"
+                  >
+                </div>
+                <autosized-textarea
+                  *ngIf="param.type == 'string' || param.type == 'char' || param.type == 'char[]' || param.type == 'string[]'"
+                  placeholder="{{param.activeType || param.type}}"
+                  [isMasked]="false"
+                  class="full_width"
+                  [value]="param.value ? (param.value.join ? param.value.join(' ') : param.value) : ''"
+                  (input)="setImportSettings(param.name, $event.target)"
+                ></autosized-textarea>
+                <div *ngIf="param.activeType && param.activeType.startsWith('function') || param.type.startsWith && param.type.startsWith('function')">
+                  <div class="function_signature">{{param.activeType || param.type}} {{'{'}}</div>
+                  <autosized-textarea
+                    placeholder="Тело функции"
+                    [isMasked]="false"
+                    class="full_width function"
+                    [min]="4"
+                    [max]="30"
+                    [value]="param.value ? param.value : ''"
+                    (input)="setImportSettings(param.name, $event.target)"
+                  ></autosized-textarea>
+                  <div class="function_signature">{{'}'}}</div>
+                </div>
+                <select *ngIf="param.type == 'select'"
+                  class="full_width"
+                  value="param.value"
+                  (change)="setImportSettings(param.name, $event.target)"
+                >
+                  <option *ngFor="let v of param.enum" [value]="v" [selected]="v == param.value">{{v}}</option>
+                </select>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="import_two_columns" id="csv_import_preview" *ngIf="importSettings.format == 'csv'">
+          <div>
+            <div class="nota_bene">Данные из CSV-файлов могут быть импортированы только как множество вершин, 
+              принадлежащих к одному классу. Столбцы CSV будут преобразованы в поля класса.</div>
+            <div class="attention">Уникальные (первичные) ключи, если такие есть в ваших данных, будут сохранены 
+              как обычные поля. В проекте Graphytica они приобретут другой id.
+            </div>
+            <div>
+              <span>Как назвать новый класс вершин: </span>
+              <autosized-textarea
+                placeholder="Имя класса"
+                class="import_new_class_name"
+                [value]="importSettings.className"
+                [isMasked]="false"
+                (input)="setImportNewClassName($event)"
+              ></autosized-textarea>
+            </div>
+            <div>
+              <span>Предпросмотр с записи </span>
+              <input
+                input="number"
+                placeholder="с № записи" 
+                title="Номер первой записи для предпросмотра"
+                class="demo_line"
+                [value]="this.importSettings.demoLineFrom"
+                min="1"
+                step="1"
+                (input)="setImportDemoLine('from', $event.target.value)"
+              > до записи 
+              <input
+                input="number"
+                placeholder="до № записи" 
+                title="Номер последней записи для предпросмотра"
+                class="demo_line"
+                [value]="this.importSettings.demoLineTo"
+                min="1"
+                step="1"
+                (input)="setImportDemoLine('to', $event.target.value)"
+              >
+              <app-pretty-button
+                text="Предпросмотр"
+                [callback]="import.bind(this, true)"
+                [active]="importSettings.path && importFileExists()"
+              ></app-pretty-button>
+            </div>
+            <div class="prewrap form_error" *ngIf="importSettings.errorMessage">{{importSettings.errorMessage}}</div>
+            <div *ngIf="importSettings.info">
+              <table>
+                <tr>
+                  <td>Строк</td>
+                  <td>Записей</td>
+                  <td>Закомментированных строк</td>
+                  <td>Пустых строк</td>
+                  <td>Строк с нестандартным числом столбцов</td>
+                </tr>
+                <tr>
+                  <td>{{ importSettings.info.lines }}</td>
+                  <td>{{ importSettings.info.records }}</td>
+                  <td>{{ importSettings.info.comment_lines }}</td>
+                  <td>{{ importSettings.info.empty_lines }}</td>
+                  <td>{{ importSettings.info.invalid_field_length }}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <div id="demo_container">
+            <div>Входные данные:</div>
+            <div class="demo_import">
+              {{importSettings.demoSource}}
+            </div>
+            <div>Результат:</div>
+            <div>
+              <table class="demo_import_table">
+                <tr *ngFor="let row of importSettings.result; let i = index">
+                  <td>{{ importSettings.demoLineFrom + i }}</td>
+                  <td *ngFor="let column of row; let j = index">
+                    <span *ngIf="i > 0">{{column}}</span>
+                    <ng-container *ngIf="i == 0">
+                      <div>
+                        <input
+                          type="checkbox"
+                          title="Включить этот столбец в импорт"
+                          [checked]="importSettings.includeHeaders[j]"
+                          (change)="setImportIncludeHeader(j)"
+                        >
+                      </div>
+                      <div>
+                        <autosized-textarea
+                          placeholder="Под каким именем импортировать столбец"
+                          class="full_width"
+                          [class.invalid_input]="['id', 'class', 'parent'].includes(importSettings.headersNames[j])"
+                          [value]="importSettings.headersNames[j]"
+                          [isMasked]="true"
+                          (input)="setImportHeaderName(j, $event)"
+                        ></autosized-textarea>
+                      </div>
+                      <div>
+                        <select *ngIf="importSettings.includeHeaders[j]"
+                          value="string"
+                          (change)="setImportHeaderType(j, $event.target.value)"
+                        >
+                          <option *ngFor="let v of importSettings.supportedTypes" [value]="v" [selected]="v == 'string'">{{v}}</option>
+                        </select>
+                      </div>
+                    </ng-container>
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <app-pretty-button text="Отмена" [callback]="switchDialog.bind(this, '')"></app-pretty-button>
+      <ng-container *ngIf="importSettings.format == ''">
+        <app-pretty-button text="Открыть" [callback]="import.bind(this)"
+          [active]="importSettings.path && importFileExists()">
+        </app-pretty-button>
+      </ng-container>
+      <ng-container *ngIf="importSettings.format == 'csv'">
+        <app-pretty-button text="Открыть" [callback]="import.bind(this)"
+          [active]="importSettings.path && importFileExists() && importSettings.className  && isImportValidCSV()">
+        </app-pretty-button>
+      </ng-container>
+    </ng-container>
+    <div id="tip_block" *ngIf="importSettings.isTipOpened">
+      <p class="grey_link" (click)="importSwitchValueTip()">&lt; Назад</p>
+      <h2>Ввод значений в настройках импорта</h2>
+      <p>Некоторые способы импорта требуют от вас дополнительной настройки. Слева в таблице можно ввести
+        нестандартные значения параметров, которые помогут правильнее распознать данные. При наведении курсора
+        на строку таблицы появится всплывающая подсказка, что значит этот параметр, какое значение по умолчанию 
+        он имеет и какие значения можете задать вы. В некоторых случаях вам предоставлен переключатель с
+        выбором из нескольких значений, но чаще требуется ввод.
+      </p>
+      <h3>Целые числа (<span class="mono">integer</span>)</h3>
+      <p>Ввести с клавиатуры или стрелочками рядом с полем.</p>
+      <h3>Логические (<span class="mono">true</span> или <span class="mono">false</span>)</h3>
+      <p>Включить или отключить галочку.</p>
+      <h3>Строки (<span class="mono">string</span>)</h3>
+      <p>Ввести с клавиатуры или вставить <span class="mono">Ctrl+V</span>.
+        Если требуется ввести специальный символ, замените его на:</p>
+      <ul>
+        <li>перенос строки (LINE FEED) - <span class="mono">\n</span></li>
+        <li>возврат каретки (CARRIAGE RETURN) - <span class="mono">\r</span></li>
+        <li>табуляция (CHARACTER TABULATION) - <span class="mono">\t</span></li>
+        <li>пустой символ (NULL) - <span class="mono">\0</span></li>
+        <li>сам символ "\" - <span class="mono">\\</span></li>
+        <li>символы юникода от U+0000 до U+10FFFF - <span class="mono">\uXXXX</span>, где XXXX - это шестнадцатеричное число от
+          0000 до 10FFFF
+        </li>
+      </ul>
+      <h3>Символы (<span class="mono">char</span>)</h3>
+      <p>Ввести с клавиатуры ровно один символ. Для ввода специальных символов и "\" см. Строки.</p>
+      <h3>Множество строк (<span class="mono">string[]</span>)</h3>
+      <p>Ввести с клавиатуры одну или несколько строк, разделенных единичным пробелом.
+        Для ввода специальных символов и "\" см. Строки. Если в одну из строк требуется включить сам пробел,
+        то заменить его на <span class="mono">\s</span>
+      </p>
+      <h3>Множество символов (<span class="mono">char[]</span>)</h3>
+      <p>Ввести с клавиатуры один или несколько символов, разделенных единичным пробелом.
+        Для ввода специальных символов и "\" см. Строки. Если требуется ввести сам пробел,
+        то заменить его на <span class="mono">\s</span>
+      </p>
+      <h3>Функция (<span class="mono">function</span>)</h3>
+      <p>Ввести с клавиатуры тело функции на языке
+        <span class="grey_link" (click)="importOpenExternalDocs('ecmascript')">Javascript (ECMAScript 2015)</span>.
+        Над полем ввода указаны имена аргументов, которые будут передаваться функции.
+        Значение аргументов описано во всплывающей подсказке, или вы можете ознакомиться с более подробными сведениями,
+        кликнув ссылку "Подробнее о значении параметров" вверху таблицы.
+      </p>
+      <p class="attention">
+        Некоторые классы, интерфейсы, синтаксические конструкции и все глобальные переменные заблокированы
+        в целях безопасности. Функция может работать <b>только</b> с переданными аргументами.
+      </p>
+      <p class="attention">
+        Будьте осторожны при написании функции. Как и всегда в программировании, никто не застраховал вас от ошибок.
+        Любой код вы запускаете на свой страх и риск.
+      </p>
+      <h2>Ошибки импорта</h2>
+      <p>
+        Если при выполнении предпросмотра или самого импорта возникнет ошибка, она будет отражена в правой половине окна
+        сверху. Причинами ошибок могут быть как неправильные настройки, так и поврежденные входные данные.
+        Внимательно читайте код и описание ошибки, обычно они содержат достаточную информацию. Также дополнительную
+        информацию вы можете найти на сайте документации по ссылке "Подробнее о значении параметров" вверху таблицы.
+      </p>
     </div>
-    <input type="button" value="Отмена" (click)="switchDialog('')">
-    <input type="button" value="Открыть" (click)="importMerge()"
-      *ngIf="importFileExists() && importPath">
   </div>
 </div>

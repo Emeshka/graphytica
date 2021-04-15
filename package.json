@@ -32,6 +32,7 @@
     "@angular/platform-browser": "^10.2.4",
     "@angular/platform-browser-dynamic": "^10.2.4",
     "@angular/router": "^10.2.4",
+    "csv-parse": "^4.15.3",
     "cytoscape": "^3.18.1",
     "cytoscape-cola": "^2.4.0",
     "cytoscape-grid-guide": "^2.3.2",
@@ -40,6 +41,7 @@
     "ngx-electron": "^2.2.0",
     "rxjs": "^6.6.7",
     "single-instance": "0.0.1",
+    "stream-transform": "^2.1.0",
     "tslib": "^2.1.0",
     "zone.js": "~0.10.2"
   },

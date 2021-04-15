@@ -166,10 +166,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   }
 
   cutForbidden(string) {
-    string = string.replace('\n', ' ')
-    string = string.replace('\r', ' ')
-    string = string.replace('\t', ' ')
-    string = string.replace('\0', '')
+    string = string.replace(/[\n\r\t\0]/g, ' ')
     return string
   }
 
@@ -235,9 +232,9 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     let newData = oldSelected.jsons();
     newData.forEach((item) => newIdMap[item.data.id] = this.conn.nextId())
     newData.forEach((item) => {
-      if (item.target && item.source) {
-        item.target = newIdMap[item.target]
-        item.source = newIdMap[item.source]
+      if (item.data.target && item.data.source) {
+        item.data.target = newIdMap[item.data.target]
+        item.data.source = newIdMap[item.data.source]
       }
       item.data.id = newIdMap[item.data.id]
       item.selected = true
@@ -245,12 +242,12 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     this.conn.cy.add(newData)
 
     let duplicateStyle = this.conn.cy.style().json()
-    let regexp = /\[id = ([a-z\d]+)\]/g
+    let regexp = /\[id = ['"]?([a-z\d]+)['"]?\]/g
     for (let entry of duplicateStyle) {
       //`[id = '${id}']`
       if (regexp.test(entry.selector)) {
         entry = JSON.parse(JSON.stringify(entry))
-        entry.selector.replace(regexp, (match, id) => {
+        entry.selector = entry.selector.replace(regexp, (match, id) => {
           return `[id = '${newIdMap[id]}']`
         })
         duplicateStyle.push(entry)

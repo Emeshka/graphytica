@@ -73,14 +73,16 @@
 }
 
 .main_dialog {
-    background-color: white;
+    display: inline-block;
+    width: 90%;
+    height: 90%;
+    padding: 20px;
     border: 1px solid black;
     border-radius: 4px;
-    width: 50%;
-    height: 50%;
-    padding: 20px;
+    background-color: white;
     text-align: left;
-    display: inline-block;
+    overflow: auto;
+    font-size: 10pt;
 }
 
 .center_block {
@@ -95,4 +97,215 @@
     text-align: left;
     /*display: flex;
     justify-content: space-evenly;*/
+}
+
+.main_dialog_padding {
+    padding: 10px 0px;
+    display: flex;
+}
+
+#import_settings_container {
+    width: 30%;
+}
+
+#import_settings {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+}
+
+#import_settings td:not([colspan="2"]):first-child {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 5px 15px;
+    overflow: auto;
+    vertical-align: middle;
+    font-size: 10pt;
+    font-family: monospace;
+    overflow-wrap: anywhere;
+    direction: rtl;
+}
+
+#import_settings td:not([colspan="2"]):first-child div {
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+#import_settings td:not([colspan="2"]):first-child label:hover {
+    text-decoration: underline;
+}
+
+#import_settings td:not([colspan="2"]) {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    overflow: auto;
+    vertical-align: middle;
+    font-size: 10pt;
+    overflow-wrap: break-word;
+}
+
+.function {
+    overflow: auto;
+    font-family: monospace;
+}
+
+.function_signature {
+    font-style: italic;
+}
+
+.import_new_class_name {
+    width: 50%;
+    margin: 10px;
+}
+
+#import_settings td:first-child {
+    text-align: right;
+}
+
+.full_width {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.checkbox_full_width_container {
+    width: 100%;
+    text-align: center;
+}
+
+.checkbox_full_width_container input {
+    width: 80%;
+}
+
+.masked_input {
+    background-color: rgba(0,0,0,0);
+    width: calc(100% - 20px);
+    height: 100%;
+    line-height: 100%;
+    border-radius: 0px;
+    border: none;
+    padding: 0px 10px;
+    margin: 0px;
+    background-size: 13px;
+    background-repeat: no-repeat;
+    background-position: 90%;
+}
+
+.masked_input:hover:not(:focus) {
+    background-image: url('../../assets/img/edit.png');
+}
+
+#csv_import_preview {
+    width: 100%;
+}
+
+.demo_import {
+    height: 30em;
+    width: 100%;
+    margin: 2px;
+    padding: 10px;
+    font-size: 10pt;
+    font-family: monospace;
+    overflow-wrap: break-word;
+    overflow: auto;
+    background: #eeeeee;
+    white-space: pre-wrap;
+}
+
+.demo_import_table {
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.demo_import_table tr:first-child td {
+    font-weight: bold;
+    text-align: center;
+}
+
+.demo_import_table tr:first-child td:hover {
+    color: #333333;
+}
+
+.demo_import_table td {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.import_two_columns {
+    display: flex;
+    flex-direction: column;
+    padding: 0px 3px;
+}
+
+#demo_container {
+    height: 100%;
+    width: 100%;
+}
+
+.grey_link {
+    text-decoration: underline;
+    color: grey;
+    font-size: 10pt;
+    font-style: italic;
+    cursor: pointer;
+}
+
+.nota_bene {
+    padding: 10px 10px 10px 30px;
+    margin: 2px;
+    border: 1px solid rgb(116, 135, 211);
+    background-color: rgb(238, 241, 252);
+    color: rgb(13, 39, 63);
+    background-image: url('../../assets/img/nota_bene.png');
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+.attention {
+    padding: 10px 10px 10px 30px;
+    margin: 2px;
+    border: 1px solid #3f100d;
+    background-color: #f0eedd;
+    color: #270604;
+    background-image: url('../../assets/img/attention.png');
+    background-position: left center;
+    background-repeat: no-repeat;
+    background-size: 20px;
+}
+
+.invalid_input {
+    background: rgba(255, 0, 0, 0.2);
+}
+
+.mono {
+    background-color:#eeeeee;
+    font-size: 10pt;
+    font-family: monospace;
+    overflow-wrap: break-word;
+}
+
+#tip_block {
+    overflow: auto;
+}
+
+input[type="number"] {
+    font-size: 10pt;
+}
+
+.demo_line {
+    width: 5em;
+}
+
+.prewrap {
+    font-size: 10pt;
+    font-family: monospace;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.active_type_select {
+    max-width:100%;
+    overflow: hidden;
+}
+
+.active_type_select option {
+    max-width:100%;
+    overflow: hidden;
 }

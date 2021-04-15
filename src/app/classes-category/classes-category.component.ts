@@ -165,11 +165,12 @@ export class ClassesCategoryComponent implements OnInit {
   }
 
   hasForbidden(propOrClassName) {
-    let forbidden = ['\n', '\t', '\r', '\0']
+    /*let forbidden = ['\n', '\t', '\r', '\0']
     let hasForbidden = forbidden.reduce((accum, current) => {
       return accum && propOrClassName.indexOf(current) >= 0
     }, true)
-    return hasForbidden
+    return hasForbidden*/
+    return propOrClassName.search(/[\n\t\r\0]/g) >= 0
   }
 
   isFieldNameInvalid(propName) {
@@ -211,10 +212,7 @@ export class ClassesCategoryComponent implements OnInit {
   }
 
   cutForbidden(string) {
-    string = string.replace('\n', ' ')
-    string = string.replace('\r', ' ')
-    string = string.replace('\t', ' ')
-    string = string.replace('\0', '')
+    string = string.replace(/[\n\r\t\0]/g, ' ')
     return string
   }
   

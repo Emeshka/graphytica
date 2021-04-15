@@ -14,4 +14,6 @@ export class AutosizedTextareaComponent {
   @Input() title: string = '';
   @Input() autofocus: boolean = false;
   @Input() isMasked: boolean = true;
+  @Input() min: number = 1;
+  @Input() max: number = 6;
 }

@@ -26,12 +26,10 @@ td {
 }
 
 td:first-child {
-    /*width: 30%;*/
     text-align: right;
 }
 
 .masked_input {
-    /*appearance: none;*/
     background-color: rgba(0,0,0,0);
     width: calc(100% - 20px);
     height: 100%;
@@ -47,10 +45,6 @@ td:first-child {
 
 .masked_input:hover:not(:focus) {
     background-image: url('../../assets/img/edit.png');
-}
-
-.masked_input:focus {
-    appearance: auto;
 }
 
 .readonly {

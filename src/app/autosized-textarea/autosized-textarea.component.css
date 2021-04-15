@@ -33,9 +33,8 @@ textarea {
 :host {
     display: inline-block;
     width: 100%;
-    font-size: 11pt;
-    line-height: 14pt;
-    vertical-align: bottom;
+    font-size: 10pt;
+    vertical-align: middle;
 }
 
 .invalid_input {

@@ -1,4 +1,4 @@
-import { Component, Input, ViewChild, NgZone, OnInit } from '@angular/core';
+import { Component, Input, ViewChild, NgZone, OnInit, ErrorHandler } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
 import { DbServiceService } from '../db-service.service';
 import { UpdateRecentService } from '../update-recent.service';
@@ -28,6 +28,8 @@ export class MainViewComponent implements OnInit {
 
   private fs = this._electronService.remote.require('fs');
   private path = this._electronService.remote.require('path');
+  private parseCSV = this._electronService.remote.require('csv-parse');
+  private streamTransform = this._electronService.remote.require('stream-transform');
   private ipcRenderer = this._electronService.ipcRenderer;
   private cy;
 
@@ -95,7 +97,23 @@ export class MainViewComponent implements OnInit {
 
   // диалоги и вуаль во время загрузки
   mainDialog : string = '';
-  importPath : string = '';
+  importSettings : any = {
+    supportedTypes: this.conn.supportedTypes,
+    path: '',
+    format: '',
+    params: [],
+    demoSource: '',
+    result: [],
+    demoLineFrom: 1,
+    demoLineTo: 3,
+    className: '',
+    isTipOpened: false,
+    errorMessage: '',
+    info: {},
+    includeHeaders: [],
+    headersType: [],
+    headersNames: []
+  }
   saveAsPath : string = '';
   
   public selection: OSelection = new OSelection([]);
@@ -369,11 +387,11 @@ export class MainViewComponent implements OnInit {
             || this.activeToolId != 'select_move_any') {
       this.cy.remove('.edge_bend_point')
       for (let selector in listeners.tapstart) {
-        console.log('remove tapstart', selector, listeners['tapstart'][selector], 'element id:', listeners.id)
+        //console.log('remove tapstart', selector, listeners['tapstart'][selector], 'element id:', listeners.id)
         this.cy.removeListener('tapstart', selector, listeners['tapstart'][selector])
       }
       for (let listener of listeners.tapend) {
-        console.log('remove tapend', listener, 'element id:', listeners.id)
+        //console.log('remove tapend', listener, 'element id:', listeners.id)
         this.cy.removeListener('tapend', listener)
       }
       
@@ -411,20 +429,20 @@ export class MainViewComponent implements OnInit {
           moveBendPoint = true
         }
         let tapEnd = (evt) => {
-          console.log('tapEnd:', evt, 'element id:', e.data('id'))
+          //console.log('tapEnd:', evt, 'element id:', e.data('id'))
           if (moveBendPoint) {
-            let angle = findAngle(evt.target.position(), e.source().position(), e.target().position())
-            let AC = findDistance(evt.target.position(), e.source().position())
+            let angle = findAngle(evt.target.position(), e.sourceEndpoint(), e.targetEndpoint())
+            let AC = findDistance(evt.target.position(), e.sourceEndpoint())
             /*console.log('positions: control:',
               evt.target.position(),
               ', edge source:',
-              e.source().position(),
+              e.sourceEndpoint(),
               ', edge target:',
-              e.target().position(),
+              e.targetEndpoint(),
               '; angle=', angle, ', AC=', AC
             )*/
             let d = Math.floor(Math.sin(angle) * AC)
-            let w = Math.cos(angle) * AC / findDistance(e.source().position(), e.target().position())
+            let w = Math.cos(angle) * AC / findDistance(e.sourceEndpoint(), e.targetEndpoint())
             //console.log('new d:', d, '; new w:', w)
             bendDistances[i] = d
             bendWeights[i] = w
@@ -454,7 +472,7 @@ export class MainViewComponent implements OnInit {
             classes: ['edge_bend_point'],
             position: bendCoordinates[i]
           }
-        ]);
+        ]).unselectify();
       }
 
       let moveSourcePoint = false
@@ -465,14 +483,15 @@ export class MainViewComponent implements OnInit {
         if (moveSourcePoint) {
           moveSourcePoint = false
           if (evt.target && evt.target != this.cy && evt.target.isNode() && !evt.target.data('id').startsWith('move-')) {
-            console.log(evt.target)
+            //console.log(evt.target)
             e.move({
               source: evt.target.data('id')
             });
             e.unselect()
             e.select()
           } else {
-            this.conn.getById('move-source').position(e.sourceEndpoint())
+            let el = this.conn.getById('move-source')
+            if (el) el.position(e.sourceEndpoint())
           }
         }
       }
@@ -493,7 +512,7 @@ export class MainViewComponent implements OnInit {
           classes: ['edge_bend_point'],
           position: e.sourceEndpoint()
         }
-      ]);
+      ]).unselectify();
 
       let moveTargetPoint = false
       let targetTapStart = (evt) => {
@@ -503,14 +522,15 @@ export class MainViewComponent implements OnInit {
         if (moveTargetPoint) {
           moveTargetPoint = false
           if (evt.target && evt.target != this.cy && evt.target.isNode() && !evt.target.data('id').startsWith('move-')) {
-            console.log(evt.target)
+            //console.log(evt.target)
             e.move({
               target: evt.target.data('id')
             });
             e.unselect()
             e.select()
           } else {
-            this.conn.getById('move-target').position(e.targetEndpoint())
+            let el = this.conn.getById('move-target')
+            if (el) el.position(e.targetEndpoint())
           }
         }
       }
@@ -531,7 +551,7 @@ export class MainViewComponent implements OnInit {
           classes: ['edge_bend_point'],
           position: e.targetEndpoint()
         }
-      ]);
+      ]).unselectify();
 
       this.conn.getById('move-source').lock()
       this.conn.getById('move-target').lock()
@@ -671,7 +691,7 @@ export class MainViewComponent implements OnInit {
   // переключение диалогов
   switchDialog = (value) => {
     this.mainDialog = value;
-    this.importPath = '';
+    this.importResetSettings()
     this.saveAsPath = '';
   }
 
@@ -693,7 +713,14 @@ export class MainViewComponent implements OnInit {
 
   // сохранить
   saveProjectListener = () => {
-    this.conn.export(this.dbLastSavedPath, null, this.successListener)
+    this.conn.export(this.dbLastSavedPath, null, this.successListener, (err) => {
+      this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+        type: 'warning',
+        buttons: ['OK'],
+        title: 'Ошибка',
+        message: `Не удалось сохранить проект по указанному пути:\n${this.dbLastSavedPath}\n${err.message}`
+      })
+    })
   }
 
   saveDisabled = () => {
@@ -733,7 +760,14 @@ export class MainViewComponent implements OnInit {
         if (pathWasAlreadyWithExtension) {
           // for Windows 10 at least: asks replace confirmation automatically, no need for second confirmation
           this.fs.unlink(fp, () => {
-            this.conn.export(fp, null, this.successListener)
+            this.conn.export(fp, null, this.successListener, (err) => {
+              this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+                type: 'warning',
+                buttons: ['OK'],
+                title: 'Ошибка',
+                message: `Не удалось сохранить проект по указанному пути:\n${fp}\n${err.message}`
+              })
+            })
           })
         } else {
           const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
@@ -744,7 +778,14 @@ export class MainViewComponent implements OnInit {
           });
           if (choice === 1) {
             this.fs.unlink(fp, () => {
-              this.conn.export(fp, null, this.successListener)
+              this.conn.export(fp, null, this.successListener, (err) => {
+                this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+                  type: 'warning',
+                  buttons: ['OK'],
+                  title: 'Ошибка',
+                  message: `Не удалось сохранить проект по указанному пути:\n${fp}\n${err.message}`
+                })
+              })
             })
           }
         }
@@ -757,51 +798,666 @@ export class MainViewComponent implements OnInit {
         });
         if (choice === 1) {
           this.fs.rmdir(fp, { recursive: true }, () => {
-            this.conn.export(fp, null, this.successListener)
+            this.conn.export(fp, null, this.successListener, (err) => {
+              this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+                type: 'warning',
+                buttons: ['OK'],
+                title: 'Ошибка',
+                message: `Не удалось сохранить проект по указанному пути:\n${fp}\n${err.message}`
+              })
+            })
           });
         }
       }
     } else {
-      this.conn.export(fp, null, this.successListener)
+      this.conn.export(fp, null, this.successListener, (err) => {
+        this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+          type: 'warning',
+          buttons: ['OK'],
+          title: 'Ошибка',
+          message: `Не удалось сохранить проект по указанному пути:\n${fp}\n${err.message}`
+        })
+      })
     }
   }
 
-  // импорт
+  /* ---------------------------------------------- Импорт --------------------------------------------------- */
+
+  importResetSettings = () => {
+    this.importSettings.demoSource = ''
+    this.importSettings.result = []
+    this.importSettings.demoLineFrom = 1
+    this.importSettings.demoLineTo = 3
+    this.importSettings.className = ''
+    this.importSettings.errorMessage = ''
+    this.importSettings.info = {}
+    this.importSettings.includeHeaders = []
+    this.importSettings.headersType = []
+    this.importSettings.headersNames = []
+  }
+
+  isImportValidCSV() {
+    const included = this.importSettings.headersNames.filter((h, i) => {
+      return this.importSettings.includeHeaders[i];
+    })
+    return included.length > 0 && !included.some(h => h == 'id' || h == 'parent' || h == 'class')
+  }
+
   importProjectPathUpdateCallback = (filepaths) => {
-    this.importPath = filepaths[0];
+    this.importSettings.path = filepaths[0];
+    if (this.importSettings.format == 'csv' && this.importSettings.path && this.importFileExists()) {
+      this.importResetSettings()
+      this.importUpdateParsedCSV(true)
+    }
   }
 
   importFileExists = () => {
-    return this.fs.existsSync(this.importPath) && this.fs.lstatSync(this.importPath).isFile();
+    return this.fs.existsSync(this.importSettings.path) && this.fs.lstatSync(this.importSettings.path).isFile();
   }
 
-  importMerge = () => {
-    //create property Person.name string
-    this.setWaiting('Подготовка...');
-    this.conn.import(this.importPath, true, (obj) => {
-      let newIdMap = {};
-      let newData = obj.data;
-      newData.forEach((item) => newIdMap[item.data.id] = this.conn.nextId())
-      newData.forEach((item) => {
-        if (item.target && item.source) {
-          item.target = newIdMap[item.target]
-          item.source = newIdMap[item.source]
-        }
-        item.data.id = newIdMap[item.data.id]
-        item.selected = false
+  importOpenExternalDocs(name) {
+    this.ipcRenderer.send('external-docs', name);
+  }
+
+  importSwitchValueTip() {
+    this.importSettings.isTipOpened = !this.importSettings.isTipOpened
+  }
+
+  setImportActiveParamType(name, type) {
+    let settingsEntry = this.importSettings.params.find(s => s.name == name)
+    settingsEntry.activeType = type
+  }
+
+  setImportDemoLine(mode, lineNumber) {
+    if (mode == 'from') {
+      this.importSettings.demoLineFrom = parseInt(lineNumber) || 1;
+    } else if (mode == 'to') {
+      this.importSettings.demoLineTo = parseInt(lineNumber) || 1;
+    }
+  }
+  
+  setImportIncludeHeader(header) {
+    this.importSettings.includeHeaders[header] = !this.importSettings.includeHeaders[header]
+  }
+  
+  setImportHeaderType(header, value) {
+    this.importSettings.headersType[header] = value
+  }
+
+  setImportHeaderName(header, event) {
+    var element = event.target || event.srcElement || event.currentTarget;
+    
+    if (element.value.includes('\n') || element.value.includes('\r')) {
+      element.value = this.trim(this.cutForbidden(element.value))
+      element.blur()
+      return;
+    }
+    element.value = this.cutForbidden(element.value)
+    let value = this.trim(element.value)
+
+    if (this.isFieldNameInvalid(header, value) && element.className.indexOf('invalid_input') < 0) {
+      element.className += ' invalid_input';
+    } else {
+      element.className = element.className.replace(/\s*invalid_input/g, '');
+      this.importSettings.headersNames[header] = value
+    }
+  }
+
+  hasForbidden(propOrClassName) {
+    return propOrClassName.search(/[\n\t\r\0]/g) >= 0
+  }
+
+  isFieldNameInvalid(j, propName) {
+    propName = this.cutForbidden(this.trim(propName))
+    let hasForbidden = this.hasForbidden(propName)
+    let commonForbidden = propName == 'id' || propName == 'class' || propName == 'parent'
+    if (!propName || hasForbidden || commonForbidden) return true;
+
+    let colliding = this.importSettings.headersNames.filter((v, index) => j != index).indexOf(propName) >= 0
+    return colliding;
+  }
+  
+  isClassNameInvalid(newClass) {
+    newClass = this.trim(newClass)
+    return (newClass == '' || this.conn.classesMap[newClass])
+  }
+
+  trim(string) {
+    return string.trim().replace(/\s\s+/g, ' ')
+  }
+
+  cutForbidden(string) {
+    string = string.replace(/[\n\r\t\0]/g, ' ')
+    return string
+  }
+
+  setImportNewClassName(event) {
+    var element = event.target || event.srcElement || event.currentTarget;
+    
+    if (element.value.includes('\n') || element.value.includes('\r')) {
+      element.value = this.trim(this.cutForbidden(element.value))
+      element.blur()
+      return;
+    }
+    element.value = this.cutForbidden(element.value)
+    let value = this.trim(element.value)
+
+    if (this.isClassNameInvalid(value) && element.className.indexOf('invalid_input') < 0) {
+      element.className += ' invalid_input';
+    } else {
+      element.className = element.className.replace(/\s*invalid_input/g, '');
+      this.importSettings.className = value
+    }
+  }
+
+  setImportSettings(name, element) {
+    let settingsEntry = this.importSettings.params.find(s => s.name == name)
+    let type = settingsEntry.activeType || settingsEntry.type
+    let value = (type == 'boolean') ? element.checked : element.value;
+
+    function replaceSpecial(string) {
+      string = string.replace('\\\\', '\\')
+      string = string.replace('\\n', '\n')
+      string = string.replace('\\r', '\r')
+      string = string.replace('\\t', '\t')
+      string = string.replace('\\0', '\0')
+      string = string.replace('\\s', ' ')
+      //\u0000 to \u10FFFF
+      let regex = /\\u([a-fA-F\d]{4,6})/g
+      string = string.replace(regex, (match, code) => {
+        return String.fromCharCode(parseInt(code, 16))
       })
-      this.cy.add(newData)
+      return string
+    }
+
+    if (type == 'string') {
+      value = replaceSpecial(value)
+      settingsEntry.value = value
+    } else if (type == 'string[]') {
+      value = replaceSpecial(value)
+      settingsEntry.value = value.split(' ')
+    } else if (type == 'integer') {
+      settingsEntry.value = parseInt(value)
+    } else if (type == 'boolean') {
+      settingsEntry.value = !!value
+    } else if (type == 'select') {
+      if (settingsEntry.enum.includes(value)) settingsEntry.value = value
+    } else if (type == 'char') {
+      value = replaceSpecial(value)
+      if (value.length > 1 && element.className.indexOf('invalid_input') < 0) {
+        element.className += ' invalid_input';
+      } else {
+        element.className = element.className.replace(/\s*invalid_input/g, '');
+        settingsEntry.value = value
+      }
+    } else if (type == 'char[]') {
+      value = replaceSpecial(value)
+      let valid = value.split(' ').every(e => e.length <= 1)
+
+      if (!valid && element.className.indexOf('invalid_input') < 0) {
+        element.className += ' invalid_input';
+      } else {
+        element.className = element.className.replace(/\s*invalid_input/g, '');
+        settingsEntry.value = value
+      }
+    } else if (type == 'function(stringValue)' || type == 'function(stringValue, context)') {
+      let functionBody = value
+      let blackList = ['Worker', 'WebSocket', 'XMLHttpRequest', 'WorkerGlobalScope', 'DOMRequest', 'DOMCursor',
+        'WorkerLocation', 'WorkerNavigator', 'Crypto', 'Fetch', 'Headers', 'FetchEvent', 'BroadcastChannel',
+        'Request', 'Response', 'Notification', 'Performance', 'PerformanceEntry', 'PerformanceMeasure', 
+        'PerformanceMark', 'PerformanceObserver', 'PerformanceResourceTiming', 'FormData', 'ImageData', 'IndexedDB',
+        'NotificationEvent', 'ServiceWorkerGlobalScope', 'ServiceWorkerRegistration', 'FileReader', 'File', 'Blob',
+        'NetworkInformation', 'MessageChannel', 'MessagePort', 'PortCollection', 'SharedWorker', 'DataTransfer',
+        'HTMLCanvasElement', 'FileSystemHandle', 'FileSystemFileHandle', 'FileSystemDirectoryHandle',
+        'DataTransferItem', 'FileSystemWritableFileStream', 'Stream', 'WriteableStream', 'ReadableStream',
+        'FileSystemFileEntry', 'FileSystemDirectoryEntry', 'FileReaderSync', 'FileList', 'URL',
+        'ReadableStreamDefaultController', 'ReadableStreamDefaultReader', 'WritableStreamDefaultWriter', 
+        'WritableStreamDefaultController', 'Body', 'ReadableStreamBYOBReader', 'ReadableByteStreamController',
+        'ReadableStreamBYOBRequest', 'EventSource', 'WebGLRenderingContext', 'WebGL2RenderingContext',
+        'WebGLActiveInfo', 'WebGLBuffer', 'WebGLContextEvent', 'WebGLFramebuffer', 'WebGLProgram', 'WebGLQuery',
+        'WebGLRenderbuffer', 'WebGLSampler', 'WebGLShader', 'WebGLShaderPrecisionFormat', 'WebGLSync', 'WebGLTexture',
+        'WebGLTransformFeedback', 'WebGLUniformLocation', 'WebGLVertexArrayObject', 'OffscreenCanvas',
+        'DedicatedWorkerGlobalScope', 'SharedWorkerGlobalScope', 'Window', 'WindowOrWorkerGlobalScope',
+        'AnalyserNode', 'Animation', 'AnimationEvent', 'AnimationTimeline',
+        'ApplicationCache', 'Cache', 'CacheStorage', 'CanvasRenderingContext2D', 'CaretPosition', 'ChannelMergerNode',
+        'CharacterData', 'ClientRect', 'ClientRectList', 'Clipboard', 'ClipboardEvent', 'CloseEvent',
+        'Comment', 'CompositionEvent', 'ConstantSourceNode', 'ConvolverNode', 'CountQueuingStrategy', 'Credential',
+        'CredentialsContainer', 'CryptoKey', 'CryptoKeyPair', 'CustomElementRegistry', 'Audio', 'AudioBuffer', 
+        'AudioBufferSourceNode', 'AudioContext', 'AudioDestinationNode', 'AudioListener', 'AudioNode', 'AudioParam',
+        'AudioParamMap', 'AudioProcessingEvent', 'AuthenticatorAssertionResponse', 'AuthenticatorAttestationResponse',
+        'DataCue', 'DataView', 'External', 'IDBDatabase', 'MediaDevices', 'MediaDeviceInfo', 'MessageEvent',
+        'MessagePort', 'MessageChannel', 'Location', 'Gamepad', 'GamepadEvent', 'Reflect', 'ShadowRoot', 'SourceBuffer',
+        'SourceBufferList', 'Storage', 'StorageEvent', 'StorageManager', 'StyleSheet', 'StyleSheetList', 'SubtleCrypto',
+        'SyncManager', 'SyntaxError', 'PageTransitionEvent', 'PaymentRequest', 'PaymentResponse', 'Permissions', 'Plugin',
+        'PointerEvent', 'PromiseRejectionEvent', 'PushSubscription', 'XMLDocument', 'XMLHttpRequestUpload',
+        'XMLSerializer', 'XPathEvaluator', 'XPathExpression', 'XPathResult',
+
+        'export', 'class', 'navigator', 'Event', 'MouseEvent', 'KeyboardEvent', 'CustomEvent', 'importScripts',
+        'Promise', 'clearInterval', 'clearTimeout', 'dump', 'implements', 'constructor', 'set', 'get', 'async', 'await',
+        'Function', 'function', 'require', 'import', 'call', 'apply', 'bind', 'prototype', '__proto__',
+        'process', 'global', 'Agent', 'read', 'write', 'http', 'FileSystem', 'NavigationPreloadManager',
+        'Navigator', 'void', 'private', 'public', 'crypto', 'customElements', 'debugger', 'default', 'dispatchEvent',
+        'departFocus', 'devicePixelRatio', '__dirname', '__filename', 'addEventListener', 'alert', 'applicationCache',
+        'blur', 'caches', 'cancelAnimationFrame', 'captureEvents', 'clearImmediate', 'clientInformation',
+        'defaultStatus', 'doNotTrack', 'document', 'console', 'confirm', 'prompt', 'eval', 'exports', 'extends',
+        'external', 'createElement', 'getElementById', 'getElementsByClassName', 'querySelector', 'this', 'Proxy',
+        'proxy', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__', 'hasOwnProperty',
+        'isPrototypeOf', 'propertyIsEnumerable', 'setPrototypeOf', 'caller', 'innerHeight', 'innerWidth', 'innerSubscribe',
+        'InnerSubscriber', 'interface', 'isSecureContext', 'kill', 'exception', 'event', 'Exception', 'throw', 'throws',
+        'invoke', 'invokeMethod', 'invokeMethodAsync', 'ajax', 'globalThis', 'visualViewport', 'fetch', 'focus',
+        'frameElement', 'frames', 'top', 'screenLeft', 'screenTop', 'screenX', 'screenY', 'Screen', 'ScreenOrientation',
+        'outerHeight', 'outerWidth', 'history', 'History', 'localStorage', 'location', 'locationbar', 'log',
+        'VisualViewport', 'Element', 'Error', 'ErrorEvent', 'ErrorHandler', 'ExtensionScriptApis',
+        'webkitURL', 'window', 'document', 'dump', 'yield', 'queueMicrotask', 'scroll', 'scrollBy', 'scrollTo', 'scrollX',
+        'scrollY', 'scrollbars', 'self', 'package', 'pageXOffset', 'pageYOffset', 'parent', 'performance', 'personalbar',
+        'postMessage', 'print', 'exec', 'run', 'execSync', 'dialog', 'electron', 'quit', 'sessionStorage', 'super',
+        'spawn', 'spawnSync', 'moveBy', 'moveTo', 'webContents', 'loadURL', '_baseURL', '_htc',
+
+        'BrowserWindow', 'ipcRenderer', 'ipcMain', 'MainViewComponent',
+        'Electron', 'Node', 'NodeFilter', 'NodeIterator', 'NodeJS', 'NodeList',
+        'Component', 'Input', 'ViewChild', 'NgZone', 'OnInit', 'ElectronService', 'DbServiceService',
+        'UpdateRecentService', 'LastDirectoryService', 'OSelection', 'cytoscape', 'cola', 'gridGuide'
+      ]
+
+      let notSecure = false;
+      for (let str of blackList) {
+        const regex =  new RegExp(`\b${str}\b`, 'g');
+        notSecure = notSecure || functionBody.search(regex)
+      }
+      if (notSecure) {
+        console.log('forbiddenVarsClassesInterfaces')
+        return
+      }
+      const lambda = /=>/g
+      notSecure = notSecure || functionBody.search(lambda)
+      if (notSecure) {
+        console.log('lambda')
+        return
+      }
+
+      if (type == 'function(stringValue, context)') {
+        let fn = new Function('stringValue', 'context', functionBody)
+        let wrapper = (stringValue, context) => {
+          let globallyAvailable = {};
+          for (let p in window) {
+            if (!blackList.includes(p)) console.log(p)
+            globallyAvailable[p] = null
+          }
+          for (var p in this) {
+            globallyAvailable['' + p] = null;
+          }
+          console.log(globallyAvailable)
+          return fn.call(globallyAvailable, stringValue, context)
+        }
+        settingsEntry.value = wrapper
+      } else {
+        let fn = new Function('stringValue', functionBody)
+        let wrapper = (stringValue) => {
+          let globallyAvailable = {};
+          for (let p in window) {
+            if (!blackList.includes(p)) console.log(p)
+            globallyAvailable[p] = null
+          }
+          for (var p in this) {
+            globallyAvailable['' + p] = null;
+          }
+          console.log(globallyAvailable)
+          /*{
+            window: null,
+            document: null,
+            console: null,
+            alert: null,
+            prompt: null,
+            confirm: null,
+            setInterval: null,
+            setTimeout: null,
+            clearInterval: null,
+            clearTimeout: null,
+            dump: null,
+            process: null
+          }*/
+          return fn.call(globallyAvailable, stringValue)
+        }
+        settingsEntry.value = wrapper
+      }
+    }
+    console.log(name, settingsEntry.value)
+  }
+
+  setImportFormat = (format) => {
+    this.importSettings.format = format;
+    if (format == 'csv') {
+      this.importSettings.params = [
+        {
+          name: 'bom',
+          type: 'boolean',
+          title: 'Если true, найти и исключить метку порядка байтов (BOM) из входного файла CSV, если она есть.',
+          value: false
+        },{
+          name: 'cast',
+          type: ['boolean', 'function(stringValue,context)'],
+          title: 'Если true, парсер будет пытаться конвертировать значения в нативные типы данных. Если задано функцией, то она принимает (1)строку-значение столбца (stringValue) и (2)контекст (context) в качестве аргументов и должна возвращать сконвертированное значение.',
+          value: false,
+          activeType: 'boolean'
+        },{
+          name: 'cast_date',
+          type: ['boolean', 'function(stringValue)'],
+          title: 'Если true, парсер будет пытаться конвертировать строки в даты (стандартным методом Date.parse). Если задано функцией, то она принимает строку (stringValue) в качестве аргумента и должна возвращать объект Date. Работает только при включенном cast.',
+          value: false,
+          activeType: 'boolean'
+        },{
+          name: 'comment',
+          type: 'string',
+          title: 'Считать символы после указанной строки за комментарий. Оставить пустым для отключения. По умолчанию отключено.',
+          value: undefined
+        },{
+          name: 'delimiter',
+          type: 'string[]',
+          title: 'Одна или несколько строк через пробел, распознающихся как разделители столбцов (для разделителей, содержащих пробелы, заменить их на \\s). По умолчанию , (запятая).',
+          value: ','
+        },{
+          name: 'encoding',
+          type: 'select',
+          enum: ['utf8', 'ucs2', 'utf16le', 'latin1', 'ascii', 'base64', 'hex'],
+          title: 'Кодировка. По умолчанию utf8.',
+          value: 'utf8'
+        },{
+          name: 'escape',
+          type: 'char',
+          title: 'Экранирующий символ. Применяется только к символам кавычек и экранирующим символам внутри значений, заключенных в кавычки. По умолчанию " (двойная кавычка).',
+          value: '"'
+        },{
+          name: 'from',
+          type: 'integer',
+          title: 'Начать обработку записей с определенного количества записей (первая запись идет под номером 1).',
+          value: undefined
+        },{
+          name: 'from_line',
+          type: 'integer',
+          title: 'Начать обработку записей с определенного номера строки.',
+          value: undefined
+        },{
+          name: 'ltrim',
+          type: 'boolean',
+          title: 'Если true, игнорировать пробелы сразу после разделителя (т.е. удалить пробелы в начале значений столбцов). По умолчанию false. Не действует на пробелы в кавычках.',
+          value: false
+        },{
+          name: 'max_record_size',
+          type: 'integer',
+          title: 'Максимально допустимое количество символов в буфере при чтении записи, иначе выдать ошибку. Задать на случай неверных delimiter или record_delimiter. Также предотвращает переполнение памяти при попытке чтения CSV с нарушенной структурой.',
+          value: undefined
+        },{
+          name: 'quote',
+          type: 'char',
+          title: 'Символ, который распознается как кавычки вокруг значения поля. Оставить пустым для отключения распознавания кавычек. По умолчанию символ " (двойная кавычка).',
+          value: '"'
+        },{
+          name: 'record_delimiter',
+          type: 'char[]',
+          title: 'Один или несколько символов через пробел, которые распознаются как разделители записей (для разделителя-пробела ввести \\s). По умолчанию - определить автоматически (для Linux - "\\n", Apple - "\\r", Windows - "\\r\\n")',
+          value: undefined
+        },{
+          name: 'relax',
+          type: 'boolean',
+          title: 'Сохранять символ кавычки внутри значений, не заключенных в кавычки.',
+          value: false
+        },{
+          name: 'relax_column_count',
+          type: 'boolean',
+          title: 'Не выдавать ошибку, если две строки имеют разное количество столбцов. По умолчанию false.',
+          value: false
+        },{
+          name: 'relax_column_count_less',
+          type: 'boolean',
+          title: 'Аналогично relax_column_count, но применяется только к строкам, содержащим столбцов меньше, чем ожидалось.',
+          value: false
+        },{
+          name: 'relax_column_count_more',
+          type: 'boolean',
+          title: 'Аналогично relax_column_count, но применяется только к строкам, содержащим столбцов больше, чем ожидалось.',
+          value: false
+        },{
+          name: 'rtrim',
+          type: 'boolean',
+          title: 'Если true, игнорировать пробелы сразу перед разделителем (т.е. удалить пробелы в конце значений столбцов). По умочанию false. Не действует на пробелы в кавычках.',
+          value: false
+        },{
+          name: 'skip_empty_lines',
+          type: 'boolean',
+          title: 'Пропускать пустые строки (соответствует рег.выражению /^$/). По умолчанию false.',
+          value: false
+        },{
+          name: 'skip_lines_with_empty_values',
+          type: 'boolean',
+          title: 'Пропускать строки, в которых есть пустые значения столбцов (соответствует рег.выражению /\s*/), пустой Buffer или равно null и undefined, если использовалась опция cast. По умолчанию false.',
+          value: false
+        },{
+          name: 'skip_lines_with_error',
+          type: 'boolean',
+          title: 'Пропускать строки, при обработке которых возникла ошибка. Когда отключено, ошибка прерывает чтение записей. По умолчанию false',
+          value: false
+        },{
+          name: 'to',
+          type: 'integer',
+          title: 'Закончить обработку записей после определенного количества записей.',
+          value: undefined
+        },{
+          name: 'to_line',
+          type: 'integer',
+          title: 'Закончить обработку записей на определенном номере строки.',
+          value: undefined
+        },{
+          name: 'trim',
+          type: 'boolean',
+          title: 'Если true, игнорировать пробелы сразу перед и после разделителя. По умолчанию false. Не действует на пробелы в кавычках.',
+          value: false
+        }
+      ]
+      if (this.importSettings.path && this.importFileExists()) {
+        this.importUpdateParsedCSV(true)
+      }
+    } else if (!format) {
+      this.importSettings.params = []
+    }
+    this.importResetSettings()
+  }
+
+  import = (isDemo) => {
+    //create property Person.name string
+    if (!isDemo) this.setWaiting('Подготовка...');
+    try {
+      if (this.importSettings.format == '') {
+        this.conn.import(this.importSettings.path, true, this.merge, (err) => {
+          this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+            type: 'warning',
+            buttons: ['OK'],
+            title: 'Ошибка',
+            message: `При импорте возникла ошибка. \n${err.message}
+              Возможно вы пытаетесь импортировать неподдерживаемый тип файла, неправильно указали
+              тип файла или файл поврежден.`
+          })
+          this.setWaiting('');
+        });
+      } else if (this.importSettings.format == 'csv') {
+        this.importUpdateParsedCSV(isDemo)
+      }
+    } catch (err) {
+      this.importSettings.errorMessage = `При импорте возникла ошибка. \n${err.message}
+        Возможно вы пытаетесь импортировать неподдерживаемый тип файла, неправильно указали
+        тип файла или файл поврежден.`
+        this.setWaiting('');
+    }
+  }
+
+  importUpdateParsedCSV(isDemo) {
+    let importSettings = this.importSettings;
+    let params: any = {};
+    for (let param of importSettings.params) {
+      params[param.name] = param.value
+    }
+
+    if (isDemo) {
+      params.from = importSettings.demoLineFrom
+      params.to = importSettings.demoLineTo
+      params.raw = true
+    }
+
+    importSettings.errorMessage = ''
+    importSettings.demoSource = ''
+    importSettings.result = []
+    console.log('importUpdateParsedCSV() params', params)
+
+    //const output = []
+    const parser = this.parseCSV(params)
+    const reader = this.fs.createReadStream(importSettings.path)
+    /*const collector = this.streamTransform(function(record, callback){
+      //console.log(record[0])
+      console.log(record)
+      if (isDemo) {
+        importSettings.demoSource += record.raw + '\n'
+        importSettings.result.push(record.record)
+      } else {
+        importSettings.result.push(record)
+      }
+      callback(null, record);
+    }, {
+      parallel: 40
+    })*/
+    const handleError = function(where, error) {
+      console.log(where, error)
+      importSettings.errorMessage = `Error in ${where}:\n\n${error.name}: ${error.message}`
+      for (let p in error) {
+        if (p != 'stack') {
+          importSettings.errorMessage += `\n${p}: ${error[p]}`
+        }
+      }
+    }
+    importSettings.info = parser.info
+    reader.on('error', (e) => {handleError('reader', e)})
+      .pipe(parser)
+      .on('readable', function(){
+        let record
+        while (record = parser.read()) {
+          console.log(record)
+          if (record) {
+            if (isDemo) {
+              importSettings.demoSource += record.raw + '\n'
+              importSettings.result.push(record.record)
+            } else {
+              importSettings.result.push(record)
+            }
+          }
+        }
+      })
+      .on('error', (e) => {handleError('parser', e)})
+      .on('end', () => {
+        // handle end of CSV
+        //console.log('parser end, parser =', parser)
+        console.log('parser info', importSettings.info)
+
+        /*importSettings.includeHeaders = []
+        importSettings.headersType = []
+        importSettings.headersNames = []*/
+        let headersRow = importSettings.result[0]
+        if (isDemo && importSettings.includeHeaders.length == 0) {
+          for (let i = 0; i < headersRow.length; i++) {
+            importSettings.includeHeaders[i] = true
+            importSettings.headersType[i] = 'string'
+            importSettings.headersNames[i] = headersRow[i]
+          }
+        }
+        console.log(importSettings.includeHeaders, importSettings.headersType, importSettings.headersNames)
+
+        if (!isDemo && importSettings.className) {
+          let properties = {
+          }
+          for (let i = 0; i<headersRow.length; i++) {
+            let propName = importSettings.headersNames[i]
+            properties[propName] = {
+              type: importSettings.headersType[i]
+            }
+          }
+          this.conn.createClass(importSettings.className, 'V', properties)
+          let data = []
+          let {x, y} = this.cy.pan()
+          let side = Math.floor(Math.sqrt(importSettings.result.length));
+          for (let i = 1, row = importSettings.result[i]; i < importSettings.result.length; i++) {
+            let plainElement = {
+              group: 'nodes',
+              data: {
+                id: this.conn.nextId(),
+                class: importSettings.className
+              },
+              position: {
+                x: x + (i % side) * 40,
+                y: y + ((i - i % side) / side) * 40
+              }
+            }
+            for (let i = 0; i<row.length; i++) {
+              if (importSettings.includeHeaders[i]) {
+                plainElement.data[importSettings.headersNames[i]] = row[i]
+              }
+            }
+            data.push(plainElement)
+          }
+
+          this.cy.add(data)
+          this.setWaiting('');
+          this.switchDialog('');
+        }
+      })
+      /*.pipe(collector).on('error', (e) => {handleError('collector', e)}).on('end', () => {
+        console.log('collector end, parse =', parser)
+      })*/
+  }
+
+  merge = (src, obj) => {
+    if (!src || !obj) {
+      this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
+        type: 'warning',
+        buttons: ['OK'],
+        title: 'Ошибка',
+        message: 'Произошла ошибка. Попробуйте еще раз.'
+      });
+      //console.log('event.ports:', event.ports);
+      this.setWaiting('');
+      return;
+    }
+    let newIdMap = {};
+    let newData = obj.data;
+    newData.forEach((item) => newIdMap[item.data.id] = this.conn.nextId())
+    //console.log('import', newIdMap)
+    newData.forEach((item) => {
+      if (item.data.target && item.data.source) {
+        item.data.target = newIdMap[item.data.target]
+        item.data.source = newIdMap[item.data.source]
+      }
+      item.data.id = newIdMap[item.data.id]
+      item.selected = false
+      console.log(item)
+    })
+    this.cy.add(newData)
+
+    if (obj.style) {
+      let currentStyle = this.cy.style().json()
       for (let entry of obj.style) {
         //`[id = '${id}']`
-        entry.selector.replace(/\[id = ([a-z\d]+)\]/g, (match, id) => {
+        console.log(entry.selector)
+        entry.selector = entry.selector.replace(/\[id = ['"]?([a-z\d]+)['"]?\]/g, (match, id) => {
+          console.log(id, newIdMap[id])
           return `[id = '${newIdMap[id]}']`
         })
+        currentStyle.push(entry)
       }
-      this.cy.style().fromJson(obj.style).update()
-    });
+      console.log('import', currentStyle)
+      this.cy.style().fromJson(currentStyle).update()
+    }
+    this.setWaiting('');
+    this.switchDialog('');
   }
 
-  // на кнопку закрыть проект
+  /* ---------------------------------- Закрыть проект ------------------------------ */
+
   closeProjectListener = () => {
     const choice = this._electronService.remote.dialog.showMessageBoxSync(this._electronService.remote.getCurrentWindow(), {
       type: 'question',
