@@ -112,7 +112,10 @@ export class MainViewComponent implements OnInit {
     info: {},
     includeHeaders: [],
     headersType: [],
-    headersNames: []
+    headersNames: [],
+    noHeaders: false,
+    fileExists: false,
+    validColumnNames: false
   }
   saveAsPath : string = '';
   
@@ -677,6 +680,11 @@ export class MainViewComponent implements OnInit {
     this.checkEdgeCurveEdit();
     
     this.conn.cy = this.cy;
+    this.conn.export(this.dbLastSavedPath, null, (src, obj)=>{
+      console.log('Exported with initial style.')
+    }, (e)=>{
+      console.log('Failed to save after initial style commit.')
+    })
     this.setTool(this.activeToolId);
     this.isRendering = false;
   }
@@ -692,6 +700,9 @@ export class MainViewComponent implements OnInit {
   switchDialog = (value) => {
     this.mainDialog = value;
     this.importResetSettings()
+    this.importSettings.path = '' // формат остается
+    this.importSettings.fileExists = false
+    this.importSettings.validColumnNames = false
     this.saveAsPath = '';
   }
 
@@ -834,17 +845,13 @@ export class MainViewComponent implements OnInit {
     this.importSettings.includeHeaders = []
     this.importSettings.headersType = []
     this.importSettings.headersNames = []
-  }
-
-  isImportValidCSV() {
-    const included = this.importSettings.headersNames.filter((h, i) => {
-      return this.importSettings.includeHeaders[i];
-    })
-    return included.length > 0 && !included.some(h => h == 'id' || h == 'parent' || h == 'class')
+    this.importSettings.noHeaders = false
   }
 
   importProjectPathUpdateCallback = (filepaths) => {
     this.importSettings.path = filepaths[0];
+    this.importSettings.fileExists = this.fs.existsSync(this.importSettings.path)
+                                       && this.fs.lstatSync(this.importSettings.path).isFile();
     if (this.importSettings.format == 'csv' && this.importSettings.path && this.importFileExists()) {
       this.importResetSettings()
       this.importUpdateParsedCSV(true)
@@ -865,6 +872,7 @@ export class MainViewComponent implements OnInit {
 
   setImportActiveParamType(name, type) {
     let settingsEntry = this.importSettings.params.find(s => s.name == name)
+    console.log(type)
     settingsEntry.activeType = type
   }
 
@@ -895,11 +903,30 @@ export class MainViewComponent implements OnInit {
     element.value = this.cutForbidden(element.value)
     let value = this.trim(element.value)
 
-    if (this.isFieldNameInvalid(header, value) && element.className.indexOf('invalid_input') < 0) {
-      element.className += ' invalid_input';
+    if (this.isFieldNameInvalid(header, value)) {
+      if (element.className.indexOf('invalid_input') < 0) {
+        element.className += ' invalid_input';
+        this.importSettings.validColumnNames = false;
+      }
     } else {
       element.className = element.className.replace(/\s*invalid_input/g, '');
       this.importSettings.headersNames[header] = value
+      const included = this.importSettings.headersNames.filter((h, i) => {
+        return this.importSettings.includeHeaders[i];
+      })
+      this.importSettings.validColumnNames = included.length > 0 
+                                          && !included.some((h, index) => this.isFieldNameInvalid(index, h))
+    }
+  }
+
+  setImportNoHeaders(value) {
+    this.importSettings.noHeaders = !!value
+    if (this.importSettings.result && this.importSettings.result[0].length > 0) {
+      let headersRow = value ? 
+                  Array.from(Array(this.importSettings.result[0].length).keys()) : this.importSettings.result[0]
+      for (let i = 0; i < headersRow.length; i++) {
+        this.importSettings.headersNames[i] = ''+headersRow[i]
+      }
     }
   }
 
@@ -942,8 +969,10 @@ export class MainViewComponent implements OnInit {
     element.value = this.cutForbidden(element.value)
     let value = this.trim(element.value)
 
-    if (this.isClassNameInvalid(value) && element.className.indexOf('invalid_input') < 0) {
-      element.className += ' invalid_input';
+    if (this.isClassNameInvalid(value)) {
+      if (element.className.indexOf('invalid_input') < 0) {
+        element.className += ' invalid_input';
+      }
     } else {
       element.className = element.className.replace(/\s*invalid_input/g, '');
       this.importSettings.className = value
@@ -1000,7 +1029,7 @@ export class MainViewComponent implements OnInit {
         element.className = element.className.replace(/\s*invalid_input/g, '');
         settingsEntry.value = value
       }
-    } else if (type == 'function(stringValue)' || type == 'function(stringValue, context)') {
+    } else if (type.startsWith('function')) {
       let functionBody = value
       let blackList = ['Worker', 'WebSocket', 'XMLHttpRequest', 'WorkerGlobalScope', 'DOMRequest', 'DOMCursor',
         'WorkerLocation', 'WorkerNavigator', 'Crypto', 'Fetch', 'Headers', 'FetchEvent', 'BroadcastChannel',
@@ -1062,14 +1091,16 @@ export class MainViewComponent implements OnInit {
       let notSecure = false;
       for (let str of blackList) {
         const regex =  new RegExp(`\b${str}\b`, 'g');
-        notSecure = notSecure || functionBody.search(regex)
+        let found = functionBody.search(regex) >= 0
+        notSecure = notSecure || found
+        //console.log('forbidden check: found =', found, ', regex =', regex, ', str =', str, ', match =', functionBody.match(regex))
       }
       if (notSecure) {
         console.log('forbiddenVarsClassesInterfaces')
         return
       }
       const lambda = /=>/g
-      notSecure = notSecure || functionBody.search(lambda)
+      notSecure = notSecure || (functionBody.search(lambda) >= 0)
       if (notSecure) {
         console.log('lambda')
         return
@@ -1121,7 +1152,7 @@ export class MainViewComponent implements OnInit {
         settingsEntry.value = wrapper
       }
     }
-    console.log(name, settingsEntry.value)
+    console.log(name, type, settingsEntry.value)
   }
 
   setImportFormat = (format) => {
@@ -1290,7 +1321,13 @@ export class MainViewComponent implements OnInit {
   }
 
   importUpdateParsedCSV(isDemo) {
-    let importSettings = this.importSettings;
+    const importSettings = this.importSettings
+    const conn = this.conn
+    const cy = this.cy
+    const setWaiting = this.setWaiting
+    const switchDialog = this.switchDialog
+    const isFieldNameInvalid = this.isFieldNameInvalid.bind(this)
+
     let params: any = {};
     for (let param of importSettings.params) {
       params[param.name] = param.value
@@ -1305,11 +1342,10 @@ export class MainViewComponent implements OnInit {
     importSettings.errorMessage = ''
     importSettings.demoSource = ''
     importSettings.result = []
-    console.log('importUpdateParsedCSV() params', params)
+    //console.log('importUpdateParsedCSV() params', params)
 
     //const output = []
-    const parser = this.parseCSV(params)
-    const reader = this.fs.createReadStream(importSettings.path)
+    //const parser = this.parseCSV(params)
     /*const collector = this.streamTransform(function(record, callback){
       //console.log(record[0])
       console.log(record)
@@ -1324,7 +1360,7 @@ export class MainViewComponent implements OnInit {
       parallel: 40
     })*/
     const handleError = function(where, error) {
-      console.log(where, error)
+      console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', where, error)
       importSettings.errorMessage = `Error in ${where}:\n\n${error.name}: ${error.message}`
       for (let p in error) {
         if (p != 'stack') {
@@ -1332,83 +1368,118 @@ export class MainViewComponent implements OnInit {
         }
       }
     }
-    importSettings.info = parser.info
-    reader.on('error', (e) => {handleError('reader', e)})
-      .pipe(parser)
-      .on('readable', function(){
-        let record
-        while (record = parser.read()) {
-          console.log(record)
-          if (record) {
+
+    let parser:any = {}
+    
+    this.fs.createReadStream(importSettings.path)
+      .on('error', function(err){
+        //console.error(err.message)
+        handleError('reader', err)
+        parser.end()
+      })
+      .on('end', function(){
+        console.log('reader.end()')
+        parser.end()
+      })
+      .setEncoding(importSettings.params.encoding)
+      .pipe(
+        parser = this.parseCSV(params)
+        .on('data', function(csvrow) {
+          console.log(csvrow);
+          if (csvrow) {
             if (isDemo) {
-              importSettings.demoSource += record.raw + '\n'
-              importSettings.result.push(record.record)
+              importSettings.demoSource += csvrow.raw + '\n'
+              importSettings.result.push(csvrow.record)
             } else {
-              importSettings.result.push(record)
+              importSettings.result.push(csvrow)
             }
           }
-        }
-      })
-      .on('error', (e) => {handleError('parser', e)})
-      .on('end', () => {
-        // handle end of CSV
-        //console.log('parser end, parser =', parser)
-        console.log('parser info', importSettings.info)
+          importSettings.info = parser.info
+        })
+        .on('error', function(error) {
+          //console.log('parser error', error);
+          handleError('parser', error)
+          parser.end()
+        })
+        .on('end', function() {
+          console.log('parser end', importSettings.result);
+          importSettings.info = parser.info
+          // handle end of CSV
+          //console.log('parser end, parser =', parser)
+          //console.log('parser info', importSettings.info)
+    
+          /*importSettings.includeHeaders = []
+          importSettings.headersType = []
+          importSettings.headersNames = []*/
+          let headersRow = importSettings.noHeaders ? 
+                      Array.from(Array(importSettings.result[0].length).keys()) : importSettings.result[0]
 
-        /*importSettings.includeHeaders = []
-        importSettings.headersType = []
-        importSettings.headersNames = []*/
-        let headersRow = importSettings.result[0]
-        if (isDemo && importSettings.includeHeaders.length == 0) {
-          for (let i = 0; i < headersRow.length; i++) {
-            importSettings.includeHeaders[i] = true
-            importSettings.headersType[i] = 'string'
-            importSettings.headersNames[i] = headersRow[i]
-          }
-        }
-        console.log(importSettings.includeHeaders, importSettings.headersType, importSettings.headersNames)
+          let sameHeaders = importSettings.headersNames.every((e, index) => e == headersRow[index])
+                                  && importSettings.headersNames.length == headersRow.length
 
-        if (!isDemo && importSettings.className) {
-          let properties = {
-          }
-          for (let i = 0; i<headersRow.length; i++) {
-            let propName = importSettings.headersNames[i]
-            properties[propName] = {
-              type: importSettings.headersType[i]
+          console.log('sameHeaders:', sameHeaders)
+          if (importSettings.headersNames.length == 0 || !sameHeaders) {
+            for (let i = 0; i < headersRow.length; i++) {
+              importSettings.includeHeaders[i] = true
+              importSettings.headersType[i] = 'string'
+              importSettings.headersNames[i] = ''+headersRow[i]
             }
+            const included = importSettings.headersNames.filter((h, i) => {
+              return importSettings.includeHeaders[i];
+            })
+            importSettings.validColumnNames = included.length > 0 
+                                                && !included.some((h, index) => isFieldNameInvalid(index, h))
+            //console.log('validColumns:', importSettings.validColumnNames)
           }
-          this.conn.createClass(importSettings.className, 'V', properties)
-          let data = []
-          let {x, y} = this.cy.pan()
-          let side = Math.floor(Math.sqrt(importSettings.result.length));
-          for (let i = 1, row = importSettings.result[i]; i < importSettings.result.length; i++) {
-            let plainElement = {
-              group: 'nodes',
-              data: {
-                id: this.conn.nextId(),
-                class: importSettings.className
-              },
-              position: {
-                x: x + (i % side) * 40,
-                y: y + ((i - i % side) / side) * 40
-              }
-            }
-            for (let i = 0; i<row.length; i++) {
+          //console.log('importSettings.includeHeaders, importSettings.headersType, importSettings.headersNames', importSettings.includeHeaders, importSettings.headersType, importSettings.headersNames)
+    
+          if (!isDemo && importSettings.className) {
+            let properties = {}
+            for (let i = 0; i<headersRow.length; i++) {
               if (importSettings.includeHeaders[i]) {
-                plainElement.data[importSettings.headersNames[i]] = row[i]
+                let propName = importSettings.headersNames[i]
+                properties[propName] = {
+                  type: importSettings.headersType[i]
+                }
               }
             }
-            data.push(plainElement)
+            conn.createClass(importSettings.className, 'V', properties)
+    
+            let data = []
+            let {x, y} = cy.pan()
+            let side = Math.floor(Math.sqrt(importSettings.result.length));
+            for (let i = importSettings.noHeaders ? 0 : 1; i < importSettings.result.length; i++) {
+              let row = importSettings.result[i]
+              let plainElement = {
+                group: 'nodes',
+                data: {
+                  id: conn.nextId(),
+                  class: importSettings.className
+                },
+                position: {
+                  x: x + (i % side) * 40,
+                  y: y + ((i - i % side) / side) * 40
+                }
+              }
+              for (let j = 0; j<row.length; j++) {
+                let include = importSettings.includeHeaders[j]
+                let name = importSettings.headersNames[j]
+                //console.log('data', include, name)
+                if (include) {
+                  plainElement.data[name] = row[j]
+                }
+              }
+    
+              console.log('plainElement:', plainElement)
+              data.push(plainElement)
+            }
+    
+            cy.add(data)
+            setWaiting('');
+            switchDialog('');
           }
-
-          this.cy.add(data)
-          this.setWaiting('');
-          this.switchDialog('');
-        }
-      })
-      /*.pipe(collector).on('error', (e) => {handleError('collector', e)}).on('end', () => {
-        console.log('collector end, parse =', parser)
-      })*/
+        })
+      );
   }
 
   merge = (src, obj) => {

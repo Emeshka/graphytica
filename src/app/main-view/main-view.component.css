@@ -122,7 +122,6 @@
     font-size: 10pt;
     font-family: monospace;
     overflow-wrap: anywhere;
-    direction: rtl;
 }
 
 #import_settings td:not([colspan="2"]):first-child div {

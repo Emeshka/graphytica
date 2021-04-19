@@ -169,10 +169,10 @@ export class DbServiceService {
               }
 
               //refactor old
-              if (toRefactor['V'].addPropertiesToOld) {
+              if (toRefactor['V'] && toRefactor['V'].addPropertiesToOld) {
                 this.getDirectInstances('V').data(toRefactor['V'].addPropertiesToOld)
               }
-              if (toRefactor['E'].addPropertiesToOld) {
+              if (toRefactor['E'] && toRefactor['E'].addPropertiesToOld) {
                 this.getDirectInstances('E').data(toRefactor['E'].addPropertiesToOld)
               }
             } else {
@@ -274,6 +274,9 @@ export class DbServiceService {
       }
       if (!this.classesMap[superClass]) {
         throw `Failed class creation: superclass ${superClass} doesn't exist`
+      }
+      for (const key in properties) {
+        properties[key].owner = name
       }
       this.classes.push({
         name: name,
