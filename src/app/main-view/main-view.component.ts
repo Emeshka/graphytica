@@ -7,6 +7,7 @@ import { OSelection } from './Selection';
 import cytoscape from 'cytoscape';
 import cola from 'cytoscape-cola';
 import gridGuide from 'cytoscape-grid-guide';
+import { SandboxFunction } from './SandboxFunction';
 cytoscape.use( cola );
 gridGuide( cytoscape );
 
@@ -272,23 +273,23 @@ export class MainViewComponent implements OnInit {
         this.cy.userPanningEnabled(true);
       },
       onmousedown: (evt) => {
-        console.log('new edge mousedown', evt.target)
+        //console.log('new edge mousedown', evt.target)
         if (evt.target && evt.target != this.cy && evt.target.isNode()) {
           this.toolById.new_edge.settings['source'].value = evt.target;
         }
       },
       onmousemove: (evt) => {
         if (this.toolById.new_edge.settings['source'].value) {
-          console.log('new edge mousemove')
+          //console.log('new edge mousemove')
           this.toolById.new_edge.settings['moved'].value = true;
         }
       },
       onmouseup: (evt) => {
-        console.log('new edge mouseup', evt.target)
+        //console.log('new edge mouseup', evt.target)
         let moved = this.toolById.new_edge.settings['moved'].value;
         let source = this.toolById.new_edge.settings['source'].value;
         if (evt.target && evt.target != this.cy && evt.target.isNode() && source && moved) {
-          console.log('create edge')
+          //console.log('create edge')
           let cl = this.toolById.new_edge.settings['selectClass'].value
           let data = {
             id: this.conn.nextId(),
@@ -660,7 +661,7 @@ export class MainViewComponent implements OnInit {
         this.selection.remove(event.target);
       }
       this.checkEdgeCurveEdit()
-      console.log('this.selection: ', this.selection);
+      //console.log('this.selection: ', this.selection);
     }
     this.cy.on('select', selectionUpdate)
     this.cy.on('unselect', selectionUpdate)
@@ -681,9 +682,9 @@ export class MainViewComponent implements OnInit {
     
     this.conn.cy = this.cy;
     this.conn.export(this.dbLastSavedPath, null, (src, obj)=>{
-      console.log('Exported with initial style.')
+      //console.log('Exported with initial style.')
     }, (e)=>{
-      console.log('Failed to save after initial style commit.')
+      //console.log('Failed to save after initial style commit.')
     })
     this.setTool(this.activeToolId);
     this.isRendering = false;
@@ -872,7 +873,7 @@ export class MainViewComponent implements OnInit {
 
   setImportActiveParamType(name, type) {
     let settingsEntry = this.importSettings.params.find(s => s.name == name)
-    console.log(type)
+    //console.log(type)
     settingsEntry.activeType = type
   }
 
@@ -982,7 +983,13 @@ export class MainViewComponent implements OnInit {
   setImportSettings(name, element) {
     let settingsEntry = this.importSettings.params.find(s => s.name == name)
     let type = settingsEntry.activeType || settingsEntry.type
-    let value = (type == 'boolean') ? element.checked : element.value;
+    let value = element.value
+    if (type == 'boolean') {
+      value = element.checked
+    } else if (type.startsWith('function')) {
+      //value = element.innerText
+    }
+    console.log('setImportSettings:', element, value)
 
     function replaceSpecial(string) {
       string = string.replace('\\\\', '\\')
@@ -1030,129 +1037,43 @@ export class MainViewComponent implements OnInit {
         settingsEntry.value = value
       }
     } else if (type.startsWith('function')) {
-      let functionBody = value
-      let blackList = ['Worker', 'WebSocket', 'XMLHttpRequest', 'WorkerGlobalScope', 'DOMRequest', 'DOMCursor',
-        'WorkerLocation', 'WorkerNavigator', 'Crypto', 'Fetch', 'Headers', 'FetchEvent', 'BroadcastChannel',
-        'Request', 'Response', 'Notification', 'Performance', 'PerformanceEntry', 'PerformanceMeasure', 
-        'PerformanceMark', 'PerformanceObserver', 'PerformanceResourceTiming', 'FormData', 'ImageData', 'IndexedDB',
-        'NotificationEvent', 'ServiceWorkerGlobalScope', 'ServiceWorkerRegistration', 'FileReader', 'File', 'Blob',
-        'NetworkInformation', 'MessageChannel', 'MessagePort', 'PortCollection', 'SharedWorker', 'DataTransfer',
-        'HTMLCanvasElement', 'FileSystemHandle', 'FileSystemFileHandle', 'FileSystemDirectoryHandle',
-        'DataTransferItem', 'FileSystemWritableFileStream', 'Stream', 'WriteableStream', 'ReadableStream',
-        'FileSystemFileEntry', 'FileSystemDirectoryEntry', 'FileReaderSync', 'FileList', 'URL',
-        'ReadableStreamDefaultController', 'ReadableStreamDefaultReader', 'WritableStreamDefaultWriter', 
-        'WritableStreamDefaultController', 'Body', 'ReadableStreamBYOBReader', 'ReadableByteStreamController',
-        'ReadableStreamBYOBRequest', 'EventSource', 'WebGLRenderingContext', 'WebGL2RenderingContext',
-        'WebGLActiveInfo', 'WebGLBuffer', 'WebGLContextEvent', 'WebGLFramebuffer', 'WebGLProgram', 'WebGLQuery',
-        'WebGLRenderbuffer', 'WebGLSampler', 'WebGLShader', 'WebGLShaderPrecisionFormat', 'WebGLSync', 'WebGLTexture',
-        'WebGLTransformFeedback', 'WebGLUniformLocation', 'WebGLVertexArrayObject', 'OffscreenCanvas',
-        'DedicatedWorkerGlobalScope', 'SharedWorkerGlobalScope', 'Window', 'WindowOrWorkerGlobalScope',
-        'AnalyserNode', 'Animation', 'AnimationEvent', 'AnimationTimeline',
-        'ApplicationCache', 'Cache', 'CacheStorage', 'CanvasRenderingContext2D', 'CaretPosition', 'ChannelMergerNode',
-        'CharacterData', 'ClientRect', 'ClientRectList', 'Clipboard', 'ClipboardEvent', 'CloseEvent',
-        'Comment', 'CompositionEvent', 'ConstantSourceNode', 'ConvolverNode', 'CountQueuingStrategy', 'Credential',
-        'CredentialsContainer', 'CryptoKey', 'CryptoKeyPair', 'CustomElementRegistry', 'Audio', 'AudioBuffer', 
-        'AudioBufferSourceNode', 'AudioContext', 'AudioDestinationNode', 'AudioListener', 'AudioNode', 'AudioParam',
-        'AudioParamMap', 'AudioProcessingEvent', 'AuthenticatorAssertionResponse', 'AuthenticatorAttestationResponse',
-        'DataCue', 'DataView', 'External', 'IDBDatabase', 'MediaDevices', 'MediaDeviceInfo', 'MessageEvent',
-        'MessagePort', 'MessageChannel', 'Location', 'Gamepad', 'GamepadEvent', 'Reflect', 'ShadowRoot', 'SourceBuffer',
-        'SourceBufferList', 'Storage', 'StorageEvent', 'StorageManager', 'StyleSheet', 'StyleSheetList', 'SubtleCrypto',
-        'SyncManager', 'SyntaxError', 'PageTransitionEvent', 'PaymentRequest', 'PaymentResponse', 'Permissions', 'Plugin',
-        'PointerEvent', 'PromiseRejectionEvent', 'PushSubscription', 'XMLDocument', 'XMLHttpRequestUpload',
-        'XMLSerializer', 'XPathEvaluator', 'XPathExpression', 'XPathResult',
+      let argStart = type.indexOf('(')
+      let argEnd = type.indexOf(')')
+      let argList = type.substring(argStart + 1, argEnd).split(',').map(a => a.trim())
 
-        'export', 'class', 'navigator', 'Event', 'MouseEvent', 'KeyboardEvent', 'CustomEvent', 'importScripts',
-        'Promise', 'clearInterval', 'clearTimeout', 'dump', 'implements', 'constructor', 'set', 'get', 'async', 'await',
-        'Function', 'function', 'require', 'import', 'call', 'apply', 'bind', 'prototype', '__proto__',
-        'process', 'global', 'Agent', 'read', 'write', 'http', 'FileSystem', 'NavigationPreloadManager',
-        'Navigator', 'void', 'private', 'public', 'crypto', 'customElements', 'debugger', 'default', 'dispatchEvent',
-        'departFocus', 'devicePixelRatio', '__dirname', '__filename', 'addEventListener', 'alert', 'applicationCache',
-        'blur', 'caches', 'cancelAnimationFrame', 'captureEvents', 'clearImmediate', 'clientInformation',
-        'defaultStatus', 'doNotTrack', 'document', 'console', 'confirm', 'prompt', 'eval', 'exports', 'extends',
-        'external', 'createElement', 'getElementById', 'getElementsByClassName', 'querySelector', 'this', 'Proxy',
-        'proxy', '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__', 'hasOwnProperty',
-        'isPrototypeOf', 'propertyIsEnumerable', 'setPrototypeOf', 'caller', 'innerHeight', 'innerWidth', 'innerSubscribe',
-        'InnerSubscriber', 'interface', 'isSecureContext', 'kill', 'exception', 'event', 'Exception', 'throw', 'throws',
-        'invoke', 'invokeMethod', 'invokeMethodAsync', 'ajax', 'globalThis', 'visualViewport', 'fetch', 'focus',
-        'frameElement', 'frames', 'top', 'screenLeft', 'screenTop', 'screenX', 'screenY', 'Screen', 'ScreenOrientation',
-        'outerHeight', 'outerWidth', 'history', 'History', 'localStorage', 'location', 'locationbar', 'log',
-        'VisualViewport', 'Element', 'Error', 'ErrorEvent', 'ErrorHandler', 'ExtensionScriptApis',
-        'webkitURL', 'window', 'document', 'dump', 'yield', 'queueMicrotask', 'scroll', 'scrollBy', 'scrollTo', 'scrollX',
-        'scrollY', 'scrollbars', 'self', 'package', 'pageXOffset', 'pageYOffset', 'parent', 'performance', 'personalbar',
-        'postMessage', 'print', 'exec', 'run', 'execSync', 'dialog', 'electron', 'quit', 'sessionStorage', 'super',
-        'spawn', 'spawnSync', 'moveBy', 'moveTo', 'webContents', 'loadURL', '_baseURL', '_htc',
-
-        'BrowserWindow', 'ipcRenderer', 'ipcMain', 'MainViewComponent',
-        'Electron', 'Node', 'NodeFilter', 'NodeIterator', 'NodeJS', 'NodeList',
-        'Component', 'Input', 'ViewChild', 'NgZone', 'OnInit', 'ElectronService', 'DbServiceService',
-        'UpdateRecentService', 'LastDirectoryService', 'OSelection', 'cytoscape', 'cola', 'gridGuide'
-      ]
-
-      let notSecure = false;
-      for (let str of blackList) {
-        const regex =  new RegExp(`\b${str}\b`, 'g');
-        let found = functionBody.search(regex) >= 0
-        notSecure = notSecure || found
-        //console.log('forbidden check: found =', found, ', regex =', regex, ', str =', str, ', match =', functionBody.match(regex))
-      }
-      if (notSecure) {
-        console.log('forbiddenVarsClassesInterfaces')
-        return
-      }
-      const lambda = /=>/g
-      notSecure = notSecure || (functionBody.search(lambda) >= 0)
-      if (notSecure) {
-        console.log('lambda')
-        return
-      }
-
-      if (type == 'function(stringValue, context)') {
-        let fn = new Function('stringValue', 'context', functionBody)
-        let wrapper = (stringValue, context) => {
-          let globallyAvailable = {};
-          for (let p in window) {
-            if (!blackList.includes(p)) console.log(p)
-            globallyAvailable[p] = null
+      let onCreateError = (e) => {
+        this.importSettings.errorMessage = `Неверный синтаксис пользовательской функции ${name} с сигнатурой ${type}:
+        \n${e.name}: ${e.message}`
+        for (let p in e) {
+          if (p != 'stack') {
+            this.importSettings.errorMessage += `\n${p}: ${e[p]}`
           }
-          for (var p in this) {
-            globallyAvailable['' + p] = null;
-          }
-          console.log(globallyAvailable)
-          return fn.call(globallyAvailable, stringValue, context)
         }
-        settingsEntry.value = wrapper
-      } else {
-        let fn = new Function('stringValue', functionBody)
-        let wrapper = (stringValue) => {
-          let globallyAvailable = {};
-          for (let p in window) {
-            if (!blackList.includes(p)) console.log(p)
-            globallyAvailable[p] = null
-          }
-          for (var p in this) {
-            globallyAvailable['' + p] = null;
-          }
-          console.log(globallyAvailable)
-          /*{
-            window: null,
-            document: null,
-            console: null,
-            alert: null,
-            prompt: null,
-            confirm: null,
-            setInterval: null,
-            setTimeout: null,
-            clearInterval: null,
-            clearTimeout: null,
-            dump: null,
-            process: null
-          }*/
-          return fn.call(globallyAvailable, stringValue)
+        let stack = e.stack.split('\n')
+        this.importSettings.errorMessage += `\n${stack[0]}\n${stack[1]}`
+
+        if (element.className.indexOf('invalid_input') < 0) {
+          element.className += ' invalid_input';
+        } else {
+          element.className = element.className.replace(/\s*invalid_input/g, '');
         }
-        settingsEntry.value = wrapper
       }
+
+      let onRuntimeError = (e) => {
+        this.importSettings.errorMessage = `Ошибка в пользовательской функции ${name} с сигнатурой ${type}:
+        \n${e.name}: ${e.message}`
+        for (let p in e) {
+          if (p != 'stack') {
+            this.importSettings.errorMessage += `\n${p}: ${e[p]}`
+          }
+        }
+        let stack = e.stack.split('\n')
+        this.importSettings.errorMessage += `\n${stack[0]}\n${stack[1]}`
+      }
+
+      settingsEntry.value = new SandboxFunction(argList, value, onCreateError, onRuntimeError)
     }
-    console.log(name, type, settingsEntry.value)
+    console.log(name, type, settingsEntry.value.toString())
   }
 
   setImportFormat = (format) => {
@@ -1167,15 +1088,18 @@ export class MainViewComponent implements OnInit {
         },{
           name: 'cast',
           type: ['boolean', 'function(stringValue,context)'],
-          title: 'Если true, парсер будет пытаться конвертировать значения в нативные типы данных. Если задано функцией, то она принимает (1)строку-значение столбца (stringValue) и (2)контекст (context) в качестве аргументов и должна возвращать сконвертированное значение.',
+          title: `Если true, парсер будет пытаться конвертировать значения в нативные типы данных.\
+          Если задано функцией, то она принимает (1)строку-значение столбца (stringValue) и (2)контекст (context)\
+          в качестве аргументов и должна возвращать сконвертированное значение.\nДля значения-функции \
+          Graphytica использует полифилл, имитирующий поведение параметра cast пакета "node-csv-parse". \
+          Поэтому свойство контекста quoting не поддерживается.`,
           value: false,
           activeType: 'boolean'
         },{
           name: 'cast_date',
-          type: ['boolean', 'function(stringValue)'],
-          title: 'Если true, парсер будет пытаться конвертировать строки в даты (стандартным методом Date.parse). Если задано функцией, то она принимает строку (stringValue) в качестве аргумента и должна возвращать объект Date. Работает только при включенном cast.',
-          value: false,
-          activeType: 'boolean'
+          type: 'boolean',
+          title: 'Если true, парсер будет пытаться конвертировать строки в даты (стандартным методом Date.parse). Работает только при включенном cast.\nЗначения-функции не поддерживаются Graphytica. Для достижения этого функционала используйте параметр cast.',
+          value: false
         },{
           name: 'comment',
           type: 'string',
@@ -1329,9 +1253,21 @@ export class MainViewComponent implements OnInit {
     const isFieldNameInvalid = this.isFieldNameInvalid.bind(this)
 
     let params: any = {};
-    for (let param of importSettings.params) {
-      params[param.name] = param.value
+    let cast = {
+      execute: (stringValue, context) => {
+        return stringValue
+      }
     }
+    for (let param of importSettings.params) {
+      let isFunction = typeof param.value == 'function'
+      if (param.name != 'cast' || !isFunction) {
+        params[param.name] = param.value
+      } else if (param.name == 'cast') {
+        cast = param.value
+      }
+    }
+    //console.log('params.cast:', params.cast)
+    //console.log('params.cast():', params.cast('test', {}))
 
     if (isDemo) {
       params.from = importSettings.demoLineFrom
@@ -1378,17 +1314,30 @@ export class MainViewComponent implements OnInit {
         parser.end()
       })
       .on('end', function(){
-        console.log('reader.end()')
+        //console.log('reader.end()')
         parser.end()
       })
       .setEncoding(importSettings.params.encoding)
       .pipe(
         parser = this.parseCSV(params)
         .on('data', function(csvrow) {
-          console.log(csvrow);
+          //console.log(csvrow);
           if (csvrow) {
             if (isDemo) {
               importSettings.demoSource += csvrow.raw + '\n'
+              csvrow.record = csvrow.record.map((stringValue, index) => {
+                let context = {
+                  column: index,
+                  empty_lines: parser.info.empty_lines,
+                  invalid_field_length: parser.info.invalid_field_length,
+                  header: importSettings.noHeaders ? false : (importSettings.result.length == 0),
+                  index: index,
+                  lines: parser.info.lines,
+                  records: parser.info.records
+                }
+                if (context && context.header) return stringValue;
+                return cast.execute(stringValue, context)
+              });
               importSettings.result.push(csvrow.record)
             } else {
               importSettings.result.push(csvrow)
@@ -1412,27 +1361,31 @@ export class MainViewComponent implements OnInit {
           importSettings.headersType = []
           importSettings.headersNames = []*/
           let headersRow = importSettings.noHeaders ? 
-                      Array.from(Array(importSettings.result[0].length).keys()) : importSettings.result[0]
+                      importSettings.result[0].map((e, index) => index) : importSettings.result[0]
 
           let sameHeaders = importSettings.headersNames.every((e, index) => e == headersRow[index])
                                   && importSettings.headersNames.length == headersRow.length
 
-          console.log('sameHeaders:', sameHeaders)
+          //console.log('sameHeaders:', sameHeaders)
           if (importSettings.headersNames.length == 0 || !sameHeaders) {
             for (let i = 0; i < headersRow.length; i++) {
               importSettings.includeHeaders[i] = true
-              importSettings.headersType[i] = 'string'
+              let columnType = 'string'
+              if (importSettings.result[1]) {
+                let v = importSettings.result[1][i]
+                if (typeof v == 'number' || typeof v == 'boolean') columnType = typeof v;
+                else if (v instanceof Date) columnType = 'date'
+              }
+              importSettings.headersType[i] = columnType
               importSettings.headersNames[i] = ''+headersRow[i]
             }
             const included = importSettings.headersNames.filter((h, i) => {
               return importSettings.includeHeaders[i];
             })
             importSettings.validColumnNames = included.length > 0 
-                                                && !included.some((h, index) => isFieldNameInvalid(index, h))
-            //console.log('validColumns:', importSettings.validColumnNames)
+               && !included.some((h, index) => isFieldNameInvalid(index, h))
           }
-          //console.log('importSettings.includeHeaders, importSettings.headersType, importSettings.headersNames', importSettings.includeHeaders, importSettings.headersType, importSettings.headersNames)
-    
+
           if (!isDemo && importSettings.className) {
             let properties = {}
             for (let i = 0; i<headersRow.length; i++) {
@@ -1470,7 +1423,7 @@ export class MainViewComponent implements OnInit {
                 }
               }
     
-              console.log('plainElement:', plainElement)
+              //console.log('plainElement:', plainElement)
               data.push(plainElement)
             }
     
@@ -1505,7 +1458,7 @@ export class MainViewComponent implements OnInit {
       }
       item.data.id = newIdMap[item.data.id]
       item.selected = false
-      console.log(item)
+      //console.log(item)
     })
     this.cy.add(newData)
 
@@ -1513,14 +1466,14 @@ export class MainViewComponent implements OnInit {
       let currentStyle = this.cy.style().json()
       for (let entry of obj.style) {
         //`[id = '${id}']`
-        console.log(entry.selector)
+        //console.log(entry.selector)
         entry.selector = entry.selector.replace(/\[id = ['"]?([a-z\d]+)['"]?\]/g, (match, id) => {
           console.log(id, newIdMap[id])
           return `[id = '${newIdMap[id]}']`
         })
         currentStyle.push(entry)
       }
-      console.log('import', currentStyle)
+      //console.log('import', currentStyle)
       this.cy.style().fromJson(currentStyle).update()
     }
     this.setWaiting('');

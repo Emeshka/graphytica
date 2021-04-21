@@ -107,7 +107,8 @@
       <div class="main_dialog_padding" *ngIf="importSettings.params && importSettings.params.length > 0">
         <div id="import_settings_container" class="import_two_columns">
           <div class="nota_bene">Чтобы увидеть подсказку, наведите на параметр.
-            <span *ngIf="importSettings.format == 'csv'">Все параметры являются опциональными.</span>
+            <span *ngIf="importSettings.format == 'csv'">Основано на пакете <span class="mono">node-csv-parse</span>. 
+              Все параметры являются опциональными.</span>
           </div>
           <table id="import_settings">
             <tr>
@@ -159,15 +160,16 @@
                 ></autosized-textarea>
                 <div *ngIf="param.activeType && param.activeType.startsWith('function') || param.type.startsWith && param.type.startsWith('function')">
                   <div class="function_signature">{{param.activeType || param.type}} {{'{'}}</div>
-                  <autosized-textarea
+                  <!--<autosized-textarea
                     placeholder="Тело функции"
                     [isMasked]="false"
+                    [isCode]="true"
+                    [value]="param.value ? param.value.functionBody : ''"
                     class="full_width function"
-                    [min]="4"
-                    [max]="30"
-                    [value]="param.value ? param.value : ''"
+                    minHeight="60px"
+                    maxHeight="420px"
                     (input)="setImportSettings(param.name, $event.target)"
-                  ></autosized-textarea>
+                  ></autosized-textarea>-->
                   <div class="function_signature">{{'}'}}</div>
                 </div>
                 <select *ngIf="param.type == 'select'"
@@ -282,14 +284,15 @@
                         (input)="setImportHeaderName(j, $event)"
                       ></autosized-textarea>
                     </div>
-                    <div>
+                    <!--<div>
                       <select *ngIf="importSettings.includeHeaders[j]"
                         value="string"
+                        title="Тип поля. Если вы конвертировали значения с помощью cast, укажите ."
                         (change)="setImportHeaderType(j, $event.target.value)"
                       >
                         <option *ngFor="let v of importSettings.supportedTypes" [value]="v" [selected]="v == 'string'">{{v}}</option>
                       </select>
-                    </div>
+                    </div>-->
                   </td>
                 </tr>
                 <tr *ngFor="let row of importSettings.result; let i = index">
@@ -315,14 +318,14 @@
                           (input)="setImportHeaderName(j, $event)"
                         ></autosized-textarea>
                       </div>
-                      <div>
+                      <!--<div>
                         <select *ngIf="importSettings.includeHeaders[j]"
                           value="string"
                           (change)="setImportHeaderType(j, $event.target.value)"
                         >
                           <option *ngFor="let v of importSettings.supportedTypes" [value]="v" [selected]="v == 'string'">{{v}}</option>
                         </select>
-                      </div>
+                      </div>-->
                     </ng-container>
                   </td>
                 </tr>

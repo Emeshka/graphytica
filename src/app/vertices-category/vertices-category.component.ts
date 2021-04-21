@@ -86,7 +86,7 @@ export class VerticesCategoryComponent implements OnInit, OnDestroy {
   panToElement(id) {
     this.conn.cy.center(this.conn.getById(id))
   }
-        
+
   ngOnChanges(changes: SimpleChanges) {
     if (changes.activeToolId) {
       this.switchEditSelected(changes.activeToolId.currentValue);

@@ -30,7 +30,7 @@ textarea {
     margin: 0px;
 }*/
 
-:host {
+:host, .host {
     display: inline-block;
     width: 100%;
     font-size: 10pt;
@@ -38,5 +38,13 @@ textarea {
 }
 
 .invalid_input {
-    background: rgb(255, 174, 174);
+    outline: 2px solid red;
+}
+
+[contentEditable=true] {
+    max-width: 100%;
+}
+
+[contentEditable=true]:empty:not(:focus):before{
+    content:attr(data-text)
 }
