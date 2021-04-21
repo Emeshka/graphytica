@@ -980,14 +980,15 @@ export class MainViewComponent implements OnInit {
     }
   }
 
-  setImportSettings(name, element) {
+  setImportSettings(name, received) {
     let settingsEntry = this.importSettings.params.find(s => s.name == name)
     let type = settingsEntry.activeType || settingsEntry.type
-    let value = element.value
+    let value = received.value
+    let element = received
     if (type == 'boolean') {
       value = element.checked
     } else if (type.startsWith('function')) {
-      //value = element.innerText
+      value = received
     }
     console.log('setImportSettings:', element, value)
 
@@ -1051,12 +1052,6 @@ export class MainViewComponent implements OnInit {
         }
         let stack = e.stack.split('\n')
         this.importSettings.errorMessage += `\n${stack[0]}\n${stack[1]}`
-
-        if (element.className.indexOf('invalid_input') < 0) {
-          element.className += ' invalid_input';
-        } else {
-          element.className = element.className.replace(/\s*invalid_input/g, '');
-        }
       }
 
       let onRuntimeError = (e) => {
@@ -1259,7 +1254,7 @@ export class MainViewComponent implements OnInit {
       }
     }
     for (let param of importSettings.params) {
-      let isFunction = typeof param.value == 'function'
+      let isFunction = param.value instanceof SandboxFunction
       if (param.name != 'cast' || !isFunction) {
         params[param.name] = param.value
       } else if (param.name == 'cast') {
@@ -1323,25 +1318,27 @@ export class MainViewComponent implements OnInit {
         .on('data', function(csvrow) {
           //console.log(csvrow);
           if (csvrow) {
+            let record = csvrow
+
             if (isDemo) {
               importSettings.demoSource += csvrow.raw + '\n'
-              csvrow.record = csvrow.record.map((stringValue, index) => {
-                let context = {
-                  column: index,
-                  empty_lines: parser.info.empty_lines,
-                  invalid_field_length: parser.info.invalid_field_length,
-                  header: importSettings.noHeaders ? false : (importSettings.result.length == 0),
-                  index: index,
-                  lines: parser.info.lines,
-                  records: parser.info.records
-                }
-                if (context && context.header) return stringValue;
-                return cast.execute(stringValue, context)
-              });
-              importSettings.result.push(csvrow.record)
-            } else {
-              importSettings.result.push(csvrow)
+              record = csvrow.record
             }
+
+            record = record.map((stringValue, index) => {
+              let context = {
+                column: index,
+                empty_lines: parser.info.empty_lines,
+                invalid_field_length: parser.info.invalid_field_length,
+                header: importSettings.noHeaders ? false : (importSettings.result.length == 0),
+                index: index,
+                lines: parser.info.lines,
+                records: parser.info.records
+              }
+              if (context && context.header) return stringValue;
+              return cast.execute(stringValue, context)
+            });
+            importSettings.result.push(record)
           }
           importSettings.info = parser.info
         })
@@ -1423,7 +1420,7 @@ export class MainViewComponent implements OnInit {
                 }
               }
     
-              //console.log('plainElement:', plainElement)
+              console.log('plainElement:', plainElement)
               data.push(plainElement)
             }
     

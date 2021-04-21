@@ -6,10 +6,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { NgxElectronModule } from 'ngx-electron';
 import { AutosizeModule } from 'ngx-autosize';
-//import { AngularHighlightJsModule } from 'angular2-highlight-js';
-import { registerLanguage } from 'highlight.js';
-import javascript from 'highlight.js/lib/languages/javascript';
-registerLanguage('javascript', javascript);
+import { CodemirrorModule } from '@ctrl/ngx-codemirror';
 
 import { AppOpenFileButtonBigComponent } from './app-open-file-button-big/app-open-file-button-big.component';
 import { TileButtonComponent } from './tile-button/tile-button.component';
@@ -28,6 +25,7 @@ import { ViewCategoryComponent } from './view-category/view-category.component';
 import { SwitchTrueFalseComponent } from './switch-true-false/switch-true-false.component';
 import { AutosizedTextareaComponent } from './autosized-textarea/autosized-textarea.component';
 import { DatePickerComponent } from './date-picker/date-picker.component';
+import { CodeMirrorComponent } from './code-mirror/code-mirror.component';
 
 @NgModule({
   declarations: [
@@ -47,10 +45,12 @@ import { DatePickerComponent } from './date-picker/date-picker.component';
     ViewCategoryComponent,
     SwitchTrueFalseComponent,
     AutosizedTextareaComponent,
-    DatePickerComponent
+    DatePickerComponent,
+    CodeMirrorComponent
   ],
   imports: [
-    //AngularHighlightJsModule,//...spread operator?
+    BrowserModule,
+    CodemirrorModule,
     BrowserModule,
     AppRoutingModule,
     NgxElectronModule,

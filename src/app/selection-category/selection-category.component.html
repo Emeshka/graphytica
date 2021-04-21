@@ -237,6 +237,11 @@
             </tr>
         </table>
     </div>
+    <code-mirror
+      [value]="testCode"
+      (input)="testLog($event)"
+      (change)="testLog($event)"
+    ></code-mirror>
 </div>
 
 <!--<div class="section" *ngIf="!showBasicTable">

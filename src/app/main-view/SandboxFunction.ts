@@ -2,7 +2,7 @@
  с событиями на добавление, удаление и замену элемента */
 
 export class SandboxFunction {
-    private readonly blackList = [
+    private static readonly blackList = [
       'Worker', 'WebSocket', 'XMLHttpRequest', 'WorkerGlobalScope', 'DOMRequest', 'DOMCursor',
       'WorkerLocation', 'WorkerNavigator', 'Crypto', 'Fetch', 'Headers', 'FetchEvent', 'BroadcastChannel',
       'Request', 'Response', 'Notification', 'Performance', 'PerformanceEntry', 'PerformanceMeasure', 
@@ -60,18 +60,50 @@ export class SandboxFunction {
       'UpdateRecentService', 'LastDirectoryService', 'OSelection', 'cytoscape', 'cola', 'gridGuide'
     ]
 
-    private readonly whiteList = [
+    private static readonly whiteList = [
       'Math', 'JSON', 'parseInt', 'parseFloat', 'Date', 'Integer', 'String', 'Number', 'Array', 'Boolean',
       'atob', 'btoa', 'RegExp', 'Object', 'Error', 'Set'
     ]
 
     /* ----------------------------------------------------------------------------------------------- */
 
-    private f = function(){return undefined};
+    private f = function(...args) {
+      console.warn('SandboxFunction is empty.')
+      return undefined
+    };
     public functionBody:string = 'return undefined';
+    
+    public static tryCreate(functionBody): Error {
+      let notSecure = false;
+      for (let str of SandboxFunction.blackList) {
+        const regex =  new RegExp(`\\b${str}\\b`, 'g');
+        let found = functionBody.search(regex) >= 0
+        notSecure = notSecure || found
+          //console.log('forbidden check: found =', found, ', regex =', regex, ', str =', str,
+          //', match =', functionBody.match(regex))
+      }
+      if (notSecure) {
+        return new Error('Используются запрещенные классы, интерфейсы, свойства, переменные или операторы.')
+      }
 
-    execute() {
-      return this.f()
+      const lambda = /=>/g
+      notSecure = notSecure || (functionBody.search(lambda) >= 0)
+      if (notSecure) {
+        return new Error('Использование лямбда-выражений запрещено')
+      }
+
+      let fn:any = function(){return undefined}
+      try {
+        fn = new Function(functionBody)
+      } catch (e) {
+        //console.log('(!) Syntax error in user function with argNames ', argNamesArray, '.', e)
+        return e
+      }
+      return null;
+    }
+
+    execute(...args) {
+      return this.f(...args)
     }
 
     toString() {
@@ -86,21 +118,9 @@ export class SandboxFunction {
         return
       }
 
-      let notSecure = false;
-      for (let str of this.blackList) {
-        const regex =  new RegExp(`\b${str}\b`, 'g');
-        let found = functionBody.search(regex) >= 0
-        notSecure = notSecure || found
-        //console.log('forbidden check: found =', found, ', regex =', regex, ', str =', str, ', match =', functionBody.match(regex))
-      }
-      if (notSecure) {
-        console.log('forbiddenVarsClassesInterfaces')
-        return
-      }
-      const lambda = /=>/g
-      notSecure = notSecure || (functionBody.search(lambda) >= 0)
-      if (notSecure) {
-        console.log('lambda')
+      let error = SandboxFunction.tryCreate(functionBody)
+      if (error) {
+        if (onCreateError) onCreateError(error)
         return
       }
 
@@ -116,14 +136,15 @@ export class SandboxFunction {
       let wrapper = (...args) => {
         let globallyAvailable = {};
         for (let p in window) {
-          if (!this.whiteList.includes(p)) {
+          if (!SandboxFunction.whiteList.includes(p)) {
             globallyAvailable[p] = null
           }
         }
         for (var p in this) {
           globallyAvailable['' + p] = null;
         }
-        console.log(globallyAvailable)
+        console.log('wrapper args', args)
+        //console.log(globallyAvailable)
         
         let result = undefined
         try {

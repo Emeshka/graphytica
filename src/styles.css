@@ -54,6 +54,7 @@ body {
   height: 100%;
   background: rgba(255,255,255,0.7);
   text-align: center;
+  z-index: 100;
 }
 .loading_voile_hidden {
   width: 0px;

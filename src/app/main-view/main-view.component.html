@@ -107,8 +107,7 @@
       <div class="main_dialog_padding" *ngIf="importSettings.params && importSettings.params.length > 0">
         <div id="import_settings_container" class="import_two_columns">
           <div class="nota_bene">Чтобы увидеть подсказку, наведите на параметр.
-            <span *ngIf="importSettings.format == 'csv'">Основано на пакете <span class="mono">node-csv-parse</span>. 
-              Все параметры являются опциональными.</span>
+            <span *ngIf="importSettings.format == 'csv'">Все параметры являются опциональными.</span>
           </div>
           <table id="import_settings">
             <tr>
@@ -160,6 +159,10 @@
                 ></autosized-textarea>
                 <div *ngIf="param.activeType && param.activeType.startsWith('function') || param.type.startsWith && param.type.startsWith('function')">
                   <div class="function_signature">{{param.activeType || param.type}} {{'{'}}</div>
+                  <code-mirror
+                    [value]="param.value ? param.value.functionBody : ''"
+                    (input)="setImportSettings(param.name, $event)"
+                  ></code-mirror>
                   <!--<autosized-textarea
                     placeholder="Тело функции"
                     [isMasked]="false"
@@ -274,6 +277,8 @@
                         (change)="setImportIncludeHeader(j)"
                       >
                     </div>
+                    <div class="mono" title="Тип столбца был автоматически определен на основании типа значения
+                    в первой записи. Для преобразования используйте параметр cast.">{{importSettings.headersType[j]}}</div>
                     <div>
                       <autosized-textarea
                         placeholder="Под каким именем импортировать столбец"
@@ -308,6 +313,8 @@
                           (change)="setImportIncludeHeader(j)"
                         >
                       </div>
+                      <div class="mono" title="Тип столбца был автоматически определен на основании типа значения
+                      в первой записи. Для преобразования используйте параметр cast.">{{importSettings.headersType[j]}}</div>
                       <div>
                         <autosized-textarea
                           placeholder="Под каким именем импортировать столбец"

@@ -25,7 +25,8 @@
               "src/orientdb-3.1.4"
             ],
             "styles": [
-              "./node_modules/highlight.js/styles/zenburn.css",
+              "./node_modules/codemirror/lib/codemirror.css",
+              "./node_modules/codemirror/theme/yonce.css",
               "src/styles.css"
             ],
             "scripts": []
@@ -90,7 +91,8 @@
               "src/assets"
             ],
             "styles": [
-              "./node_modules/highlight.js/styles/zenburn.css",
+              "./node_modules/codemirror/lib/codemirror.css",
+              "./node_modules/codemirror/theme/yonce.css",
               "src/styles.css"
             ],
             "scripts": []

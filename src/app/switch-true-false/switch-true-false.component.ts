@@ -16,13 +16,13 @@ export class SwitchTrueFalseComponent implements OnInit {
 
   setValue(value) {
     this.currentValue = value;
-    console.log('switch-true-false: set current value', this.currentValue)
+    //console.log('switch-true-false: set current value', this.currentValue)
     this.value.emit(value);
   }
         
   ngOnChanges(changes: SimpleChanges) {
     if (changes.firstValue) {
-      console.log('switch-true-false ngOnChanges firstValue', changes.firstValue.currentValue)
+      //console.log('switch-true-false ngOnChanges firstValue', changes.firstValue.currentValue)
       if (changes.firstValue.currentValue === false || changes.firstValue.currentValue === true) {
         this.currentValue = changes.firstValue.currentValue;
       } else this.currentValue = '';
@@ -30,7 +30,7 @@ export class SwitchTrueFalseComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('switch-true-false', this.firstValue)
+    //console.log('switch-true-false', this.firstValue)
     if (this.firstValue === false || this.firstValue === true) this.currentValue = this.firstValue;
     else this.currentValue = '';
   }

@@ -34,6 +34,15 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   freeProps = null;
   //unifyFreeProps = null;
   classDefinedPropsColspanOwnerByOrder = null;
+
+  public _testCode = 'let someVar = 100;'
+  get testCode() {
+    return this._testCode
+  }
+  set testCode(value) {
+    console.log('set testCode', value)
+    this._testCode = value
+  }
   
   static hideColumnsList = [];
   get hideColumns() {
@@ -285,6 +294,13 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     if (allLocked) sel.unlock();
     else sel.lock();
   }
+
+  ////////
+
+  testLog(code) {
+    console.log('testLog', code)
+    this.testCode = code
+  }
   
   /* ----------------------------------------- Инициализация ------------------------------------ */
 
@@ -300,7 +316,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
         //this.unifyFreeProps = new Set([]);
         
         for (let e of arr) {
-          console.log(e.data('id'), e.isNode(), e.isEdge())
+          //console.log(e.data('id'), e.isNode(), e.isEdge())
           areEdges = areEdges && e.isEdge();
           areVertices = areVertices && e.isNode();
   
@@ -384,8 +400,8 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
         } else {
           this.areEdges = areEdges ? true : (areVertices ? false : null);
         }
-        console.log(areEdges, areVertices, this.areEdges)
-        console.log('selection-category.selectionListener():', this.entities)
+        //console.log(areEdges, areVertices, this.areEdges)
+        //console.log('selection-category.selectionListener():', this.entities)
       }
       this.selectionListener = f.bind(this)
       this.selection.addEventListener('itemadded', this.selectionListener)
