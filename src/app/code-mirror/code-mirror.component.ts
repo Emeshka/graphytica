@@ -1,5 +1,6 @@
-import { Component, Input, OnInit, ViewChild, ElementRef, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, ViewChild, SimpleChanges, Output, EventEmitter } from '@angular/core';
 import 'codemirror/mode/javascript/javascript';
+import 'codemirror/mode/sql/sql';
 import { SandboxFunction } from '../main-view/SandboxFunction';
 
 @Component({
@@ -12,6 +13,7 @@ export class CodeMirrorComponent implements OnInit {
   constructor() { }
 
   @Input() value = '';
+  @Input() mode = 'full';
   @ViewChild('ngxCodeMirror') ngxCodeMirror;
   @ViewChild('root') root;
   @Output() input = new EventEmitter<any>();
@@ -20,6 +22,8 @@ export class CodeMirrorComponent implements OnInit {
   options = {}
 
   checkValid() {
+    if (this.mode == 'sql') return true;
+
     let error = SandboxFunction.tryCreate(this.value)
     
     if (error) {
@@ -55,15 +59,41 @@ export class CodeMirrorComponent implements OnInit {
       this.change.emit(this.value);
     }
   }
+        
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes.mode && changes.mode.currentValue) {
+      if (this.mode != changes.mode.currentValue) {
+        let editor = this.ngxCodeMirror.codeMirror;
+        if (changes.mode.currentValue == 'sql') {
+          editor.setOption('theme', 'mdn-like')
+        } else if (changes.mode.currentValue == 'full') {
+          editor.setOption('theme', 'yonce')
+        }
+      }
+      this.mode = changes.mode.currentValue
+    }
+  }
 
   ngOnInit(): void {
-    //console.log(this.value);
-    this.options = {
-      value: this.value || '',
-      lineNumbers: true,
-      //lineWrapping: true,
-      theme: 'yonce',
-      mode: 'javascript'
+    if (this.mode == 'full') {
+      this.options = {
+        value: this.value || '',
+        lineNumbers: true,
+        theme: 'yonce',
+        mode: 'javascript'
+      }
+    } else if (this.mode == 'sql') {
+      this.options = {
+        height: '100px',
+        value: this.value || '',
+        lineWrapping: true,
+        mode: 'sql',
+        theme: 'mdn-like'
+      }
+        //parserfile: '../../assets/sql_highlighting/parsesql.js',
+        //stylesheet: '../../assets/sql_highlighting/sqlcolors.css',
+        //path: '../../assets/sql_highlighting/js/'
+        //
     }
   }
 

@@ -616,15 +616,9 @@ export class MainViewComponent implements OnInit {
           }
         },
         {
-          selector: '.cy_hidden',
+          selector: '.hidden',
           style: {
             'opacity': '0.1'
-          }
-        },
-        {
-          selector: '.cy_edit_hidden',
-          style: {
-            'opacity': '0.25'
           }
         }
       ]

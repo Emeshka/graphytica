@@ -1,4 +1,4 @@
-<div #root class="root" (input)="onInput($event)" (keyup)="onInput($event)" (change)="onChange($event)">
+<div #root class="root" [class.js]="mode == 'full'" (input)="onInput($event)" (keyup)="onInput($event)" (change)="onChange($event)">
     <ngx-codemirror #ngxCodeMirror
     [(ngModel)]="value"
     [options]="options"

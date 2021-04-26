@@ -16,7 +16,7 @@
     text-decoration-color: red;
 }
 
-.root:focus-within {
+.js:focus-within {
     position: absolute;
     overflow: visible;
     min-width: 20em;

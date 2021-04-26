@@ -1,4 +1,4 @@
-<div class="section" *ngIf="showBasicTable">
+<div class="section" *ngIf="showTable">
     <div>Действия над выделением:</div>
     <app-icon-button title="Дублировать" iconSrc="assets/img/duplicate.png"
         [callback]="duplicate.bind(this)"></app-icon-button>
@@ -10,9 +10,13 @@
         [callback]="pinUnpin.bind(this)"></app-icon-button>
     <app-icon-button title="Сбросить выделение" iconSrc="assets/img/reset_selection.png"
         [callback]="resetSelection.bind(this)"></app-icon-button>
+    <app-icon-button title="Изменить выделение" iconSrc="assets/img/select_query.png"
+        [callback]="setShowTable.bind(this, 'select_query')"></app-icon-button>
+    <app-icon-button title="Анализ" iconSrc="assets/img/lambda.png"
+        [callback]="setShowTable.bind(this, 'update_query')"></app-icon-button>
 </div>
     
-<div class="section" *ngIf="showBasicTable">
+<div class="section" *ngIf="showTable == 'selection'">
     <div>Редактировать свойства выделенных 
         {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}:
     </div>
@@ -244,62 +248,132 @@
     ></code-mirror>
 </div>
 
-<!--<div class="section" *ngIf="!showBasicTable">
-    <table>
-        <tr *ngFor="let cl of conn.classesMap[selectedClass].properties | keyvalue">
-            <td class="field_name">
-                <autosized-textarea
-                    [value]="cl.key"
-                    placeholder="Имя поля"
-                    (change)="alterFieldName(cl.key, $event)"
-                    (input)="checkInvalid($event, cl.key, true, isFieldNameInvalid.bind(this))"
-                ></autosized-textarea>
-            </td>
-            <td class="field_value">
-                <select class="masked_input" value="{{cl.value.type}}"
-                    (change)="alterField(cl.key, 'type', $event.target.value)">
-                    <option *ngFor="let type of conn.supportedTypes" [selected]="type == cl.value.type" 
-                        value="{{type}}">{{type}}</option>
-                </select>
-                <tiny-button
-                    title="Удалить поле"
-                    iconSrc="assets/img/close.png"
-                    [callback]="removeField.bind(this, cl.key)"
-                ></tiny-button>
-            </td>
-        </tr>
+<div class="section" *ngIf="showTable == 'select_query'">
+    <div>Режим:</div>
+    <app-icon-button title="Заменить" iconSrc="assets/img/select_mode_reset.png"
+        [callback]="setSelectionMode.bind(this, 'reset')"></app-icon-button>
+    <app-icon-button title="Добавить" iconSrc="assets/img/select_mode_add.png"
+        [callback]="setSelectionMode.bind(this, 'add')"></app-icon-button>
+    <app-icon-button title="Вычесть" iconSrc="assets/img/select_mode_subtract.png"
+        [callback]="setSelectionMode.bind(this, 'subtract')"></app-icon-button>
+    <app-icon-button title="Пересечь" iconSrc="assets/img/select_mode_intersect.png"
+        [callback]="setSelectionMode.bind(this, 'intersect')"></app-icon-button>
+</div>
 
-        <tr *ngIf="fakeNewField">
-            <td class="field_name">
-                <autosized-textarea
-                    placeholder="Имя поля" 
-                    (change)="setNewFieldName($event)"
-                    (input)="checkInvalid($event, newFieldName, true, isFieldNameInvalid.bind(this))"
-                ></autosized-textarea>
-            </td>
-            <td class="field_value">
-                <select value=""
-                    (change)="setNewFieldType($event.target.value)"
-                    class="full_width"
-                >
-                    <option selected disabled value="">Тип данных</option>
-                    <option *ngFor="let type of conn.supportedTypes" value="{{type}}">{{type}}</option>
-                </select>
-                <tiny-button
-                    title="Не создавать"
-                    iconSrc="assets/img/close.png"
-                    [callback]="hideFakeField.bind(this)"
-                ></tiny-button>
-            </td>
-        </tr>
-        <tr *ngIf="!fakeNewField">
-            <td colspan=2 class="add_field">
-                <tiny-button
-                    iconSrc="assets/img/green_plus.png"
-                    title="Создать новое поле"
-                    [callback]="addFakeField.bind(this)"
-                ></tiny-button>
-            </td>
-        </tr>
-    </table>
+<div class="section" *ngIf="showTable == 'select_query'">
+    <div>Запрос:</div>
+    <span class="grey_link" (click)="switchSelectQueryHelp()">Как вводить запросы?</span>
+    <div *ngIf="selectSettings.manualTyping">
+        <div>Введите запрос:</div>
+        <code-mirror
+            mode="sql"
+            [value]="selectSettings.query.strQuery"
+            (input)="setTempQuery($event)"
+        ></code-mirror>
+        <tiny-button
+            iconSrc="assets/img/close.png"
+            title="Отмена"
+            [callback]="editQuery.bind(this)"
+        ></tiny-button>
+        <tiny-button
+            iconSrc="assets/img/ok.png"
+            title="Готово"
+            [callback]="setQuery.bind(this)"
+        ></tiny-button>
+    </div>
+    <div *ngIf="!selectSettings.manualTyping">
+        <sq-operator [tree]="selectSettings.query.tree"></sq-operator>
+        <tiny-button
+            title="Править в текстовом виде"
+            iconSrc="assets/img/edit.png"
+            [callback]="editQuery.bind(this)"
+        ></tiny-button>
+    </div>
+</div>
+
+<div class="loading_voile_full_screen" *ngIf="selectSettings.showHelp">
+    <div class="help_dialog">
+        <p class="grey_link" (click)="switchSelectQueryHelp()">&lt; Назад</p>
+        <h2>Как вводить запросы для изменения выделения?</h2>
+        <p>Помощь.</p>
+    </div>
+</div>
+<!--
+<div class="section" *ngIf="showTable == 'select_query'">
+    <div>Условия:</div>
+    <div>
+        <span>Скрытые:</span>
+        <switch-true-false
+            [firstValue]="selectSettings.hidden"
+            title="Искать среди скрытых элементов, видимых или неважно"
+            (value)="setSelectOption('hidden', $event)"
+        ></switch-true-false>
+    </div>
+    <div>
+        <span>Класс:</span>
+        <select
+            value="{{cl.value.type}}"
+            placeholder="неважно"
+            (change)="alterField(cl.key, 'type', $event.target.value)"
+        >
+            <option></option>
+            <option *ngFor="let type of conn.supportedTypes" [selected]="type == cl.value.type" 
+                value="{{type}}">{{type}}</option>
+        </select>
+    </div>
+
+    <div>
+        <table>
+            <tr *ngFor="let p of selectSettings.props | keyvalue: classPropsOrderComparator">
+                <td class="field_name">
+                    {{p.key}}
+                </td>
+                <td class="field_value" *ngIf="">
+                    <select class="masked_input" value="{{cl.value.type}}"
+                        (change)="alterField(cl.key, 'type', $event.target.value)">
+                        <option *ngFor="let type of conn.supportedTypes" [selected]="type == cl.value.type" 
+                            value="{{type}}">{{type}}</option>
+                    </select>
+                    <tiny-button
+                        title="Удалить поле"
+                        iconSrc="assets/img/close.png"
+                        [callback]="removeField.bind(this, cl.key)"
+                    ></tiny-button>
+                </td>
+            </tr>
+
+            <tr *ngIf="fakeNewField">
+                <td class="field_name">
+                    <autosized-textarea
+                        placeholder="Имя поля" 
+                        (change)="setNewFieldName($event)"
+                        (input)="checkInvalid($event, newFieldName, true, isFieldNameInvalid.bind(this))"
+                    ></autosized-textarea>
+                </td>
+                <td class="field_value">
+                    <select value=""
+                        (change)="setNewFieldType($event.target.value)"
+                        class="full_width"
+                    >
+                        <option selected disabled value="">Тип данных</option>
+                        <option *ngFor="let type of conn.supportedTypes" value="{{type}}">{{type}}</option>
+                    </select>
+                    <tiny-button
+                        title="Не создавать"
+                        iconSrc="assets/img/close.png"
+                        [callback]="hideFakeField.bind(this)"
+                    ></tiny-button>
+                </td>
+            </tr>
+            <tr *ngIf="!fakeNewField">
+                <td colspan=2 class="add_field">
+                    <tiny-button
+                        iconSrc="assets/img/green_plus.png"
+                        title="Создать новое поле"
+                        [callback]="addFakeField.bind(this)"
+                    ></tiny-button>
+                </td>
+            </tr>
+        </table>
+    </div>
 </div>-->

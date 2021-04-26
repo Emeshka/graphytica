@@ -145,3 +145,24 @@ td:first-child {
     display: inline-block;
     padding: 10px;
 }
+
+.help_dialog {
+    display: inline-block;
+    width: 90%;
+    height: 90%;
+    padding: 20px;
+    border: 1px solid black;
+    border-radius: 4px;
+    background-color: white;
+    text-align: left;
+    overflow: auto;
+    font-size: 10pt;
+}
+
+.grey_link {
+    text-decoration: underline;
+    color: grey;
+    font-size: 10pt;
+    font-style: italic;
+    cursor: pointer;
+}

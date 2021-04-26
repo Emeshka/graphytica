@@ -2,6 +2,7 @@ import { Component, OnInit, Input, OnDestroy } from '@angular/core';
 import { KeyValue } from '@angular/common';
 import { ElectronService } from 'ngx-electron';
 import { DbServiceService } from '../db-service.service';
+import { SelectQuery } from './SelectQuery';
 
 @Component({
   selector: 'selection-category',
@@ -19,7 +20,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   @Input() toolById;
   @Input() activeToolId: string;
 
-  showBasicTable: boolean = true;
+  showTable: string = 'selection';
   expandTable: boolean = false;
   selectionListener = null;
   showCreateFreeField: boolean = false;
@@ -32,8 +33,15 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
   classDefinedProps = null;
   freeProps = null;
-  //unifyFreeProps = null;
   classDefinedPropsColspanOwnerByOrder = null;
+  
+  selectSettings = {
+    mode: 'reset',
+    manualTyping: false,
+    tempStrQuery: 'SELECT any',
+    showHelp: false,
+    query: new SelectQuery('SELECT any')
+  }
 
   public _testCode = 'let someVar = 100;'
   get testCode() {
@@ -60,7 +68,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
   updateTable() {
     if (this.selectionListener) this.selectionListener();
-    this.showBasicTable = true;
+    this.showTable = 'selection';
   }
 
   panToElement(id) {
@@ -301,8 +309,47 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     console.log('testLog', code)
     this.testCode = code
   }
-  
-  /* ----------------------------------------- Инициализация ------------------------------------ */
+
+  setShowTable(value) {
+    this.showTable = value
+  }
+
+  /* ----------------------------------------- Анализ ------------------------------------------- */
+
+  /* ------------------------------------ Изменить выделение ------------------------------------ */
+
+  editQuery() {
+    this.selectSettings.manualTyping = !this.selectSettings.manualTyping
+  }
+
+  setTempQuery(value) {
+    this.selectSettings.tempStrQuery = value
+  }
+
+  setQuery() {
+    this.selectSettings.query = new SelectQuery(this.selectSettings.tempStrQuery)
+    this.selectSettings.manualTyping = false
+  }
+
+  resetSelectSettings() {
+    this.selectSettings = {
+      mode: 'reset',
+      manualTyping: false,
+      tempStrQuery: 'SELECT any',
+      showHelp: false,
+      query: new SelectQuery('SELECT any')
+    }
+  }
+
+  setSelectionMode(value) {
+    this.selectSettings.mode = value
+  }
+
+  switchSelectQueryHelp() {
+    this.selectSettings.showHelp = !this.selectSettings.showHelp
+  }
+
+  /* -------------------------------------- Инициализация ------------------------------------ */
 
   ngOnInit(): void {
     setTimeout(() => {

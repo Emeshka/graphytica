@@ -26,6 +26,9 @@ import { SwitchTrueFalseComponent } from './switch-true-false/switch-true-false.
 import { AutosizedTextareaComponent } from './autosized-textarea/autosized-textarea.component';
 import { DatePickerComponent } from './date-picker/date-picker.component';
 import { CodeMirrorComponent } from './code-mirror/code-mirror.component';
+import { SqPredicateComponent } from './sq-predicate/sq-predicate.component';
+import { SqOperatorComponent } from './sq-operator/sq-operator.component';
+import { SqSelectorComponent } from './sq-selector/sq-selector.component';
 
 @NgModule({
   declarations: [
@@ -46,7 +49,10 @@ import { CodeMirrorComponent } from './code-mirror/code-mirror.component';
     SwitchTrueFalseComponent,
     AutosizedTextareaComponent,
     DatePickerComponent,
-    CodeMirrorComponent
+    CodeMirrorComponent,
+    SqPredicateComponent,
+    SqOperatorComponent,
+    SqSelectorComponent
   ],
   imports: [
     BrowserModule,

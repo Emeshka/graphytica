@@ -1,0 +1,7 @@
+:host {
+    display: inline;
+}
+
+:host:hover {
+    background-color: cyan;
+}
