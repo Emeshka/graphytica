@@ -1,7 +1,45 @@
 :host {
-    display: inline;
+    display: inline-block;
+    font-family: monospace;
+    font-size: 11pt;
+    cursor: default;
 }
 
-:host:hover {
-    background-color: yellow;
+.operator {
+    display: inline;
+    border-radius: 3px;
 }
+
+.operator:hover {
+    background-color: rgb(225, 218, 255);
+    text-decoration: underline;
+}
+
+.root:hover {
+    background-color: rgba(47, 0, 255, 0.05);
+}
+
+.root {
+    background-color: rgba(47, 0, 255, 0.02);
+}
+
+.not_variable {
+    margin-left: 20px;
+    display: block;
+}
+/*
+SELECT edges WHERE 
+    isLoop OR 
+        (`speed` < 5
+        XOR
+        (
+            `speed` > 7
+            AND
+                (isSimple
+                OR
+                NOT inDegree < 2)
+            AND
+            `cost` = 5
+        )
+    ) 
+*/

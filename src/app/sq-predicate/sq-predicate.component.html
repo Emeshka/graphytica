@@ -1,2 +1,17 @@
-<p>sq-predicate works!</p>
-{{tree.str}}
+<div class="root" *ngIf="tree.type == 'condition'"><!--
+ --><div *ngIf="tree.style == 'infix'"><!--
+     --><sq-predicate class="not_variable" [tree]="tree.args[0]"></sq-predicate><!--
+     --><div class="operator" title="{{tree.title}}"> {{tree.name}} </div><!--
+     --><sq-predicate class="not_variable" [tree]="tree.args[1]"></sq-predicate><!--
+ --></div><!--
+ --><div *ngIf="tree.style == 'prefix'"><!--
+     --><div class="operator" title="{{tree.title}}"> {{tree.name}} </div><!--
+     --><sq-predicate class="not_variable" [tree]="tree.args[0]"></sq-predicate><!--
+ --></div><!--
+ --><div *ngIf="tree.style == 'postfix'"><!--
+     --><sq-predicate class="not_variable" [tree]="tree.args[0]"></sq-predicate><!--
+     --><div class="operator" title="{{tree.title}}"> {{tree.name}} </div><!--
+ --></div>
+</div><!--
+
+--><span class="root" *ngIf="tree.type == 'variable'" title="{{tree.title}}">{{tree.str}}</span>

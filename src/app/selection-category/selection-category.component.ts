@@ -331,6 +331,14 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
     this.selectSettings.manualTyping = false
   }
 
+  runQuery() {
+    try {
+      this.selectSettings.query.execute(this.conn.cy)
+    } catch (err) {
+      console.log('runQuery():', err)
+    }
+  }
+
   resetSelectSettings() {
     this.selectSettings = {
       mode: 'reset',

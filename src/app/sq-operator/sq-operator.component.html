@@ -1,9 +1,9 @@
-<p>sq-operator works!</p>
-<div *ngIf="single">
-    <sq-selector *ngIf="isFirstPredicate" [tree]="tree.args[0]"></sq-selector>
-    <sq-operator *ngIf="!isFirstPredicate" [tree]="tree.args[0]"></sq-operator>
-    <div>.{{tree.name + (single ? '' : '(')}}</div>
-    <sq-selector *ngIf="!single && isSecondPredicate" [tree]="tree.args[1]"></sq-selector>
-    <sq-operator *ngIf="!single && !isSecondPredicate" [tree]="tree.args[1]"></sq-operator>
+<div class="root">
+    <sq-selector *ngIf="isFirstSelector" [tree]="tree.args[0]"></sq-selector>
+    <sq-operator *ngIf="!isFirstSelector" [tree]="tree.args[0]"></sq-operator>
+    <div class="operator" title="{{tree.title}}">{{tree.name}}</div>
+    <div *ngIf="!single">(</div>
+    <sq-selector *ngIf="!single && isSecondSelector" [tree]="tree.args[1]"></sq-selector>
+    <sq-operator *ngIf="!single && !isSecondSelector" [tree]="tree.args[1]"></sq-operator>
     <div *ngIf="!single">)</div>
 </div>

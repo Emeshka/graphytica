@@ -1,6 +1,13 @@
-<div #root class="root" [class.js]="mode == 'full'" (input)="onInput($event)" (keyup)="onInput($event)" (change)="onChange($event)">
+<div #root
+    class="root"
+    [class.js]="mode == 'full'" 
+    [class.sql]="mode == 'sql'" 
+    (input)="onInput($event)" 
+    (keyup)="onInput($event)" 
+    (change)="onChange($event)"
+>
     <ngx-codemirror #ngxCodeMirror
-    [(ngModel)]="value"
-    [options]="options"
+        [(ngModel)]="value"
+        [options]="options"
     ></ngx-codemirror>
 </div>

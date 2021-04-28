@@ -262,32 +262,50 @@
 
 <div class="section" *ngIf="showTable == 'select_query'">
     <div>Запрос:</div>
-    <span class="grey_link" (click)="switchSelectQueryHelp()">Как вводить запросы?</span>
+    
     <div *ngIf="selectSettings.manualTyping">
-        <div>Введите запрос:</div>
+        <div class="interpadding">
+            <div class="preicon">Введите запрос:</div>
+            <tiny-button class="inline_buttons"
+                iconSrc="assets/img/close.png"
+                title="Отмена"
+                [callback]="editQuery.bind(this)"
+            ></tiny-button>
+            <tiny-button class="inline_buttons"
+                iconSrc="assets/img/ok.png"
+                title="Готово"
+                [callback]="setQuery.bind(this)"
+            ></tiny-button>
+            <span class="inline_buttons grey_link" (click)="switchSelectQueryHelp()">Как вводить запросы?</span>
+        </div>
+        <div class="interpadding form_error">
+            <div class="query_error" *ngFor="let error of selectSettings.query.errors">{{error}}</div>
+        </div>
         <code-mirror
             mode="sql"
             [value]="selectSettings.query.strQuery"
             (input)="setTempQuery($event)"
         ></code-mirror>
-        <tiny-button
-            iconSrc="assets/img/close.png"
-            title="Отмена"
-            [callback]="editQuery.bind(this)"
-        ></tiny-button>
-        <tiny-button
-            iconSrc="assets/img/ok.png"
-            title="Готово"
-            [callback]="setQuery.bind(this)"
-        ></tiny-button>
     </div>
     <div *ngIf="!selectSettings.manualTyping">
-        <sq-operator [tree]="selectSettings.query.tree"></sq-operator>
-        <tiny-button
-            title="Править в текстовом виде"
-            iconSrc="assets/img/edit.png"
-            [callback]="editQuery.bind(this)"
-        ></tiny-button>
+        <div class="interpadding">
+            <div class="preicon">Запрос:</div>
+            <tiny-button class="inline_buttons"
+                title="Править в текстовом виде"
+                iconSrc="assets/img/edit.png"
+                [callback]="editQuery.bind(this)"
+            ></tiny-button>
+            <tiny-button class="inline_buttons"
+                title="Выделить"
+                iconSrc="assets/img/run.png"
+                [callback]="runQuery.bind(this)"
+            ></tiny-button>
+        </div>
+        <div class="interpadding form_error">
+            <div class="query_error" *ngFor="let error of selectSettings.query.errors">{{error}}</div>
+        </div>
+        <sq-selector *ngIf="selectSettings.query.tree.type == 'selector'" [tree]="selectSettings.query.tree"></sq-selector>
+        <sq-operator *ngIf="selectSettings.query.tree.type == 'collectionOperation'" [tree]="selectSettings.query.tree"></sq-operator>
     </div>
 </div>
 

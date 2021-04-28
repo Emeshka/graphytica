@@ -311,9 +311,11 @@ export class SelectQuery {
       }
     ]
 
+    // infix, prefix, postfix
     private static readonly primitiveOperators = [
       {
         name: '=',
+        style: 'infix',
         //regex: /([a-z]+) = ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (!isNaN(Number(o1)) && o2 == '=' && !isNaN(Number(o3))) {
@@ -323,13 +325,14 @@ export class SelectQuery {
             }
           } else return null;
         },
-        tip: 'a = b\nРавенство a и b',
+        tip: 'a = b\nТочное равенство a и b (Javascript: a === b) (см. стандарт ECMAScript 2015)',
         call: (variables, ...argIndeces) => {
           return variables[argIndeces[0]].value === variables[argIndeces[1]].value
         }
       },
       {
         name: '<',
+        style: 'infix',
         //regex: /([a-z]+) < ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (!isNaN(Number(o1)) && o2 == '<' && !isNaN(Number(o3))) {
@@ -346,6 +349,7 @@ export class SelectQuery {
       },
       {
         name: '>',
+        style: 'infix',
         //regex: /([a-z]+) > ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (!isNaN(Number(o1)) && o2 == '>' && !isNaN(Number(o3))) {
@@ -362,6 +366,7 @@ export class SelectQuery {
       },
       {
         name: 'NOT',
+        style: 'prefix',
         //regex: /NOT ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (o1 == 'NOT' && !isNaN(Number(o2))) {
@@ -378,6 +383,7 @@ export class SelectQuery {
       },
       {
         name: 'AND',
+        style: 'infix',
         //regex: /([a-z]+) AND ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (!isNaN(Number(o1)) && o2 == 'AND' && !isNaN(Number(o3))) {
@@ -394,6 +400,7 @@ export class SelectQuery {
       },
       {
         name: 'XOR',
+        style: 'infix',
         //regex: /([a-z]+) XOR ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (!isNaN(Number(o1)) && o2 == 'XOR' && !isNaN(Number(o3))) {
@@ -411,6 +418,7 @@ export class SelectQuery {
       },
       {
         name: 'OR',
+        style: 'infix',
         //regex: /([a-z]+) OR ([a-z]+)/g,
         check: (o1, o2, o3) => {
           if (!isNaN(Number(o1)) && o2 == 'OR' && !isNaN(Number(o3))) {
@@ -430,40 +438,52 @@ export class SelectQuery {
     private static readonly dataExtractors = {
       isSimple: {
         accepts: 'edges',
+        tip: 'Проверяет, является ли ребро простым (начальная и конечная вершины разные)',
         get: (cytoscapeSingleElement) => {
           return cytoscapeSingleElement.isSimple()
         }
       },
       isLoop: {
         accepts: 'edges',
+        tip: 'Проверяет, является ли ребро петлей (начальная и конечная вершины одинаковы)',
         get: (cytoscapeSingleElement) => {
           return cytoscapeSingleElement.isLoop()
         }
       },
       isHidden: {
         accepts: 'any',
+        tip: 'Проверяет, является ли элемент скрытым (позволяет исключить из поиска элементы, которые вы сделали невидимыми)',
         get: (cytoscapeSingleElement) => {
           return cytoscapeSingleElement.hasClass('hidden')
         }
       },
       degree: {
         accepts: 'nodes',
+        tip: 'Возвращает степень вершины (количество входящих и выходящих ребер)',
         get: (cytoscapeSingleElement) => {
           return cytoscapeSingleElement.degree()
         }
       },
       inDegree: {
         accepts: 'nodes',
+        tip: 'Возвращает количество входящих ребер',
         get: (cytoscapeSingleElement) => {
           return cytoscapeSingleElement.inDegree()
         }
       },
       outDegree: {
         accepts: 'nodes',
+        tip: 'Возвращает количество выходящих ребер',
         get: (cytoscapeSingleElement) => {
           return cytoscapeSingleElement.outDegree()
         }
       }
+    }
+
+    private static readonly elementTypeTitles = {
+      any: 'any\nВыбирать любые элементы, вершины или ребра',
+      nodes: 'nodes\nВыбирать вершины',
+      edges: 'edges\nВыбирать ребра'
     }
 
     /* ----------------------------------------------------------------------------------------------- */
@@ -482,6 +502,7 @@ export class SelectQuery {
       str: lexems[start] + ' ' + lexems[start + 1] + ' ' + lexems[start + 2] + ' ' + lexems[start + 3],
       returns: lexems[start + 1],
       condition: b,//lexems[start + 3],
+      title: 'sdsdsd',
       value: null
     }
     this.selectors[b][variableNextIndex] = {
@@ -489,6 +510,7 @@ export class SelectQuery {
       str: found.str,
       args: found.args,
       name: po.name,
+      style: po.style,
       title: po.tip,
       calc: po.call.bind(this, this.selectors[b], found.args),
       value: null
@@ -496,6 +518,7 @@ export class SelectQuery {
     this.selectors[selectorIndex][variableIndex] = {
       type: 'variable',
       str: `'${buffer}'`,
+      title: 'dddd',
       get: (cytoscapeSingleElement) => {
         return stringConstantCopy
       },
@@ -524,7 +547,7 @@ export class SelectQuery {
           }
 
           if (o.condition !== null) {
-            let conditions = this.selectors[o.conditions]
+            let conditions = o.condition
             o.value = o.value.filter(function(ele, i, eles) {
               for (let condition of conditions) {
                 if (condition.type == 'variable') {
@@ -548,6 +571,7 @@ export class SelectQuery {
       this.strQuery = query
       if (!query) {
         console.warn(`SelectQuery constructor: provided empty query: ${query}`)
+        this.errors.push(`No operations found in query`)
         return
       }
 
@@ -572,10 +596,11 @@ export class SelectQuery {
           if (ch.search(/[\s\(\)\'\`]/) >= 0 || k == query.length-1) {
             //got space, quote or parenthesis, check buffer
 
+            if (k == query.length-1 && ch.search(/[\s\(\)\'\`]/) < 0) {
+              buffer = buffer + ch
+            }
             if (buffer.length > 0) {
-              if (k == query.length-1 && ch.search(/[\s\(\)\'\`]/) < 0) {
-                buffer = buffer + ch
-              }
+              console.log('buffer:', buffer)
               let isKeyword = false
               if (waitingForCondition) {
                 isKeyword = primitiveOperators.includes(buffer.toUpperCase())
@@ -587,7 +612,9 @@ export class SelectQuery {
                 lexems.push(buffer)
               } else {
                 //not listed in keywords, maybe SELECT, WHERE, nodes, edges, any, isSimple, isLoop or isHidden?
+                console.log('not keyword')
                 if (buffer.toUpperCase() == 'SELECT') {
+                  console.log('recognized SELECT')
                   if (waitingForSelectType || waitingForWhere || waitingForCondition) {
                     this.errors.push(`Unexpected SELECT keyword at ${k - 6}. Nested SELECT queries aren't supported.`)
                   } else if (k == query.length-1) {
@@ -608,6 +635,7 @@ export class SelectQuery {
                   }
 
                 } else if (buffer.toUpperCase() == 'WHERE') {
+                  console.log('recognized WHERE')
                   if (waitingForWhere) {
                     if (ch == ')') {
                       this.errors.push(`Unexpected closing parenthesis ) at ${k} after WHERE keyword. A condition was expected.`)
@@ -629,6 +657,7 @@ export class SelectQuery {
                   }
 
                 } else if (buffer == 'nodes' || buffer == 'edges' || buffer == 'any') {
+                  console.log('recognized type of elements')
                   if (waitingForSelectType) {
                     if (ch.search(/\'\`\(/) >= 0) {
                       this.errors.push(`Unexpected ${ch} at ${k} after element type ${buffer}. Either an end of SELECT query (with closing parenthesis ) ) or a WHERE keyword was expected.`)
@@ -647,6 +676,7 @@ export class SelectQuery {
                   }
 
                 } else if (buffer in extractors) {
+                  console.log('recognized extractor')
                   if (waitingForCondition) {
                     let extractor = extractors[buffer]
                     if (currentSelectType != extractor.accepts && extractor.accepts != 'any') {
@@ -656,6 +686,7 @@ export class SelectQuery {
                       type: 'variable',
                       str: buffer,
                       get: extractor.get,
+                      title: `${buffer}\n${extractor.tip}`,
                       value: null
                     }
                     lexems.push(variableIndex)
@@ -669,6 +700,7 @@ export class SelectQuery {
                   }
 
                 } else if (!isNaN(Number(buffer))) {
+                  console.log('recognized number constant')
                   let numberConstantCopy = Number(buffer)
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
@@ -676,46 +708,55 @@ export class SelectQuery {
                     get: (cytoscapeSingleElement) => {
                       return numberConstantCopy
                     },
+                    title: `${buffer}\nЧисловая константа.${
+                      (buffer == '0' || buffer == '1') ? ' NB: 0 и 1 не эквивалентны логическим FALSE и TRUE' : ''
+                    }`,
                     value: null
                   }
                   lexems.push(variableIndex)
                   variableIndex++
 
                 } else if (buffer.toUpperCase() == 'TRUE') {
+                  console.log('recognized TRUE')
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
                     str: 'TRUE',
                     get: (cytoscapeSingleElement) => {
                       return true
                     },
+                    title: 'TRUE\nЛогическая константа TRUE (истина). NB: числовая константа 1 не эквивалентна TRUE',
                     value: null
                   }
                   lexems.push(variableIndex)
                   variableIndex++
 
                 } else if (buffer.toUpperCase() == 'FALSE') {
+                  console.log('recognized FALSE')
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
                     str: 'FALSE',
                     get: (cytoscapeSingleElement) => {
                       return false
                     },
+                    title: 'FALSE\nЛогическая константа FALSE (истина). NB: числовая константа 0 не эквивалентна FALSE',
                     value: null
                   }
                   lexems.push(variableIndex)
                   variableIndex++
 
-                } else if (buffer.toUpperCase() == 'NULL') {
+                /*} else if (buffer.toUpperCase() == 'NULL') {
+                  console.log('recognized NULL')
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
                     str: 'NULL',
                     get: (cytoscapeSingleElement) => {
                       return null
                     },
+                    title: `NULL\nКонстанта null. Обратите внимание, что null не равно пустому полю. Пустое поле (Javascript: null) (см. стандарт ECMAScript 2015)`,
                     value: null
                   }
                   lexems.push(variableIndex)
-                  variableIndex++
+                  variableIndex++*/
 
                 } else {
                   this.errors.push(`Unknown keyword ${buffer} at ${k - buffer.length}`)
@@ -772,6 +813,7 @@ export class SelectQuery {
                 get: (cytoscapeSingleElement) => {
                   return cytoscapeSingleElement.data(fieldNameCopy)
                 },
+                title: `\`${buffer}\`\nИмя поля класса или свободного свойства выбираемых элементов`,
                 value: null
               }
               lexems.push(variableIndex)
@@ -789,20 +831,39 @@ export class SelectQuery {
               k = k + 1
               buffer += '\''
             } else {
-              //create constant string variable
-              let stringConstantCopy = buffer
-              this.selectors[selectorIndex][variableIndex] = {
-                type: 'variable',
-                str: `'${buffer}'`,
-                get: (cytoscapeSingleElement) => {
-                  return stringConstantCopy
-                },
-                value: null
+              if (!isNaN(new Date(buffer).getTime())) {
+                //create constant date variable
+                let date = new Date(buffer)
+                this.selectors[selectorIndex][variableIndex] = {
+                  type: 'variable',
+                  str: `'${buffer}'`,
+                  get: (cytoscapeSingleElement) => {
+                    return date
+                  },
+                  title: `'${buffer}'\nКонстанта типа дата-время`,
+                  value: null
+                }
+                lexems.push(variableIndex)
+                variableIndex++
+                isStringOpened = false
+                buffer = ''
+              } {
+                //create constant string variable
+                let stringConstantCopy = buffer
+                this.selectors[selectorIndex][variableIndex] = {
+                  type: 'variable',
+                  str: `'${buffer}'`,
+                  get: (cytoscapeSingleElement) => {
+                    return stringConstantCopy
+                  },
+                  title: `'${buffer}'\nСтроковая константа`,
+                  value: null
+                }
+                lexems.push(variableIndex)
+                variableIndex++
+                isStringOpened = false
+                buffer = ''
               }
-              lexems.push(variableIndex)
-              variableIndex++
-              isStringOpened = false
-              buffer = ''
             }
           } else {
             buffer += ch
@@ -845,6 +906,7 @@ export class SelectQuery {
               str: lexems[start] + ' ' + lexems[end - 1],
               returns: lexems[end - 1],
               condition: null,
+              title: SelectQuery.elementTypeTitles[lexems[end - 1]],
               value: true
             }
             lexems.splice(start, 2, ''+variableNextIndex)
@@ -858,7 +920,9 @@ export class SelectQuery {
               type: 'selector',
               str: lexems[start] + ' ' + lexems[start + 1] + ' ' + lexems[start + 2] + ' ' + lexems[start + 3],
               returns: lexems[start + 1],
-              condition: b,//lexems[start + 3],
+              //condition: b,//lexems[start + 3],
+              title: SelectQuery.elementTypeTitles[lexems[start + 1]],
+              condition: this.selectors[b],
               value: null
             }
             lexems.splice(start, 4, ''+variableNextIndex)
@@ -867,10 +931,10 @@ export class SelectQuery {
 
           } else {
             //simplify condition
-            for (let i = start + 1; i < end; i++) {
-              console.log(`simplify condition. i = ${i}`, '; lexems: ', lexems)
-              // (.) (*) (.); (.) (*) _
-              for (let po of SelectQuery.primitiveOperators) {
+            for (let po of SelectQuery.primitiveOperators) {
+              for (let i = start + 1; i < end; i++) {
+                console.log(`simplify condition. i = ${i}`, '; lexems: ', lexems)
+                // (.) (*) (.); (.) (*) _
                 console.log(`check ${lexems[i]} for ${po.name}`)
                 let found = null
                 if (i == end - 1) {
@@ -881,11 +945,13 @@ export class SelectQuery {
                 }
                 if (found) {
                   let variableNextIndex = this.selectors[b].length
+                  let args = found.args.map(index => this.selectors[b][index])
                   this.selectors[b][variableNextIndex] = {
                     type: 'condition',
                     str: found.str,
-                    args: found.args,
+                    args: args,
                     name: po.name,
+                    style: po.style,
                     title: po.tip,
                     calc: po.call.bind(this, this.selectors[b], found.args),
                     value: null
@@ -895,13 +961,13 @@ export class SelectQuery {
                   end = end - found.args.length
                   i = i - found.args.length
                 }
-              }
-              if (lexems[i-1] == '(' && !isNaN(Number(lexems[i])) && lexems[i+1] == ')') {
-                let id = lexems[i]
-                lexems.splice(i-1, 3, id)
-                shift += 2
-                end = end - 2
-                i = i - 2
+                if (lexems[i-1] == '(' && !isNaN(Number(lexems[i])) && lexems[i+1] == ')') {
+                  let id = lexems[i]
+                  lexems.splice(i-1, 3, id)
+                  shift += 2
+                  end = end - 2
+                  i = i - 2
+                }
               }
             }
           }
@@ -927,8 +993,8 @@ export class SelectQuery {
               found = o.check(lexems[i-1], lexems[i], lexems[i+1])
             }
             if (found) {
+              let args = found.args.map(index => this.operations[index])
               if (o.accepts != 'any') {
-                let args = found.args.map(index => this.operations[index])
                 if (!args.every(a => a.returns == o.accepts)) {
                   this.errors.push(`Type mismatch in ${found.str}. Operator ${o.name} accepts elements type ${o.accepts}, while arguments are of type ${args.map(a => a.returns)}`)
                 }
@@ -936,7 +1002,7 @@ export class SelectQuery {
               this.operations[operationIndex] = {
                 type: 'collectionOperation',
                 str: found.str,
-                args: found.args,
+                args: args,
                 name: o.name,
                 title: o.tip,
                 calc: o.call.bind(this, this.operations, found.args),
@@ -955,7 +1021,12 @@ export class SelectQuery {
         }
       }
 
-      this.tree = this.operations[this.operations.length - 1]
+      if (this.operations.length >= 1) {
+        this.tree = this.operations[this.operations.length - 1]
+      } else {
+        console.warn('SelectQuery: no operations in query')
+        this.errors.push(`No operations found in query`)
+      }
 
       console.log(`Finished. strQuery: ${query}, subs: ${this.operations.join('\n')}, tree:`,
       this.tree, ', selectors:', this.selectors, '; errors:', this.errors);

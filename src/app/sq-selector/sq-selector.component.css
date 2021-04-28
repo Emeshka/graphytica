@@ -1,0 +1,24 @@
+:host {
+    display: block;
+    margin-left: 20px;
+    cursor: default;
+}
+
+.elements_type {
+    font-family: monospace;
+    font-size: 11pt;
+    border-radius: 3px;
+}
+
+.elements_type:hover {
+    background-color: rgb(255, 255, 202);
+    text-decoration: underline;
+}
+
+.root:hover {
+    background-color: rgba(255, 255, 0, 0.05);
+}
+
+.root {
+    background-color: rgba(255, 255, 0, 0.02);
+}

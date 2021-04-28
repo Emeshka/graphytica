@@ -1,7 +1,7 @@
 import { Component, OnInit, Input } from '@angular/core';
 
 @Component({
-  selector: 'app-sq-selector',
+  selector: 'sq-selector',
   templateUrl: './sq-selector.component.html',
   styleUrls: ['./sq-selector.component.css']
 })

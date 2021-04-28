@@ -2,8 +2,6 @@
     display: inline-block;
     box-sizing: border-box;
     width: 100%;
-    max-height: 30em;
-    font-size: 9pt;
     vertical-align: middle;
     border-radius: 4px;
     overflow: auto;
@@ -16,11 +14,21 @@
     text-decoration-color: red;
 }
 
+.js {
+    font-size: 9pt;
+    min-width: 20em;
+    max-width: 90vw;
+    max-height: 30em;
+}
+
+.sql {
+    font-size: 10pt;
+    height: auto;
+}
+
 .js:focus-within {
     position: absolute;
     overflow: visible;
-    min-width: 20em;
-    max-width: 90vw;
     max-height: none;
     width: 40em;
     height: auto;
