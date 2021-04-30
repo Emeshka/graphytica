@@ -1,0 +1,10 @@
+<input
+    class="pretty_button"
+    [class.pretty_button_active]="isActive"
+    [class.pretty_button_inactive]="!isActive"
+    style="background-image: url('{{ iconSrc }}');"
+    type="{{type || 'button'}}"
+    value="{{text}}"
+    [disabled]="!isActive"
+    (click)="onclick()"
+/>

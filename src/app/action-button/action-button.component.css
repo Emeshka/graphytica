@@ -1,0 +1,43 @@
+:host {
+    display: inline-block;
+}
+.pretty_button {
+    display: inline-block;
+    line-height: 30px;
+    border: none;
+    margin: 5px 2px;
+    text-decoration: none;
+    background-color: white;
+    font-size: 10pt;
+    font-family: "Arimo", sans-serif;
+    font-style: italic;
+    transition: .3s;
+    
+    height: 30px;
+    background-position: right;
+    background-repeat: no-repeat;
+    background-size: 20px;
+    padding-right: 30px;
+}
+.pretty_button_inactive {
+    /*box-shadow: 0 15px 20px */
+    box-shadow: 0 8px 15px rgba(158, 158, 158, 0.2);
+    color: grey;
+    cursor: default;
+}
+.pretty_button_active {
+    /*box-shadow: 0 8px 15px ;*/
+    box-shadow: 0 8px 15px rgba(0, 0, 0, .2);
+    color: #444444;
+    cursor: pointer;
+}
+.pretty_button_active:hover {
+    color: black;
+}
+.pretty_button_active:active, .pretty_button_active:focus {
+    color: #1a1f81;
+    /*box-shadow: 0 8px 15px ;*/
+    box-shadow: 0 8px 15px #1a1f8128;
+    border: none;
+    outline: none;
+}

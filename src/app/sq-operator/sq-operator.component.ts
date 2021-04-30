@@ -15,8 +15,10 @@ export class SqOperatorComponent implements OnInit {
   isSecondSelector = false;
 
   ngOnInit(): void {
+    console.log(this.tree);
+    
     this.single = this.tree.args.length == 1
     this.isFirstSelector = this.tree.args[0].type == 'selector'
-    if (this.single) this.isSecondSelector = this.tree.args[1].type == 'selector'
+    if (!this.single) this.isSecondSelector = this.tree.args[1].type == 'selector'
   }
 }

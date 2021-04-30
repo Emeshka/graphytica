@@ -20,6 +20,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   @Input() toolById;
   @Input() activeToolId: string;
 
+  infoMessage: string = '';
   showTable: string = 'selection';
   expandTable: boolean = false;
   selectionListener = null;
@@ -35,22 +36,15 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   freeProps = null;
   classDefinedPropsColspanOwnerByOrder = null;
   
-  selectSettings = {
+  private static storedSelectSettings = {
     mode: 'reset',
     manualTyping: false,
     tempStrQuery: 'SELECT any',
     showHelp: false,
+    runtimeError: null,
     query: new SelectQuery('SELECT any')
   }
-
-  public _testCode = 'let someVar = 100;'
-  get testCode() {
-    return this._testCode
-  }
-  set testCode(value) {
-    console.log('set testCode', value)
-    this._testCode = value
-  }
+  selectSettings: any = {}
   
   static hideColumnsList = [];
   get hideColumns() {
@@ -305,13 +299,16 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
   ////////
 
-  testLog(code) {
-    console.log('testLog', code)
-    this.testCode = code
-  }
-
   setShowTable(value) {
     this.showTable = value
+  }
+
+  showMessage(str) {
+    this.infoMessage = str
+    //may be problem with ng zone
+    setTimeout(() => {
+      this.infoMessage = ''
+    }, 3000)
   }
 
   /* ----------------------------------------- Анализ ------------------------------------------- */
@@ -329,13 +326,38 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
   setQuery() {
     this.selectSettings.query = new SelectQuery(this.selectSettings.tempStrQuery)
     this.selectSettings.manualTyping = false
+    this.selectSettings.runtimeError = null
   }
 
   runQuery() {
     try {
-      this.selectSettings.query.execute(this.conn.cy)
+      let result = this.selectSettings.query.execute(this.conn.cy)
+
+      if (result) {
+        let oldValue = this.conn.cy.autounselectify();
+        this.conn.cy.autounselectify(false);
+        if (this.selectSettings.mode == 'reset') {
+          this.conn.cy.elements().unselect();
+          result.select();
+        } else if (this.selectSettings.mode == 'add') {
+          result.select();
+        } else if (this.selectSettings.mode == 'subtract') {
+          result.unselect();
+        } else if (this.selectSettings.mode == 'intersect') {
+          this.conn.cy.elements().difference(result).unselect();
+        }
+        this.conn.cy.autounselectify(oldValue);
+      } else {
+        this.showMessage('Ничего не найдено')
+        if (this.selectSettings.mode == 'intersect' || this.selectSettings.mode == 'reset') {
+          let oldValue = this.conn.cy.autounselectify();
+          this.conn.cy.autounselectify(false);
+          this.conn.cy.elements().unselect();
+          this.conn.cy.autounselectify(oldValue);
+        }
+      }
     } catch (err) {
-      console.log('runQuery():', err)
+      this.selectSettings.runtimeError = err.message
     }
   }
 
@@ -345,8 +367,10 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
       manualTyping: false,
       tempStrQuery: 'SELECT any',
       showHelp: false,
+      runtimeError: null,
       query: new SelectQuery('SELECT any')
     }
+    SelectionCategoryComponent.storedSelectSettings = this.selectSettings
   }
 
   setSelectionMode(value) {
@@ -364,6 +388,7 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
 
       let f = () => {
         let arr = this.selection.getArray();
+        console.log('this.selectionListener: this.selection.getArray():', arr)
         let commonClass = null;
         let freeCommonProps = null;
         let areEdges = true;
@@ -371,13 +396,13 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
         //this.unifyFreeProps = new Set([]);
         
         for (let e of arr) {
-          //console.log(e.data('id'), e.isNode(), e.isEdge())
+          //console.log('this.selectionListener: of this.selection.getArray():', e.data('id'), e.isNode(), e.isEdge())
           areEdges = areEdges && e.isEdge();
           areVertices = areVertices && e.isNode();
   
           let className = e.data('class');
           if (commonClass === null) commonClass = className;
-          else {
+          else if (commonClass != '') {
             let common = this.conn.getClosestCommonAncestor(commonClass, className)
             if (common) {
               commonClass = common
@@ -456,9 +481,10 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
           this.areEdges = areEdges ? true : (areVertices ? false : null);
         }
         //console.log(areEdges, areVertices, this.areEdges)
-        //console.log('selection-category.selectionListener():', this.entities)
+        console.log('selection-category.selectionListener():', this.entities)
       }
       this.selectionListener = f.bind(this)
+      console.log('selection-category bind selection listeners')
       this.selection.addEventListener('itemadded', this.selectionListener)
       this.selection.addEventListener('itemset', this.selectionListener)
       this.selection.addEventListener('itemremoved', this.selectionListener)
@@ -466,9 +492,12 @@ export class SelectionCategoryComponent implements OnInit, OnDestroy {
       this.updateTable()
 
     })
+
+    this.selectSettings = SelectionCategoryComponent.storedSelectSettings
   }
 
   ngOnDestroy(): void {
+    console.log('selection-category unbind selection listeners')
     this.selection.removeEventListener('itemadded', this.selectionListener)
     this.selection.removeEventListener('itemset', this.selectionListener)
     this.selection.removeEventListener('itemremoved', this.selectionListener)

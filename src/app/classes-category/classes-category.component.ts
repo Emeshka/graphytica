@@ -21,14 +21,13 @@ export class ClassesCategoryComponent implements OnInit {
   countDirectEntities = -1;
   selectedDirectChildren = [];
   selectedFieldList = {};
-  private selectedDescendantsSelector = '';
 
   fakeNewField = false;
   newFieldType = '';
   newFieldName = '';
 
   selectClass = (value) => {
-    console.log('selectClass()', value);
+    //console.log('selectClass()', value);
 
     if (value) {
       this.selectedFieldList = this.conn.classesMap[value].properties;
@@ -42,21 +41,7 @@ export class ClassesCategoryComponent implements OnInit {
 
     this.selectedClass = value || '';
   }
-/*
-  addToSelection = () => {
-    let oldValue = this.conn.cy.autounselectify();
-    this.conn.cy.autounselectify(false);
-    this.conn.cy.$(this.selectedDescendantsSelector).select()
-    this.conn.cy.autounselectify(oldValue);
-  };
 
-  excludeFromSelection = () => {
-    let oldValue = this.conn.cy.autounselectify();
-    this.conn.cy.autounselectify(false);
-    this.conn.cy.$(this.selectedDescendantsSelector).unselect()
-    this.conn.cy.autounselectify(oldValue);
-  };
-*/
   addFakeField = () => {
     this.fakeNewField = true;
   }
@@ -144,7 +129,7 @@ export class ClassesCategoryComponent implements OnInit {
 в поле "${propName}". Вы хотите только убрать поле "${propName}" из модели класса
 (данные останутся и станут свободными свойствами) или также безвозвратно стереть значения поля?`
     });
-    console.log(choice);
+    //console.log(choice);
     if (choice === 1 || choice === 2) {
       this.conn.alterClass(this.selectedClass, {removeProperties: [propName]})
       if (choice === 1) {

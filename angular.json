@@ -27,7 +27,6 @@
             "styles": [
               "./node_modules/codemirror/lib/codemirror.css",
               "./node_modules/codemirror/theme/yonce.css",
-              "./node_modules/codemirror/theme/mdn-like.css",
               "./node_modules/codemirror/addon/hint/show-hint.css",
               "src/styles.css"
             ],
@@ -94,7 +93,6 @@
             ],
             "styles": [
               "./node_modules/codemirror/lib/codemirror.css",
-              "./node_modules/codemirror/theme/mdn-like.css",
               "./node_modules/codemirror/theme/yonce.css",
               "./node_modules/codemirror/addon/hint/show-hint.css",
               "src/styles.css"

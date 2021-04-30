@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-icon-button',
@@ -13,8 +13,6 @@ export class IconButtonComponent {
   @Input() iconSrc: string;
   @Input() active: any = false;
   @Input() callback: () => {};
-
-  afterViewInit = false
 
   isActive() {
     if (typeof this.active == 'function') return this.active();

@@ -10,10 +10,6 @@
         [callback]="pinUnpin.bind(this)"></app-icon-button>
     <app-icon-button title="Сбросить выделение" iconSrc="assets/img/reset_selection.png"
         [callback]="resetSelection.bind(this)"></app-icon-button>
-    <app-icon-button title="Изменить выделение" iconSrc="assets/img/select_query.png"
-        [callback]="setShowTable.bind(this, 'select_query')"></app-icon-button>
-    <app-icon-button title="Анализ" iconSrc="assets/img/lambda.png"
-        [callback]="setShowTable.bind(this, 'update_query')"></app-icon-button>
 </div>
     
 <div class="section" *ngIf="showTable == 'selection'">
@@ -32,6 +28,18 @@
         Общий класс: 
         <span *ngIf="commonClass" class="class_name">{{commonClass}}</span>
     </div>
+
+    <div>
+        <action-button
+            text="Изменить выделение"
+            iconSrc="assets/img/select_query.png"
+            [callback]="setShowTable.bind(this, 'select_query')"></action-button>
+        <action-button
+            text="Анализ"
+            iconSrc="assets/img/lambda.png"
+            *ngIf="entities && entities.length > 0"
+            [callback]="setShowTable.bind(this, 'update_query')"></action-button>
+    </div>
     <div
         class="big_table"
         [class.expand_table]="expandTable"
@@ -46,11 +54,7 @@
                 iconSrc="assets/img/close.png"
                 [callback]="toggleExpand.bind(this)"
             ></tiny-button>
-        </div><!--
-            (mousedown)="onmousedownExpandTable()"
-            (mousemove)="onmousemoveExpandTable($event)"
-            (mouseup)="onmouseupExpandTable()"
-        -->
+        </div>
         <table *ngIf="entities && entities.length > 0"
             [class.vertices_table]="areEdges === false"
             [class.edges_table]="areEdges === true"
@@ -241,23 +245,22 @@
             </tr>
         </table>
     </div>
-    <code-mirror
-      [value]="testCode"
-      (input)="testLog($event)"
-      (change)="testLog($event)"
-    ></code-mirror>
 </div>
 
 <div class="section" *ngIf="showTable == 'select_query'">
     <div>Режим:</div>
     <app-icon-button title="Заменить" iconSrc="assets/img/select_mode_reset.png"
-        [callback]="setSelectionMode.bind(this, 'reset')"></app-icon-button>
+        [callback]="setSelectionMode.bind(this, 'reset')"
+        [active]="selectSettings.mode == 'reset'"></app-icon-button>
     <app-icon-button title="Добавить" iconSrc="assets/img/select_mode_add.png"
-        [callback]="setSelectionMode.bind(this, 'add')"></app-icon-button>
+        [callback]="setSelectionMode.bind(this, 'add')"
+        [active]="selectSettings.mode == 'add'"></app-icon-button>
     <app-icon-button title="Вычесть" iconSrc="assets/img/select_mode_subtract.png"
-        [callback]="setSelectionMode.bind(this, 'subtract')"></app-icon-button>
+        [callback]="setSelectionMode.bind(this, 'subtract')"
+        [active]="selectSettings.mode == 'subtract'"></app-icon-button>
     <app-icon-button title="Пересечь" iconSrc="assets/img/select_mode_intersect.png"
-        [callback]="setSelectionMode.bind(this, 'intersect')"></app-icon-button>
+        [callback]="setSelectionMode.bind(this, 'intersect')"
+        [active]="selectSettings.mode == 'intersect'"></app-icon-button>
 </div>
 
 <div class="section" *ngIf="showTable == 'select_query'">
@@ -266,43 +269,52 @@
     <div *ngIf="selectSettings.manualTyping">
         <div class="interpadding">
             <div class="preicon">Введите запрос:</div>
-            <tiny-button class="inline_buttons"
-                iconSrc="assets/img/close.png"
-                title="Отмена"
-                [callback]="editQuery.bind(this)"
-            ></tiny-button>
-            <tiny-button class="inline_buttons"
-                iconSrc="assets/img/ok.png"
-                title="Готово"
-                [callback]="setQuery.bind(this)"
-            ></tiny-button>
             <span class="inline_buttons grey_link" (click)="switchSelectQueryHelp()">Как вводить запросы?</span>
+        </div>
+        <div>
+            <action-button class="inline_buttons"
+                iconSrc="assets/img/close.png"
+                text="Отмена"
+                [callback]="editQuery.bind(this)"
+            ></action-button>
+            <action-button class="inline_buttons"
+                iconSrc="assets/img/ok.png"
+                text="Готово"
+                [callback]="setQuery.bind(this)"
+            ></action-button>
         </div>
         <div class="interpadding form_error">
             <div class="query_error" *ngFor="let error of selectSettings.query.errors">{{error}}</div>
+            <div class="query_error" *ngIf="selectSettings.runtimeError">{{selectSettings.runtimeError.message}}</div>
         </div>
         <code-mirror
             mode="sql"
-            [value]="selectSettings.query.strQuery"
+            [value]="selectSettings.tempStrQuery"
             (input)="setTempQuery($event)"
         ></code-mirror>
     </div>
     <div *ngIf="!selectSettings.manualTyping">
         <div class="interpadding">
-            <div class="preicon">Запрос:</div>
-            <tiny-button class="inline_buttons"
-                title="Править в текстовом виде"
+            <action-button
+                text="Назад"
+                iconSrc="assets/img/close.png"
+                [callback]="setShowTable.bind(this, 'selection')">
+            </action-button>
+            <action-button
+                text="Ввести"
                 iconSrc="assets/img/edit.png"
-                [callback]="editQuery.bind(this)"
-            ></tiny-button>
-            <tiny-button class="inline_buttons"
-                title="Выделить"
+                [callback]="editQuery.bind(this)">
+            </action-button>
+            <action-button
+                text="Выделить"
                 iconSrc="assets/img/run.png"
                 [callback]="runQuery.bind(this)"
-            ></tiny-button>
+                [active]="selectSettings.query.errors.length == 0 && !selectSettings.runtimeError">
+            </action-button>
         </div>
         <div class="interpadding form_error">
             <div class="query_error" *ngFor="let error of selectSettings.query.errors">{{error}}</div>
+            <div class="query_error" *ngIf="selectSettings.runtimeError">{{selectSettings.runtimeError.message}}</div>
         </div>
         <sq-selector *ngIf="selectSettings.query.tree.type == 'selector'" [tree]="selectSettings.query.tree"></sq-selector>
         <sq-operator *ngIf="selectSettings.query.tree.type == 'collectionOperation'" [tree]="selectSettings.query.tree"></sq-operator>
@@ -315,6 +327,10 @@
         <h2>Как вводить запросы для изменения выделения?</h2>
         <p>Помощь.</p>
     </div>
+</div>
+
+<div class="info_message" *ngIf="infoMessage">
+    {{infoMessage}}
 </div>
 <!--
 <div class="section" *ngIf="showTable == 'select_query'">

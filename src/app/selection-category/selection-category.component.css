@@ -187,3 +187,15 @@ td:first-child {
     display: inline-block;
     margin-right: 10px;
 }
+
+.info_message {
+    position: absolute;
+    top: 5%;
+    left: 30%;
+    z-index: 4;
+    width: 40%;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px solid grey;
+    padding: 10px;
+}

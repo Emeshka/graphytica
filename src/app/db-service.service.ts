@@ -321,8 +321,14 @@ export class DbServiceService {
   getClosestCommonAncestor(className1, className2) {
     let c1 = this.classesMap[className1];
     let c2 = this.classesMap[className2];
-    if (!c1) throw `Invalid getClosestCommonAncestor() call: first class ${className1} doesn't exist`
-    if (!c2) throw `Invalid getClosestCommonAncestor() call: second class ${className2} doesn't exist`
+    if (!c1) {
+      console.warn(`Invalid getClosestCommonAncestor() call: first class ${className1} doesn't exist`)
+      return
+    }
+    if (!c2) {
+      console.warn(`Invalid getClosestCommonAncestor() call: second class ${className2} doesn't exist`)
+      return
+    }
 
     let classAncestors1 = [className1].concat(this.getSuperStack(className1).map(c => c.name))
 

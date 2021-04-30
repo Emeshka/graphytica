@@ -1,17 +1,39 @@
 <div class="root" *ngIf="tree.type == 'condition'"><!--
- --><div *ngIf="tree.style == 'infix'"><!--
-     --><sq-predicate class="not_variable" [tree]="tree.args[0]"></sq-predicate><!--
-     --><div class="operator" title="{{tree.title}}"> {{tree.name}} </div><!--
-     --><sq-predicate class="not_variable" [tree]="tree.args[1]"></sq-predicate><!--
+ --><div *ngIf="tree.style == 'infix'"><!--()
+     --><sq-predicate [class.not_inline]="block" [tree]="tree.args[0]"></sq-predicate><!--
+     --><div
+        class="operator"
+        [class.syntax-keyword]="isLogical"
+        [class.syntax-operator]="!isLogical"
+        title="{{tree.title}}"
+     > {{tree.name}} </div><!--
+     --><sq-predicate [class.not_inline]="block" [tree]="tree.args[1]"></sq-predicate><!--
  --></div><!--
  --><div *ngIf="tree.style == 'prefix'"><!--
-     --><div class="operator" title="{{tree.title}}"> {{tree.name}} </div><!--
-     --><sq-predicate class="not_variable" [tree]="tree.args[0]"></sq-predicate><!--
+     --><div
+        class="operator"
+        [class.syntax-keyword]="isLogical"
+        [class.syntax-operator]="!isLogical"
+        title="{{tree.title}}"
+     > {{tree.name}} </div><!--
+     --><sq-predicate [class.not_inline]="block" [tree]="tree.args[0]"></sq-predicate><!--
  --></div><!--
  --><div *ngIf="tree.style == 'postfix'"><!--
-     --><sq-predicate class="not_variable" [tree]="tree.args[0]"></sq-predicate><!--
-     --><div class="operator" title="{{tree.title}}"> {{tree.name}} </div><!--
+     --><sq-predicate [class.not_inline]="block" [tree]="tree.args[0]"></sq-predicate><!--
+     --><div
+        class="operator syntax-operator"
+        title="{{tree.title}}"
+     > {{tree.name}} </div><!--
  --></div>
 </div><!--
 
---><span class="root" *ngIf="tree.type == 'variable'" title="{{tree.title}}">{{tree.str}}</span>
+--><span
+    *ngIf="tree.type == 'variable'"
+    class="variable"
+    [class.syntax-extractor]="tree.variableType == 'extractor'"
+    [class.syntax-string]="tree.variableType == 'string'"
+    [class.syntax-date]="tree.variableType == 'date'"
+    [class.syntax-boolean]="tree.variableType == 'boolean'"
+    [class.syntax-number]="tree.variableType == 'number'"
+    title="{{tree.title}}"
+>{{tree.str}}</span>

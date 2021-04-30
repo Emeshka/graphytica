@@ -29,6 +29,7 @@ import { CodeMirrorComponent } from './code-mirror/code-mirror.component';
 import { SqPredicateComponent } from './sq-predicate/sq-predicate.component';
 import { SqOperatorComponent } from './sq-operator/sq-operator.component';
 import { SqSelectorComponent } from './sq-selector/sq-selector.component';
+import { ActionButtonComponent } from './action-button/action-button.component';
 
 @NgModule({
   declarations: [
@@ -52,7 +53,8 @@ import { SqSelectorComponent } from './sq-selector/sq-selector.component';
     CodeMirrorComponent,
     SqPredicateComponent,
     SqOperatorComponent,
-    SqSelectorComponent
+    SqSelectorComponent,
+    ActionButtonComponent
   ],
   imports: [
     BrowserModule,

@@ -17,8 +17,8 @@ export class SelectQuery {
         accepts: 'any',
         returns: 'any',
         tip: 'a1.unify(a2)\nОбъединить коллекцию элементов a1 и коллекцию элементов a2',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.union(operations[argIndeces[1]].value)
+        call: (args) => {
+          return args[0].value.union(args[1].value)
         }
       },
       {
@@ -35,8 +35,8 @@ export class SelectQuery {
         accepts: 'any',
         returns: 'any',
         tip: 'a1.diff(a2)\nВычесть коллекцию элементов a2 из коллекции элементов a1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.difference(operations[argIndeces[1]].value)
+        call: (args) => {
+          return args[0].value.difference(args[1])
         }
       },
       {
@@ -53,8 +53,8 @@ export class SelectQuery {
         accepts: 'any',
         returns: 'any',
         tip: 'a1.intersect(a2)\nПересечь коллекцию элементов a1 с коллекцией элементов a2',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.intersection(operations[argIndeces[1]].value)
+        call: (args) => {
+          return args[0].value.intersection(args[1].value)
         }
       },
       {
@@ -71,8 +71,8 @@ export class SelectQuery {
         accepts: 'any',
         returns: 'any',
         tip: 'a1.openNeighborhood\nПолучить для коллекции a1 соседние элементы (вершины и ребра, соединяющие a1 с ними)',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.openNeighborhood()
+        call: (args) => {
+          return args[0].value.openNeighborhood()
         }
       },
       {
@@ -89,8 +89,8 @@ export class SelectQuery {
         accepts: 'any',
         returns: 'any',
         tip: 'a1.closedNeighborhood\nПолучить для коллекции a1 соседние элементы (вершины и ребра, соединяющие a1 с ними), включая саму коллекцию a1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.closedNeighborhood()
+        call: (args) => {
+          return args[0].value.closedNeighborhood()
         }
       },
       {
@@ -107,8 +107,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.edgesWith(n2)\nПолучить ребра, связывающие коллекции вершин n1 и n2 (направление неважно)',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.edgesWith(operations[argIndeces[1]].value)
+        call: (args) => {
+          return args[0].value.edgesWith(args[1].value)
         }
       },
       {
@@ -125,8 +125,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.edgesTo(n2)\nПолучить ребра, непосредственно выходящие из вершин коллекции n1 и входящие в ребра коллекции n2',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.edgesTo(operations[argIndeces[1]].value)
+        call: (args) => {
+          return args[0].value.edgesTo(args[1].value)
         }
       },
       {
@@ -143,8 +143,8 @@ export class SelectQuery {
         accepts: 'edges',
         returns: 'nodes',
         tip: 'e1.connectedNodes\nПолучить вершины, являющиеся началами и концами ребер коллекции e1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.connectedNodes()
+        call: (args) => {
+          return args[0].value.connectedNodes()
         }
       },
       {
@@ -161,8 +161,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.connectedEdges\nПолучить ребра непосредственно входящие и выходящие из вершин коллекции n1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.connectedEdges()
+        call: (args) => {
+          return args[0].value.connectedEdges()
         }
       },
       {
@@ -179,8 +179,8 @@ export class SelectQuery {
         accepts: 'edges',
         returns: 'nodes',
         tip: 'e1.sources\nПолучить начала ребер колекции e1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.sources()
+        call: (args) => {
+          return args[0].value.sources()
         }
       },
       {
@@ -197,8 +197,8 @@ export class SelectQuery {
         accepts: 'edges',
         returns: 'nodes',
         tip: 'e1.targets\nПолучить концы ребер коллекции e1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.targets()
+        call: (args) => {
+          return args[0].value.targets()
         }
       },
       {
@@ -215,8 +215,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.outgoers\nПолучить ребра, непосредственно выходящие из вершин коллекции n1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.outgoers()
+        call: (args) => {
+          return args[0].value.outgoers()
         }
       },
       {
@@ -233,8 +233,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.successors\nПолучить все ребра, выходящие из вершин коллекции n1 (как рекурсивный вызов outgoers)',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.successors()
+        call: (args) => {
+          return args[0].value.successors()
         }
       },
       {
@@ -251,8 +251,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.incomers\nПолучить ребра, непосредственно входящие в вершины коллекции n1',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.incomers()
+        call: (args) => {
+          return args[0].value.incomers()
         }
       },
       {
@@ -269,8 +269,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'edges',
         tip: 'n1.predecessors\nПолучить все ребра, входящие в вершины коллекции n1 (как рекурсивный вызов incomers)',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.predecessors()
+        call: (args) => {
+          return args[0].value.predecessors()
         }
       },
       {
@@ -287,8 +287,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'nodes',
         tip: 'n1.roots\nИз коллекции вершин n1 оставить лишь корни (вершины без входящих ребер)',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.roots()
+        call: (args) => {
+          return args[0].value.roots()
         }
       },
       {
@@ -305,8 +305,8 @@ export class SelectQuery {
         accepts: 'nodes',
         returns: 'nodes',
         tip: 'n1.leaves\nИз коллекции вершин n1 оставить лишь листья (вершины без выходящих ребер)',
-        call: (operations, ...argIndeces) => {
-          return operations[argIndeces[0]].value.leaves()
+        call: (args) => {
+          return args[0].value.leaves()
         }
       }
     ]
@@ -326,8 +326,8 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'a = b\nТочное равенство a и b (Javascript: a === b) (см. стандарт ECMAScript 2015)',
-        call: (variables, ...argIndeces) => {
-          return variables[argIndeces[0]].value === variables[argIndeces[1]].value
+        call: (args) => {
+          return args[0].value === args[1].value
         }
       },
       {
@@ -343,8 +343,8 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'a < b\na меньше b',
-        call: (variables, ...argIndeces) => {
-          return variables[argIndeces[0]].value < variables[argIndeces[1]].value
+        call: (args) => {
+          return args[0].value < args[1].value
         }
       },
       {
@@ -360,8 +360,8 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'a > b\na больше b',
-        call: (variables, ...argIndeces) => {
-          return variables[argIndeces[0]].value > variables[argIndeces[1]].value
+        call: (args) => {
+          return args[0].value > args[1].value
         }
       },
       {
@@ -377,8 +377,8 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'NOT a\nОтрицание условия a',
-        call: (conditions, ...argIndeces) => {
-          return !conditions[argIndeces[0]].value
+        call: (args) => {
+          return !args[0].value
         }
       },
       {
@@ -394,8 +394,8 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'a AND b\na и b истина одновременно',
-        call: (conditions, ...argIndeces) => {
-          return !!(conditions[argIndeces[0]].value && conditions[argIndeces[1]].value)
+        call: (args) => {
+          return !!(args[0].value && args[1].value)
         }
       },
       {
@@ -411,9 +411,9 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'a XOR b\nИстина либо a, либо b, но не одновременно',
-        call: (conditions, ...argIndeces) => {
-          return !!(!conditions[argIndeces[0]].value && conditions[argIndeces[1]].value ||
-            conditions[argIndeces[0]].value && !conditions[argIndeces[1]].value)
+        call: (args) => {
+          return !!(!args[0].value && args[1].value ||
+            args[0].value && !args[1].value)
         }
       },
       {
@@ -429,8 +429,8 @@ export class SelectQuery {
           } else return null;
         },
         tip: 'a OR b\nИстина a или b или оба одновременно',
-        call: (conditions, ...argIndeces) => {
-          return !!(conditions[argIndeces[0]].value || conditions[argIndeces[1]].value)
+        call: (args) => {
+          return !!(args[0].value || args[1].value)
         }
       }
     ]
@@ -512,12 +512,13 @@ export class SelectQuery {
       name: po.name,
       style: po.style,
       title: po.tip,
-      calc: po.call.bind(this, this.selectors[b], found.args),
+      calc: po.call.bind(this, this.selectors[b], args),
       value: null
     }
     this.selectors[selectorIndex][variableIndex] = {
       type: 'variable',
       str: `'${buffer}'`,
+      variableType: '',
       title: 'dddd',
       get: (cytoscapeSingleElement) => {
         return stringConstantCopy
@@ -530,7 +531,7 @@ export class SelectQuery {
       args: found.args,
       name: o.name,
       title: o.tip,
-      calc: o.call.bind(this, this.operations, found.args),
+      calc: o.call.bind(this, this.operations, args),
       value: null
     }
      */
@@ -571,7 +572,8 @@ export class SelectQuery {
       this.strQuery = query
       if (!query) {
         console.warn(`SelectQuery constructor: provided empty query: ${query}`)
-        this.errors.push(`No operations found in query`)
+        //this.errors.push(`Provided empty query.`)
+        this.errors.push(`Запрос пуст.`)
         return
       }
 
@@ -616,12 +618,15 @@ export class SelectQuery {
                 if (buffer.toUpperCase() == 'SELECT') {
                   console.log('recognized SELECT')
                   if (waitingForSelectType || waitingForWhere || waitingForCondition) {
-                    this.errors.push(`Unexpected SELECT keyword at ${k - 6}. Nested SELECT queries aren't supported.`)
+                    //this.errors.push(`Unexpected SELECT keyword at ${k - 6}. Nested SELECT queries aren't supported.`)
+                    this.errors.push(`Непредвиденное ключевое слово SELECT на позиции ${k - 6}. Вложенные SELECT-запросы не поддерживаются.`)
                   } else if (k == query.length-1) {
-                    this.errors.push(`Unexpected end of query after SELECT keyword at ${k}.`)
+                    //this.errors.push(`Unexpected end of query after SELECT keyword at ${k}.`)
+                    this.errors.push(`Неожиданный конец запроса после ключевого слова SELECT на позиции ${k}.`)
                   } else {
                     if (ch.search(/\(\)\'\`/) >= 0) {
-                      this.errors.push(`Unexpected ${ch} at ${k} after SELECT keyword. An element type (nodes/edges/any) was expected.`)
+                      //this.errors.push(`Unexpected ${ch} at ${k} after SELECT keyword. An element type (nodes/edges/any) was expected.`)
+                      this.errors.push(`Неожиданный символ ${ch} на позиции ${k} после ключевого слова SELECT. Ожидался тип элементов (nodes/edges/any).`)
                     } else {
                       lexems.push(buffer.toUpperCase())
                       rootSelectParenthesisCount = parenthesisCount
@@ -638,9 +643,11 @@ export class SelectQuery {
                   console.log('recognized WHERE')
                   if (waitingForWhere) {
                     if (ch == ')') {
-                      this.errors.push(`Unexpected closing parenthesis ) at ${k} after WHERE keyword. A condition was expected.`)
+                      //this.errors.push(`Unexpected closing parenthesis ) at ${k} after WHERE keyword. A condition was expected.`)
+                      this.errors.push(`Неожиданная закрывающая скобка ) на позиции ${k} после ключевого слова WHERE. Ожидалось условие.`)
                     } else if (k == query.length-1) {
-                      this.errors.push(`Unexpected end of query after WHERE keyword at ${k}.`)
+                      ///this.errors.push(`Unexpected end of query after WHERE keyword at ${k}.`)
+                      this.errors.push(`Неожиданный конец запроса после ключевого слова WHERE на позиции ${k}.`)
                     } else {
                       lexems.push(buffer.toUpperCase())
                       waitingForWhere = false
@@ -648,11 +655,14 @@ export class SelectQuery {
                     }
                   } else {
                     if (waitingForCondition) {
-                      this.errors.push(`Unexpected WHERE keyword at ${k - 5}. It was already used in this SELECT query.`)
+                      //this.errors.push(`Unexpected WHERE keyword at ${k - 5}. It was already used in this SELECT query.`)
+                      this.errors.push(`Непредвиденное ключевое слово WHERE на позиции ${k - 5}. Оно было уже использовано в этом SELECT-запросе.`)
                     } else if (waitingForSelectType) {
-                      this.errors.push(`Unexpected WHERE keyword at ${k - 5}. An element type (nodes/edges/any) was expected.`)
+                      //this.errors.push(`Unexpected WHERE keyword at ${k - 5}. An element type (nodes/edges/any) was expected.`)
+                      this.errors.push(`Непредвиденное ключевое слово WHERE на позиции ${k - 5}. Ожидался тип элементов (nodes/edges/any).`)
                     } else {
-                      this.errors.push(`Unexpected WHERE keyword at ${k - 5}. SELECT query wasn't opened.`)
+                      //this.errors.push(`Unexpected WHERE keyword at ${k - 5}. SELECT query wasn't opened.`)
+                      this.errors.push(`Непредвиденное ключевое слово WHERE на позиции ${k - 5} вне SELECT-запроса.`)
                     }
                   }
 
@@ -660,7 +670,8 @@ export class SelectQuery {
                   console.log('recognized type of elements')
                   if (waitingForSelectType) {
                     if (ch.search(/\'\`\(/) >= 0) {
-                      this.errors.push(`Unexpected ${ch} at ${k} after element type ${buffer}. Either an end of SELECT query (with closing parenthesis ) ) or a WHERE keyword was expected.`)
+                      //this.errors.push(`Unexpected ${ch} at ${k} after element type ${buffer}. Either an end of SELECT query (with closing parenthesis ) ) or a WHERE keyword was expected.`)
+                      this.errors.push(`Неожиданный символ ${ch} на позиции ${k} после типа элементов ${buffer}. Ожидался либо конец SELECT-запроса (с помощью закрывающей скобки ) ) или ключевое слово WHERE.`)
                     } else {
                       lexems.push(buffer)
                       currentSelectType = buffer
@@ -669,9 +680,11 @@ export class SelectQuery {
                     }
                   } else {
                     if (waitingForWhere || waitingForCondition) {
-                      this.errors.push(`Unexpected ${buffer} keyword at ${k - buffer.length}. SELECT query already got an elements' type.`)
+                      //this.errors.push(`Unexpected ${buffer} keyword at ${k - buffer.length}. SELECT query already got an elements' type.`)
+                      this.errors.push(`Непредвиденное ключевое слово ${buffer} на позиции ${k - buffer.length}. В этом SELECT-запросе уже задан тип элементов.`)
                     } else {
-                      this.errors.push(`Unexpected ${buffer} keyword at ${k - buffer.length}. SELECT query wasn't opened.`)
+                      //this.errors.push(`Unexpected ${buffer} keyword at ${k - buffer.length}. SELECT query wasn't opened.`)
+                      this.errors.push(`Непредвиденное ключевое слово ${buffer} на позиции ${k - buffer.length} вне SELECT-запроса.`)
                     }
                   }
 
@@ -680,11 +693,13 @@ export class SelectQuery {
                   if (waitingForCondition) {
                     let extractor = extractors[buffer]
                     if (currentSelectType != extractor.accepts && extractor.accepts != 'any') {
-                      this.errors.push(`Invalid ${buffer} metadata property check at ${k - buffer.length}. You select elements of type ${currentSelectType}, while ${buffer} is only valid for type ${extractor.accepts}.`)
+                      //this.errors.push(`Invalid ${buffer} metadata property check at ${k - buffer.length}. You select elements of type ${currentSelectType}, while ${buffer} is only valid for type ${extractor.accepts}.`)
+                      this.errors.push(`Неверная проверка метаданных ${buffer} на позиции ${k - buffer.length}. Этот SELECT-запрос выбирает элементы типа ${currentSelectType}, но ${buffer} проверяет только элементы типа ${extractor.accepts}.`)
                     }
                     this.selectors[selectorIndex][variableIndex] = {
                       type: 'variable',
                       str: buffer,
+                      variableType: 'extractor',
                       get: extractor.get,
                       title: `${buffer}\n${extractor.tip}`,
                       value: null
@@ -693,9 +708,11 @@ export class SelectQuery {
                     variableIndex++
                   } else {
                     if (waitingForSelectType || waitingForWhere) {
-                      this.errors.push(`Unexpected ${buffer} metadata property check at ${k - buffer.length}. It's only allowed in conditions after WHERE keyword.`)
+                      //this.errors.push(`Unexpected ${buffer} metadata property check at ${k - buffer.length}. It's only allowed in conditions after WHERE keyword.`)
+                      this.errors.push(`Неверная проверка метаданных ${buffer} на позиции ${k - buffer.length}. Они разрешены только после ключевого слова WHERE.`)
                     } else {
-                      this.errors.push(`Unexpected ${buffer} metadata property check at ${k - buffer.length}. SELECT query wasn't opened.`)
+                      //this.errors.push(`Unexpected ${buffer} metadata property check at ${k - buffer.length}. SELECT query wasn't opened.`)
+                      this.errors.push(`Неверная проверка метаданных ${buffer} на позиции ${k - buffer.length} вне SELECT-запроса.`)
                     }
                   }
 
@@ -705,6 +722,7 @@ export class SelectQuery {
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
                     str: buffer,
+                    variableType: 'number',
                     get: (cytoscapeSingleElement) => {
                       return numberConstantCopy
                     },
@@ -721,6 +739,7 @@ export class SelectQuery {
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
                     str: 'TRUE',
+                    variableType: 'boolean',
                     get: (cytoscapeSingleElement) => {
                       return true
                     },
@@ -735,6 +754,7 @@ export class SelectQuery {
                   this.selectors[selectorIndex][variableIndex] = {
                     type: 'variable',
                     str: 'FALSE',
+                    variableType: 'boolean',
                     get: (cytoscapeSingleElement) => {
                       return false
                     },
@@ -759,7 +779,8 @@ export class SelectQuery {
                   variableIndex++*/
 
                 } else {
-                  this.errors.push(`Unknown keyword ${buffer} at ${k - buffer.length}`)
+                  //this.errors.push(`Unknown keyword ${buffer} at ${k - buffer.length}`)
+                  this.errors.push(`Неизвестное ключевое слово ${buffer} на позиции ${k - buffer.length}`)
                 }
               }
               buffer = ''
@@ -775,12 +796,18 @@ export class SelectQuery {
                   lexems.push(ch)
                   parenthesisCount--
                   if (parenthesisCount < 0) {
-                    this.errors.push(`Unmatched closing parenthesis at ${k}`)
+                    //this.errors.push(`Unmatched closing parenthesis at ${k}`)
+                    this.errors.push(`Непарная закрывающая скобка на позиции ${k}`)
                   }
                 }
                 if (parenthesisCount < rootSelectParenthesisCount || k == query.length-1) {
                   //with this ) we finished a SELECT query
-                  selectBoundaries[selectBoundaries.length - 1].end = k == query.length-1 ? lexems.length : lexems.length - 1
+                  console.log('end of lexem with char = ', ch, ', query end =', k == query.length-1)
+                  if (k == query.length-1 && ch.search(/[\(\)\'\`]/) < 0) {
+                    selectBoundaries[selectBoundaries.length - 1].end = lexems.length
+                  } else {
+                    selectBoundaries[selectBoundaries.length - 1].end = lexems.length - 1
+                  }
                   rootSelectParenthesisCount = -1
                   currentSelectType = ''
                   waitingForCondition = false
@@ -810,6 +837,7 @@ export class SelectQuery {
               this.selectors[selectorIndex][variableIndex] = {
                 type: 'variable',
                 str: `\`${buffer}\``,
+                variableType: 'property',
                 get: (cytoscapeSingleElement) => {
                   return cytoscapeSingleElement.data(fieldNameCopy)
                 },
@@ -824,6 +852,15 @@ export class SelectQuery {
           } else {
             buffer += ch
           }
+          if (k == query.length-1) {
+            //with this ) we finished a SELECT query
+            console.log('end of lexem with char = ', ch, ', query end =', k == query.length-1)
+            selectBoundaries[selectBoundaries.length - 1].end = lexems.length
+            rootSelectParenthesisCount = -1
+            currentSelectType = ''
+            waitingForCondition = false
+            waitingForWhere = false
+          }
         } else if (isStringOpened) {
           //we are inside string constant
           if (ch == '\'') {
@@ -837,6 +874,7 @@ export class SelectQuery {
                 this.selectors[selectorIndex][variableIndex] = {
                   type: 'variable',
                   str: `'${buffer}'`,
+                  variableType: 'date',
                   get: (cytoscapeSingleElement) => {
                     return date
                   },
@@ -847,12 +885,13 @@ export class SelectQuery {
                 variableIndex++
                 isStringOpened = false
                 buffer = ''
-              } {
+              } else {
                 //create constant string variable
                 let stringConstantCopy = buffer
                 this.selectors[selectorIndex][variableIndex] = {
                   type: 'variable',
                   str: `'${buffer}'`,
+                  variableType: 'string',
                   get: (cytoscapeSingleElement) => {
                     return stringConstantCopy
                   },
@@ -868,18 +907,31 @@ export class SelectQuery {
           } else {
             buffer += ch
           }
+          if (k == query.length-1) {
+            //with this ) we finished a SELECT query
+            console.log('end of lexem with char = ', ch, ', query end =', k == query.length-1)
+            selectBoundaries[selectBoundaries.length - 1].end = lexems.length
+            rootSelectParenthesisCount = -1
+            currentSelectType = ''
+            waitingForCondition = false
+            waitingForWhere = false
+          }
         }
       }
       if (parenthesisCount > 0) {
-        this.errors.push(`Totally ${parenthesisCount} unmatched opening parenthesis`)
+        //this.errors.push(`Totally ${parenthesisCount} unmatched opening parenthesis.`)
+        this.errors.push(`Всего ${parenthesisCount} непарных открывающих скобок.`)
       } else if (parenthesisCount < 0) {
-        this.errors.push(`Totally ${-parenthesisCount} unmatched closing parenthesis`)
+        //this.errors.push(`Totally ${-parenthesisCount} unmatched closing parenthesis.`)
+        this.errors.push(`Всего ${-parenthesisCount} непарных закрывающих скобок.`)
       }
       if (isStringOpened) {
-        this.errors.push(`Missing closing quote \' for a string constant`)
+        //this.errors.push(`Missing closing quote \' for a string or date constant.`)
+        this.errors.push(`Пропущена закрывающая кавычка \' для строковой константы или даты.`)
       }
       if (isFieldNameOpened) {
-        this.errors.push(`Missing closing quote \` for a field name`)
+        //this.errors.push(`Missing closing backquote \` for a field or free property name.`)
+        this.errors.push(`Пропущен закрывающий обратный апостроф \` для имени поля или свободного свойства.`)
       }
 
       /* ---------------------------------------- Build relational queries trees ---------------------------------------- */
@@ -889,18 +941,19 @@ export class SelectQuery {
       let operationIndex = 0
       let shift = 0
       for (let b = 0; b < selectBoundaries.length; b++) {
-        console.log(b)
         let bounds = selectBoundaries[b]
         let previousSelectLength = 0
         let start = bounds.start - shift
         let end = bounds.end - shift
-        while (previousSelectLength != end - start) {
+        console.log(`Start simplifying SELECT at ${b}, start = ${start}, end = ${end}`)
+        while ((end - start > 0) && (previousSelectLength != end - start)) {
           console.log(`not simplified yet. start = ${start}, end = ${end}, previousSelectLength = ${previousSelectLength} lexems = `, lexems)
           previousSelectLength = end - start
 
           if (previousSelectLength == 2) {
             console.log(`pushing short select at ${operationIndex}`)
-            let variableNextIndex = this.selectors[b].length
+            //let variableNextIndex = this.selectors[b].length
+            operationIndex = b
             this.operations[operationIndex] = {
               type: 'selector',
               str: lexems[start] + ' ' + lexems[end - 1],
@@ -909,13 +962,13 @@ export class SelectQuery {
               title: SelectQuery.elementTypeTitles[lexems[end - 1]],
               value: true
             }
-            lexems.splice(start, 2, ''+variableNextIndex)
+            lexems.splice(start, 2, operationIndex)
             shift += 1
-            operationIndex++
 
           } else if (previousSelectLength == 4) {
             console.log(`pushing select with condition at ${operationIndex}`)
-            let variableNextIndex = this.selectors[b].length
+            //let variableNextIndex = this.selectors[b].length
+            operationIndex = b
             this.operations[operationIndex] = {
               type: 'selector',
               str: lexems[start] + ' ' + lexems[start + 1] + ' ' + lexems[start + 2] + ' ' + lexems[start + 3],
@@ -925,9 +978,8 @@ export class SelectQuery {
               condition: this.selectors[b],
               value: null
             }
-            lexems.splice(start, 4, ''+variableNextIndex)
+            lexems.splice(start, 4, operationIndex)
             shift += 3
-            operationIndex++
 
           } else {
             //simplify condition
@@ -953,10 +1005,10 @@ export class SelectQuery {
                     name: po.name,
                     style: po.style,
                     title: po.tip,
-                    calc: po.call.bind(this, this.selectors[b], found.args),
+                    calc: po.call.bind(this, args),
                     value: null
                   }
-                  lexems.splice(i-1, found.args.length+1, ''+variableNextIndex)
+                  lexems.splice(i-1, found.args.length+1, variableNextIndex)
                   shift += found.args.length
                   end = end - found.args.length
                   i = i - found.args.length
@@ -974,10 +1026,12 @@ export class SelectQuery {
         }
       }
       
-      console.log(`strQuery: ${query}, subs: ${this.operations.join('\n')}`);
+      console.log('\n---------------------\nFinished tree of SELECTs. lexems:', lexems,
+      ' ; operations:', this.operations, '; selectors:', this.selectors);
 
       /* ----------------------------------- Build collection operations tree ------------------------------------- */
 
+      operationIndex++;
       let previousLexemsLength = 0
       while (lexems.length != previousLexemsLength) {
         previousLexemsLength = lexems.length
@@ -996,7 +1050,8 @@ export class SelectQuery {
               let args = found.args.map(index => this.operations[index])
               if (o.accepts != 'any') {
                 if (!args.every(a => a.returns == o.accepts)) {
-                  this.errors.push(`Type mismatch in ${found.str}. Operator ${o.name} accepts elements type ${o.accepts}, while arguments are of type ${args.map(a => a.returns)}`)
+                  //this.errors.push(`Type mismatch in ${found.str}. Operator ${o.name} accepts elements type ${o.accepts}, while arguments are of type ${args.map(a => a.returns)}`)
+                  this.errors.push(`Несовпадение типов в ${found.str}. Оператор ${o.name} принимает тип элементов ${o.accepts}, но аргументы имеют типы ${args.map(a => a.returns)}`)
                 }
               }
               this.operations[operationIndex] = {
@@ -1005,10 +1060,10 @@ export class SelectQuery {
                 args: args,
                 name: o.name,
                 title: o.tip,
-                calc: o.call.bind(this, this.operations, found.args),
+                calc: o.call.bind(this, args),
                 value: null
               }
-              lexems.splice(i-1, found.args.length + 1, ''+operationIndex)
+              lexems.splice(i-1, found.args.length + 1, operationIndex)
               i = i - found.args.length
               operationIndex++
             }
@@ -1025,10 +1080,11 @@ export class SelectQuery {
         this.tree = this.operations[this.operations.length - 1]
       } else {
         console.warn('SelectQuery: no operations in query')
-        this.errors.push(`No operations found in query`)
+        //this.errors.push(`No operations found in query`)
+        this.errors.push(`В запросе не найдено ни одной операции.`)
       }
 
-      console.log(`Finished. strQuery: ${query}, subs: ${this.operations.join('\n')}, tree:`,
-      this.tree, ', selectors:', this.selectors, '; errors:', this.errors);
+      console.log('Finished. lexems:', lexems, '; operations:', this.operations, '; tree:',
+      this.tree, '; selectors:', this.selectors, '; errors:', this.errors);
     }
   }

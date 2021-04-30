@@ -175,7 +175,7 @@ export class OSelection {
 
     toString() {
       let str = this._array.toString();
-      console.log('OSelection.toString():', str)
+      //console.log('OSelection.toString():', str)
       return str
     }
   

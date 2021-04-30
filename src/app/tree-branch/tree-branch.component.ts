@@ -103,6 +103,6 @@ export class TreeBranchComponent implements OnInit {
 
   ngOnInit(): void {
     this.level = this.level*1
-    console.log('tree margin:' + ((this.level + 1) * 20) + 'px')
+    //console.log('tree margin:' + ((this.level + 1) * 20) + 'px')
   }
 }

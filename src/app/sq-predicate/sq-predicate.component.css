@@ -10,7 +10,7 @@
     border-radius: 3px;
 }
 
-.operator:hover {
+.operator:hover, .variable:hover {
     background-color: rgb(225, 218, 255);
     text-decoration: underline;
 }
@@ -20,12 +20,41 @@
 }
 
 .root {
-    background-color: rgba(47, 0, 255, 0.02);
+    /*background-color: rgba(47, 0, 255, 0.02);*/
 }
 
-.not_variable {
-    margin-left: 20px;
+.not_inline {
+    border-left: 1px solid grey;
+    padding-left: 20px;
     display: block;
+}
+
+.syntax-keyword {
+    color: #6b3796;
+}
+
+.syntax-operator {
+    color: #5a4929;
+}
+
+.syntax-extractor {
+    color: #36776c;
+}
+
+.syntax-string {
+    color: #851c1c;
+}
+
+.syntax-date {
+    color: #aa4908;
+}
+
+.syntax-boolean {
+    color: #0d4ace;
+}
+
+.syntax-number {
+    color: #238130;
 }
 /*
 SELECT edges WHERE 
@@ -42,4 +71,7 @@ SELECT edges WHERE
             `cost` = 5
         )
     ) 
+
+
+    ((SELECT edges).connectedNodes).intersect(SELECT nodes WHERE `создан` < '2018-01-01')
 */

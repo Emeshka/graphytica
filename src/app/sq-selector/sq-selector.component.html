@@ -1,6 +1,8 @@
 <div class="root">
-    <span>Выбрать </span>
+    <span class="cm-keyword">Выбрать </span>
     <span class="elements_type" title="{{tree.title}}">{{tree.returns}}</span>
-    <span *ngIf="tree.condition">, где </span>
-    <sq-predicate *ngIf="tree.condition" [tree]="tree.condition[tree.condition.length - 1]"></sq-predicate>
+    <span class="cm-keyword" *ngIf="tree.condition"> такие, что </span>
+    <div>
+        <sq-predicate *ngIf="tree.condition" [tree]="tree.condition[tree.condition.length - 1]"></sq-predicate>
+    </div>
 </div>
