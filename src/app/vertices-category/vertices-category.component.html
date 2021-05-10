@@ -1,5 +1,5 @@
 <div class="section" *ngIf="activeToolId">
-    <div>{{toolById[activeToolId].title}}:</div>
+    <div>{{toolById[activeToolId].title}}</div>
     <table>
         <ng-container *ngIf="toolById[activeToolId].settings">
             <ng-container *ngFor="let s of toolById[activeToolId].settings | keyvalue: settingsOrderComparator">
@@ -24,10 +24,10 @@
 <div class="section" *ngIf="editSelected === false">
     <div>
         <div *ngIf="activeToolId == 'new_vertex'">
-            Создать новую вершину со свойствами:
+            Создать новую вершину со свойствами
         </div>
         <div *ngIf="activeToolId == 'new_edge'">
-            Создать новое ребро со свойствами:
+            Создать новое ребро со свойствами
         </div>
     </div>
     <div class="big_table">

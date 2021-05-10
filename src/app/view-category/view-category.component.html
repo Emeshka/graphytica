@@ -1,6 +1,187 @@
-<p>view-category works!</p>
-<app-icon-button
-    title="Разместить вершины автоматически"
-    iconSrc="assets/img/autolayout.png"
-    [callback]="autolayout.bind(this)"
-></app-icon-button>
+<div class="section">
+    <div>Изменить вид</div>
+    <app-icon-button
+        title="Разместить все вершины автоматически"
+        iconSrc="assets/img/autolayout.png"
+        [callback]="autolayout.bind(this)"
+    ></app-icon-button>
+</div>
+
+<div class="section">
+    <div>Правила отображения элементов графа</div>
+    <table>
+        <tr *ngFor="let rule of rules">
+            <td>
+                <div>
+                    <tiny-button
+                        title="Убрать"
+                        iconSrc="assets/img/close.png"
+                        [callback]="removeStyleRule.bind(this, rule)"
+                    ></tiny-button>
+                    <span>{{rule.name}}</span>
+                </div>
+                <sq-selector *ngIf="rule.condition.tree.type == 'selector'" [tree]="rule.condition.tree"></sq-selector>
+            </td>
+            <td>
+                <div *ngFor="let style of rule.then; let i = index">
+                    {{style.what}}: {{style.calculator}}({{style.value.join ? style.value.join(', ') : style.value}});
+                </div>
+            </td>
+        </tr>
+        <tr *ngIf="newSettings.fakeNewField">
+            <td colspan=2 class="field_name">
+                <autosized-textarea
+                    placeholder="Имя нового стиля"
+                    (change)="setNewStyleRuleName($event)"
+                    (input)="checkInvalid($event, isCytoscapeClassNameInvalid.bind(this))"
+                ></autosized-textarea>
+                <div class="rule_part">Для элементов:</div>
+                <div *ngIf="newSettings.manualTyping">
+                    <div class="interpadding">
+                        <div class="preicon">Введите запрос:</div>
+                    </div>
+                    <div>
+                        <action-button class="inline_buttons"
+                            iconSrc="assets/img/close.png"
+                            text="Отмена"
+                            [callback]="editQuery.bind(this)"
+                        ></action-button>
+                        <action-button class="inline_buttons"
+                            iconSrc="assets/img/ok.png"
+                            text="Готово"
+                            [callback]="setQuery.bind(this)"
+                        ></action-button>
+                    </div>
+                    <div class="interpadding form_error">
+                        <div class="query_error" *ngFor="let error of newSettings.condition.errors">{{error}}</div>
+                    </div>
+                    <code-mirror
+                        mode="sql"
+                        [value]="newSettings.tempStrQuery"
+                        (input)="setTempQuery($event)"
+                    ></code-mirror>
+                </div>
+                <div *ngIf="!newSettings.manualTyping">
+                    <div class="interpadding">
+                        <action-button
+                            text="Ввести"
+                            iconSrc="assets/img/edit.png"
+                            [callback]="editQuery.bind(this)">
+                        </action-button>
+                    </div>
+                    <div class="interpadding form_error">
+                        <div class="query_error" *ngFor="let error of newSettings.condition.errors">{{error}}</div>
+                    </div>
+                    <sq-selector *ngIf="newSettings.condition.tree.type == 'selector'" [tree]="newSettings.condition.tree"></sq-selector>
+                </div>
+                <div class="rule_part">Применить стили:</div>
+                <div *ngFor="let style of newSettings.then; let i = index" class="style_property">
+                    <tiny-button
+                        title="Убрать"
+                        iconSrc="assets/img/close.png"
+                        [callback]="removeThenStyle.bind(this)"
+                    ></tiny-button>
+                    <div>
+                        <select value="{{style.what}}"
+                            (change)="setThenStyleName(i, $event.target.value)"
+                            class="full_width"
+                        >
+                            <option
+                                *ngFor="let styleName of supportedStyles"
+                                value="{{styleName}}"
+                                [selected]="styleName == style.what"
+                            >{{styleName}}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select value="{{style.calculator}}"
+                            (change)="setThenStyleCalculator(i, $event.target.value)"
+                            class="full_width"
+                        >
+                            <option value="equals" selected>=</option>
+                            <option value="data" selected>брать из свойства</option>
+                            <option value="mapData" selected>линейно спроецировать</option>
+                        </select>
+                    </div>
+                    <div *ngIf="style.calculator == 'equals'">
+                        <div class="test_color"></div>
+                        <autosized-textarea
+                            placeholder="Значение" 
+                            (change)="setThenStyleValue(i, $event)"
+                            (input)="checkInvalid($event, isInvalidCSSProperty.bind(this, style.what))"
+                        ></autosized-textarea>
+                    </div>
+                    <div *ngIf="style.calculator == 'data'">
+                        <div class="test_color"></div>
+                        <autosized-textarea
+                            placeholder="Имя свойства элемента" 
+                            (change)="setThenStyleValueData(i, $event)"
+                        ></autosized-textarea>
+                    </div>
+                    <div *ngIf="style.calculator == 'mapData'">
+                        свойство
+                        <autosized-textarea
+                            placeholder="Имя свойства элемента" 
+                            (change)="setThenStyleValueMapData(i, 0, $event, null)"
+                        ></autosized-textarea>
+                        от
+                        <autosized-textarea
+                            placeholder="Мин. значение свойства элемента" 
+                            [isMasked]="false"
+                            (change)="setThenStyleValueMapData(i, 1, $event, 'isNaN')"
+                        ></autosized-textarea>
+                        до
+                        <autosized-textarea
+                            placeholder="Макс. значение свойства элемента" 
+                            [isMasked]="false"
+                            (change)="setThenStyleValueMapData(i, 2, $event, 'isNaN')"
+                        ></autosized-textarea>
+                         - значение от
+                        <div class="test_color"></div>
+                        <autosized-textarea
+                            placeholder="Мин. значение стиля" 
+                            [isMasked]="false"
+                            (change)="setThenStyleValueMapData(i, 3, $event, isInvalidCSSProperty.bind(this, style.what, $event.target.value))"
+                        ></autosized-textarea>
+                        до
+                        <div class="test_color"></div>
+                        <autosized-textarea
+                            placeholder="Макс. значение стиля" 
+                            [isMasked]="false"
+                            (change)="setThenStyleValueMapData(i, 4, $event, isInvalidCSSProperty.bind(this, style.what, $event.target.value))"
+                        ></autosized-textarea>
+                    </div>
+                </div>
+                <div>
+                    <tiny-button
+                        iconSrc="assets/img/green_plus.png"
+                        title="Добавить"
+                        [callback]="addThenStyle.bind(this)"
+                    ></tiny-button>
+                </div>
+            </td>
+        </tr>
+        <tr *ngIf="newSettings.fakeNewField">
+            <action-button class="inline_buttons"
+                iconSrc="assets/img/close.png"
+                text="Отмена"
+                [callback]="hideFakeField.bind(this)"
+            ></action-button>
+            <action-button class="inline_buttons"
+                iconSrc="assets/img/ok.png"
+                text="Применить правило"
+                [active]="isAddRuleButtonActive"
+                [callback]="createRule.bind(this)"
+            ></action-button>
+        </tr>
+        <tr *ngIf="!newSettings.fakeNewField">
+            <td colspan=2 class="add_field">
+                <tiny-button
+                    iconSrc="assets/img/green_plus.png"
+                    title="Создать новое поле"
+                    [callback]="addFakeField.bind(this)"
+                ></tiny-button>
+            </td>
+        </tr>
+    </table>
+</div>

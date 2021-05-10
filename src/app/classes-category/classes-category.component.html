@@ -1,5 +1,5 @@
 <div class="section">
-    <div>Дерево классов:</div>
+    <div>Дерево классов</div>
     <tree-branch
         [tree]="conn.classesTree"
         level="0"
@@ -9,7 +9,7 @@
 </div>
 
 <div class="section" *ngIf="selectedClass">
-    <div>Данные класса <span class="class_name">{{selectedClass}}</span>:</div>
+    <div>Данные класса <span class="class_name">{{selectedClass}}</span></div>
     <table>
         <tr *ngIf="selectedClass != 'V' && selectedClass != 'E'">
             <td class="field_name">Суперкласс:</td>
@@ -46,7 +46,7 @@
 </div>-->
 
 <div class="section" *ngIf="selectedClass">
-    <div>Поля класса <span class="class_name">{{selectedClass}}</span>:</div>
+    <div>Поля класса <span class="class_name">{{selectedClass}}</span></div>
     <table>
         <tr *ngFor="let cl of conn.classesMap[selectedClass].properties | keyvalue">
             <td class="field_name">

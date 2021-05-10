@@ -1,5 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { combineLatest } from 'rxjs';
+import { DbServiceService } from '../db-service.service';
+import { SelectQuery } from '../selection-category/SelectQuery';
 
 @Component({
   selector: 'view-category',
@@ -8,52 +9,265 @@ import { combineLatest } from 'rxjs';
 })
 export class ViewCategoryComponent implements OnInit {
 
-  constructor() { }
+  constructor(
+    private conn: DbServiceService
+  ) { }
 
   @Input() cy = null;
+  private static storedNewSettings = {
+    fakeNewField: false,
+    condition: new SelectQuery('SELECT nodes WHERE isSelected'),
+    name: null,
+    tempStrQuery: 'SELECT nodes WHERE isSelected',
+    manualTyping: false,
+    then: [
+      {
+        what: 'background-color',
+        calculator: 'equals',
+        value: null
+      }
+    ]
+  };
+  newSettings;
+  rules = [];
+  supportedStyles = ['background-color', 'width', 'height', 'line-color'];
+  colorStyles = ['background-color', 'line-color'];
+  isAddRuleButtonActive = false;
 
   autolayout() {
-    let options = {// default layout options
+    let options = {
       name: 'cola',
-      animate: true, // whether to show the layout as it's running
-      refresh: 1, // number of ticks per frame; higher is faster but more jerky
-      maxSimulationTime: 4000, // max length in ms to run the layout
-      ungrabifyWhileSimulating: false, // so you can't drag nodes during layout
-      fit: true, // on every layout reposition of nodes, fit the viewport
-      padding: 30, // padding around the simulation
-      boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
-      nodeDimensionsIncludeLabels: false, // whether labels should be included in determining the space used by a node
-    
-      // layout event callbacks
-      ready: function(){}, // on layoutready
-      stop: function(){}, // on layoutstop
-    
-      // positioning options
-      randomize: false, // use random node positions at beginning of layout
-      avoidOverlap: true, // if true, prevents overlap of node bounding boxes
-      handleDisconnected: true, // if true, avoids disconnected components from overlapping
-      convergenceThreshold: 0.01, // when the alpha value (system energy) falls below this value, the layout stops
-      nodeSpacing: function( node ){ return 10; }, // extra spacing around nodes
-      flow: undefined, // use DAG/tree flow layout if specified, e.g. { axis: 'y', minSeparation: 30 }
-      alignment: undefined, // relative alignment constraints on nodes, e.g. {vertical: [[{node: node1, offset: 0}, {node: node2, offset: 5}]], horizontal: [[{node: node3}, {node: node4}], [{node: node5}, {node: node6}]]}
-      gapInequalities: undefined, // list of inequality constraints for the gap between the nodes, e.g. [{"axis":"y", "left":node1, "right":node2, "gap":25}]
-    
-      // different methods of specifying edge length
-      // each can be a constant numerical value or a function like `function( edge ){ return 2; }`
-      edgeLength: undefined, // sets edge length directly in simulation
-      edgeSymDiffLength: undefined, // symmetric diff edge length in simulation
-      edgeJaccardLength: undefined, // jaccard edge length in simulation
-    
-      // iterations of cola algorithm; uses default values on undefined
-      unconstrIter: undefined, // unconstrained initial layout iterations
-      userConstIter: undefined, // initial layout iterations with user-specified constraints
-      allConstIter: undefined, // initial layout iterations with all constraints including non-overlap
+      animate: true,
+      refresh: 1,
+      maxSimulationTime: 4000,
+      ungrabifyWhileSimulating: false,
+      fit: true,
+      padding: 30,
+      nodeDimensionsIncludeLabels: false,
+      ready: function(){},
+      stop: function(){},
+      randomize: false,
+      avoidOverlap: true,
+      handleDisconnected: true,
+      convergenceThreshold: 0.01,
+      nodeSpacing: function( node ){ return 10; }
     }
     this.cy.layout(options).run();
     this.cy.layout({name: 'preset'}).run();
   }
 
-  ngOnInit(): void {
+  addFakeField = () => {
+    this.newSettings.fakeNewField = true;
   }
 
+  hideFakeField = () => {
+    this.newSettings = {
+      fakeNewField: false,
+      condition: new SelectQuery('SELECT nodes WHERE isSelected'),
+      tempStrQuery: 'SELECT nodes WHERE isSelected',
+      manualTyping: false,
+      name: null,
+      then: [
+        {
+          what: 'background-color',
+          calculator: 'equals',
+          value: null
+        }
+      ]
+    };
+
+    ViewCategoryComponent.storedNewSettings = this.newSettings
+    this.newSettings.fakeNewField = false;
+  }
+
+  createRule() {
+    this.conn.addStyleRule({
+      condition: this.newSettings.condition,
+      name: this.newSettings.name,
+      then: this.newSettings.then
+    })
+    this.hideFakeField();
+  }
+
+  isCytoscapeClassNameInvalid(name) {
+    if (!name) return true;
+    let isValid = /^[a-z][a-z0-9_-]*$/.test(name)
+    return !isValid
+  }
+
+  isInvalidCSSProperty(name, value){
+    var s = document.createElement('div').style;
+    s[name] = value;
+    return s[name] != value;
+  }
+
+  trim(string) {
+    return string.trim().replace(/\s\s+/g, ' ')
+  }
+
+  cutForbidden(string) {
+    string = string.replace(/[\n\r\t\0]/g, ' ')
+    return string
+  }
+  
+  checkInvalid(event, isInvalid) {
+    var element = event.target || event.srcElement || event.currentTarget;
+    
+    if (element.value.includes('\n') || element.value.includes('\r')) {
+      element.value = this.trim(this.cutForbidden(element.value))
+      //element.dispatchEvent(new Event('change', { 'bubbles': true }))
+      element.blur()
+      //console.log('dispatched event')
+      return;
+    }
+    element.value = this.cutForbidden(element.value)
+
+    //console.log(oldValue, element.value, oldValue != element.value)
+    let value = this.trim(element.value)
+
+    if (isInvalid(value) && element.className.indexOf('invalid_input') < 0) {
+      element.className += ' invalid_input';
+    } else {
+      element.className = element.className.replace(/\s*invalid_input/g, '');
+    }
+    //console.log('parent css class =', parent.className, typeof parent.className, parent)
+  }
+
+  setNewStyleRuleName(event) {
+    //console.log(`setNewClassName `, event)
+    if (!this.isCytoscapeClassNameInvalid(event.target.value)) {
+      this.newSettings.name = event.target.value
+  
+      var element = event.target || event.srcElement || event.currentTarget;
+      let parent = element.parentElement.parentElement;
+      parent.className = parent.className.replace(/\s*invalid_input/g, '');
+    }
+    this.updateIsAddRuleButtonActive()
+  }
+
+  addThenStyle() {
+    this.newSettings.then.push(
+      {
+        what: 'background-color',
+        calculator: 'equals',
+        value: null
+      }
+    )
+    this.updateIsAddRuleButtonActive()
+  }
+
+  removeThenStyle() {
+    //
+  }
+
+  setThenStyleName(index, name) {
+    this.newSettings.then[index].what = name
+    this.updateIsAddRuleButtonActive()
+  }
+
+  setThenStyleCalculator(index, calculator) {
+    let oldCalculator = this.newSettings.then[index].calculator
+    this.newSettings.then[index].calculator = calculator
+    if ((oldCalculator == 'equals' || oldCalculator == 'data') && calculator == 'mapData') {
+      this.newSettings.then[index].value = [this.newSettings.then[index].value, null, null, null, null]
+    } else if ((calculator == 'equals' || calculator == 'data') && oldCalculator == 'mapData') {
+      this.newSettings.then[index].value = this.newSettings.then[index].value[0]
+    }
+    this.updateIsAddRuleButtonActive()
+  }
+
+  setThenStyleValue(index, event) {
+    let style = this.newSettings.then[index]
+    console.log(index, this.newSettings)
+    if (!this.isInvalidCSSProperty(style.what, event.target.value)) {
+      style.value = event.target.value
+  
+      var element = event.target || event.srcElement || event.currentTarget;
+      let parent = element.parentElement.parentElement;
+      parent.className = parent.className.replace(/\s*invalid_input/g, '');
+
+      if (this.colorStyles.includes(style.what)) {
+        let testColorBlock = element.parentElement.previousSibling
+        testColorBlock.style.background = event.target.value
+      }
+    }
+    this.updateIsAddRuleButtonActive()
+  }
+
+  setThenStyleValueData(index, event) {
+    let style = this.newSettings.then[index]
+    style.value = event.target.value
+  
+    var element = event.target || event.srcElement || event.currentTarget;
+    if (this.colorStyles.includes(style.what)) {
+      let testColorBlock = element.parentElement.previousSibling
+      testColorBlock.style.background = event.target.value
+    }
+    this.updateIsAddRuleButtonActive()
+  }
+
+  setThenStyleValueMapData(index, partIndex, event, isInvalid) {
+    let style = this.newSettings.then[index]
+    if (isInvalid == 'isNaN') isInvalid = isNaN.bind(this, event.target.value)
+    if (partIndex == 0 || isInvalid && !isInvalid()) {
+      style.value[partIndex] = event.target.value
+  
+      if (partIndex > 0) {
+        var element = event.target || event.srcElement || event.currentTarget;
+        let parent = element.parentElement.parentElement;
+        parent.className = parent.className.replace(/\s*invalid_input/g, '');
+        if (partIndex == 3 || partIndex == 4) {
+          if (this.colorStyles.includes(style.what)) {
+            let testColorBlock = element.parentElement.previousSibling
+            testColorBlock.style.background = event.target.value
+          }
+        }
+      }
+    }
+    this.updateIsAddRuleButtonActive()
+  }
+
+  removeStyleRule(rule) {
+    this.conn.removeStyleRule(rule)
+  }
+
+  editQuery() {
+    this.newSettings.manualTyping = !this.newSettings.manualTyping
+  }
+
+  setTempQuery(value) {
+    this.newSettings.tempStrQuery = value
+  }
+
+  setQuery() {
+    this.newSettings.condition = new SelectQuery(this.newSettings.tempStrQuery)
+    this.newSettings.manualTyping = false
+    this.updateIsAddRuleButtonActive()
+  }
+
+  updateIsAddRuleButtonActive() {
+    let isSelectQuery = this.newSettings.condition instanceof SelectQuery
+    let isSelector = this.newSettings.condition.tree.type == 'selector'
+    let isNameValid = !this.isCytoscapeClassNameInvalid(this.newSettings.name)
+    let isThenNotEmpty = this.newSettings.then.length > 0 && this.newSettings.then.every(
+      style => {
+        let what = style.what
+        let calc = style.calculator
+        let value = style.value
+        let isString = typeof style.value == 'string'
+        let isArray = style.value instanceof Array
+        let notNull = isArray && style.value.every(v => !!v || v === 0)
+        console.log('check then:', what, calc, value, isString, isArray, notNull)
+        return what && calc && value && (isString || isArray && notNull)
+      }
+    )
+    let result = isSelectQuery && isSelector && isNameValid && isThenNotEmpty
+    console.log('update:', isSelectQuery, isSelector, isNameValid, isThenNotEmpty)
+    this.isAddRuleButtonActive = result
+  }
+
+  ngOnInit(): void {
+    this.rules = this.conn.styleRules
+    this.newSettings = ViewCategoryComponent.storedNewSettings
+  }
 }

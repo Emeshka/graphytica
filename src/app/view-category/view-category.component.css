@@ -1,0 +1,76 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+td {
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 5px 3px;
+    overflow: auto;
+    vertical-align: middle;
+}
+
+.invalid_input {
+    background: rgba(255, 0, 0, 0.2);
+}
+
+.help_dialog {
+    display: inline-block;
+    width: 90%;
+    height: 90%;
+    padding: 20px;
+    border: 1px solid black;
+    border-radius: 4px;
+    background-color: white;
+    text-align: left;
+    overflow: auto;
+    font-size: 10pt;
+}
+
+.grey_link {
+    text-decoration: underline;
+    color: grey;
+    font-size: 10pt;
+    font-style: italic;
+    cursor: pointer;
+}
+
+.query_error {
+    border-bottom: 1px solid red;
+    border-top: 1px solid red;
+    padding: 5px 0px;
+    font-size: 11pt;
+}
+
+.interpadding {
+    padding: 10px 0px;
+}
+
+.test_color {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    vertical-align: middle;
+    border: 1px dashed grey;
+}
+
+.rule_part {
+    width: 100%;
+    /*border-top: 1px solid grey;*/
+    margin: 10px 0px;
+    padding: 5px;
+    font-size: 11pt;
+}
+
+.style_property {
+    margin: 5px 2px;
+    padding: 5px;
+    box-shadow: 0 0 10px 5px rgba(221, 221, 221, 1);
+    background-color: white;
+    border-radius: 4px;
+}

@@ -1,5 +1,5 @@
 <div class="section" *ngIf="showTable">
-    <div>Действия над выделением:</div>
+    <div>Действия над выделением</div>
     <app-icon-button title="Дублировать" iconSrc="assets/img/duplicate.png"
         [callback]="duplicate.bind(this)"></app-icon-button>
     <app-icon-button title="Удалить" iconSrc="assets/img/red_cross.png"
@@ -14,7 +14,7 @@
     
 <div class="section" *ngIf="showTable == 'selection'">
     <div>Редактировать свойства выделенных 
-        {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}:
+        {{areEdges === true ? 'ребер' : (areEdges === false ? 'вершин' : 'элементов')}}
     </div>
     <!--<div class="loading_voile_full_screen" *ngIf="expandTable"></div>-->
     <div *ngIf="!entities || entities.length == 0" class="inline_info">
@@ -248,7 +248,7 @@
 </div>
 
 <div class="section" *ngIf="showTable == 'select_query'">
-    <div>Режим:</div>
+    <div>Режим</div>
     <app-icon-button title="Заменить" iconSrc="assets/img/select_mode_reset.png"
         [callback]="setSelectionMode.bind(this, 'reset')"
         [active]="selectSettings.mode == 'reset'"></app-icon-button>
@@ -264,7 +264,7 @@
 </div>
 
 <div class="section" *ngIf="showTable == 'select_query'">
-    <div>Запрос:</div>
+    <div>Запрос</div>
     
     <div *ngIf="selectSettings.manualTyping">
         <div class="interpadding">

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
 import { BehaviorSubject } from 'rxjs';
+import { SelectQuery } from './selection-category/SelectQuery';
 
 @Injectable({
   providedIn: 'root'
@@ -22,6 +23,8 @@ export class DbServiceService {
   classes = [];
   classesMap = {};
   classesTree = {};
+
+  styleRules = [];
 
   export(path, data, callback, onerror): void {
     try {
@@ -49,6 +52,7 @@ export class DbServiceService {
         style: styleObj,
         lastId: this.lastId,
         classes: cloneClasses,
+        styleRules: this.styleRules,
         zoom: zoom,
         pan: pan
       }
@@ -62,6 +66,8 @@ export class DbServiceService {
           if (typeof callback == 'function') callback(path, {
             data: data,
             zoom: zoom,
+            style: styleObj,
+            styleRules: this.styleRules,
             pan: pan
           })
         }
@@ -175,9 +181,11 @@ export class DbServiceService {
               if (toRefactor['E'] && toRefactor['E'].addPropertiesToOld) {
                 this.getDirectInstances('E').data(toRefactor['E'].addPropertiesToOld)
               }
+              if (fullData.styleRules) this.styleRules.push(...fullData.styleRules)
             } else {
               this.lastId = fullData.lastId
               this.classes = fullData.classes
+              if (fullData.styleRules) this.styleRules = fullData.styleRules
             }
             this.update();
             let dateTypes = ['date', 'time', 'datetime']
@@ -192,6 +200,12 @@ export class DbServiceService {
                 if (props[p] && dateTypes.includes(props[p].type)) {
                   e.data[p] = new Date(e.data[p])
                 }
+              }
+            }
+            if (fullData.styleRules) {
+              for (let r of fullData.styleRules) {
+                r.condition = new SelectQuery(r.condition)
+                this.applyStyleRule(r)
               }
             }
             if (typeof callback == 'function') callback(path, {
@@ -227,6 +241,7 @@ export class DbServiceService {
         properties: {}
       }
     ];
+    this.styleRules = []
     this.update();
   }
 
@@ -480,5 +495,54 @@ export class DbServiceService {
       this.update();
       this.change.next(true);
     } else throw `Failed class removal: class ${name} doesn't exist`
+  }
+
+  applyStyleRule(settings) {
+    const query = settings.condition
+    const name = settings.name
+    const then = settings.then
+
+    let classStylesObj = {}
+    for (let entry of then) {
+      if (entry.calculator == 'equals') {
+        classStylesObj[entry.what] = entry.value
+      } else if (entry.calculator == 'data') {
+        classStylesObj[entry.what] = 'data(' + entry.value + ')'
+      } else if (entry.calculator == 'mapData') {
+        classStylesObj[entry.what] = 'mapData(' + entry.value.join(', ') + ')'
+      }
+    }
+    console.log(classStylesObj)
+    this.cy.style().selector('.' + name).style(classStylesObj).update()
+
+    let elems = query.execute(this.cy)
+    for (let ele of elems) {
+      ele.toggleClass(name, true)
+      console.log(ele.classes())
+    }
+  }
+
+  addStyleRule(settings) {
+    console.log(settings)
+    if (settings.condition instanceof SelectQuery && settings.condition.tree.type == 'selector' 
+          && settings.name && settings.then instanceof Array) {
+      this.styleRules.push(settings)
+      this.applyStyleRule(settings)
+    }
+  }
+
+  removeStyleRule(rule) {
+    let index = this.styleRules.indexOf(rule)
+    if (index >= 0) {
+      let elems = rule.condition.execute(this.cy)
+      for (let ele of elems) {
+        ele.toggleClass(name, false)
+      }
+      this.styleRules.splice(index, 1)
+      
+      let currentStyle = this.cy.style().json()
+      currentStyle.splice(currentStyle.findIndex(s => s.selector == '.'+rule.name), 1)
+      this.cy.style().fromJson(currentStyle).update()
+    }
   }
 }

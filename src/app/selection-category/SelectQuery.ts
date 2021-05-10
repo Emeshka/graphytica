@@ -314,6 +314,74 @@ export class SelectQuery {
     // infix, prefix, postfix
     private static readonly primitiveOperators = [
       {
+        name: '*',
+        style: 'infix',
+        //regex: /([a-z]+) = ([a-z]+)/g,
+        check: (o1, o2, o3) => {
+          if (!isNaN(Number(o1)) && o2 == '*' && !isNaN(Number(o3))) {
+            return {
+              str: o1 + ' ' + o2 + ' ' + o3,
+              args: [Number(o1), Number(o3)]
+            }
+          } else return null;
+        },
+        tip: 'a * b\nУмножение a и b',
+        call: (args) => {
+          return args[0].value * args[1].value
+        }
+      },
+      {
+        name: '/',
+        style: 'infix',
+        //regex: /([a-z]+) = ([a-z]+)/g,
+        check: (o1, o2, o3) => {
+          if (!isNaN(Number(o1)) && o2 == '/' && !isNaN(Number(o3))) {
+            return {
+              str: o1 + ' ' + o2 + ' ' + o3,
+              args: [Number(o1), Number(o3)]
+            }
+          } else return null;
+        },
+        tip: 'a / b\nДеление a на b',
+        call: (args) => {
+          return args[0].value / args[1].value
+        }
+      },
+      {
+        name: '+',
+        style: 'infix',
+        //regex: /([a-z]+) = ([a-z]+)/g,
+        check: (o1, o2, o3) => {
+          if (!isNaN(Number(o1)) && o2 == '+' && !isNaN(Number(o3))) {
+            return {
+              str: o1 + ' ' + o2 + ' ' + o3,
+              args: [Number(o1), Number(o3)]
+            }
+          } else return null;
+        },
+        tip: 'a + b\nСложение a и b, если она оба - числа. Конкатенация строк, если первый операнд - строка',
+        call: (args) => {
+          return args[0].value + args[1].value
+        }
+      },
+      {
+        name: '-',
+        style: 'infix',
+        //regex: /([a-z]+) = ([a-z]+)/g,
+        check: (o1, o2, o3) => {
+          if (!isNaN(Number(o1)) && o2 == '-' && !isNaN(Number(o3))) {
+            return {
+              str: o1 + ' ' + o2 + ' ' + o3,
+              args: [Number(o1), Number(o3)]
+            }
+          } else return null;
+        },
+        tip: 'a - b\nВычитание b из a',
+        call: (args) => {
+          return args[0].value - args[1].value
+        }
+      },
+      {
         name: '=',
         style: 'infix',
         //regex: /([a-z]+) = ([a-z]+)/g,
@@ -457,6 +525,20 @@ export class SelectQuery {
           return cytoscapeSingleElement.hasClass('hidden')
         }
       },
+      isLocked: {
+        accepts: 'nodes',
+        tip: 'Проверяет, является ли вершина заблокированной от перемещения',
+        get: (cytoscapeSingleElement) => {
+          return cytoscapeSingleElement.locked()
+        }
+      },
+      isSelected: {
+        accepts: 'any',
+        tip: 'Проверяет, входит ли элемент в выделение на момент перед началом запроса (позволяет задать стиль выделенным элементам)',
+        get: (cytoscapeSingleElement) => {
+          return cytoscapeSingleElement.selected()
+        }
+      },
       degree: {
         accepts: 'nodes',
         tip: 'Возвращает степень вершины (количество входящих и выходящих ребер)',
@@ -491,9 +573,7 @@ export class SelectQuery {
     selectors = []
     operations = []
     strQuery = ''
-    tree = {
-      value: null
-    }
+    tree:any = {}
     errors = []
 
     /*
@@ -535,6 +615,28 @@ export class SelectQuery {
       value: null
     }
      */
+    checkElement(cytoscapeSingleElement) {
+      // if tree is selector, check if argument satisfies the conditions
+      if (this.tree.type != 'selector') return false;
+
+      let result = true
+      if (this.tree.returns == 'nodes') result = result && cytoscapeSingleElement.isNode();
+      else if (this.tree.returns == 'edges') result = result && cytoscapeSingleElement.isEdge();
+
+      if (this.tree.condition === null || !result) return result;
+
+      let conditions = this.tree.condition
+      for (let condition of conditions) {
+        if (condition.type == 'variable') {
+          condition.value = condition.get(cytoscapeSingleElement)
+        } else if (condition.type == 'condition') {
+          condition.value = condition.calc()
+        }
+      }
+      let finalCondition = conditions[conditions.length - 1]
+      return finalCondition.value
+    }
+
     execute(cytoscape) {
       //by design of parsing operations and conditions in each of selectors go in order of possibility to calculate
       for (let o of this.operations) {
@@ -566,6 +668,10 @@ export class SelectQuery {
         }
       }
       return this.tree.value
+    }
+
+    toJSON() {
+      return this.strQuery
     }
 
     constructor(query: string) {

@@ -665,9 +665,22 @@ export class MainViewComponent implements OnInit {
       pan: pan
     });
 
+    let checkClassesOnEvents = ['add', 'remove', 'select', 'unselect',
+      'tapselect', 'tapunselect', 'boxselect', 'box', 'lock', 'data']
     let catchChanges = (event) => {
-      if (!event.target.hasClass('edge_bend_point')) {
-        this.unsavedChanges = true
+      let elem = event.target
+      if (elem) {
+        if (!elem.hasClass('edge_bend_point')) {
+          this.unsavedChanges = true
+        }
+
+        let classChange = checkClassesOnEvents.includes(event.type)
+        if (classChange && (elem.isNode() || elem.isEdge())) {
+          for (let rule of this.conn.styleRules) {
+            let classTurnOn = rule.condition.checkElement(elem)
+            elem.toggleClass(rule.name, classTurnOn)
+          }
+        }
       }
     }
     this.cy.on('add remove move select unselect tapselect tapunselect boxselect box lock', catchChanges)
